@@ -1,0 +1,73 @@
+﻿@page
+@model UtilityManagerProjects.Pages.Meters.IndexModel
+@{
+}
+<div class="dashboard-container">
+<h3>Meters</h3>
+<p>Manage and monitor all  utility meters</p>
+<a class="btn btn-primary">Create New</a>
+<div class="row g-4 mb-4">
+
+@foreach (var kpi in Model.MeterTypeKpis)
+{
+    <div class="col-md-4">
+        <div class="kpi-card">
+
+            <div class="d-flex justify-content-between align-items-start">
+
+                <div>
+                    <div class="kpi-title">
+                        @kpi.MeterType
+                    </div>
+
+                    <div class="kpi-value">
+                        @kpi.Current7Days
+                    </div>
+                </div>
+
+                <div class="kpi-icon">
+                    <i class="bi bi-speedometer2"></i>
+                </div>
+
+            </div>
+        </div>
+   </div>
+
+}
+</div>
+
+<div class="table-container">
+    <h2>All Meters</h2>
+<div class="table-card">
+<table class="table table-hover mb-0">
+    <thead class="theader-dark">
+        <tr>
+            <th>Meter Name </th>
+            <th>Meter Type</th>
+            <th>Unit</th>
+            <th>Area</th>
+            <th>Active</th>
+        </tr>
+    </thead>
+
+    <tbody>
+            @foreach(var item in Model.MeterList)
+            {
+                <tr>
+                    <td>@item.MeterName</td>
+
+                        <td>
+                            <span class="meter-tag @item.MeterType">
+                                @item.MeterType
+                            </span>
+                        </td>
+                    <td>@item.Unit</td>
+                    <td>@item.AreaName..</td>
+                    <td>@item.IsActive</td>
+                </tr>
+            }
+    </tbody>
+</table>
+</div>
+</div>
+</div>

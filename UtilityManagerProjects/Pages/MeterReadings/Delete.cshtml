@@ -1,0 +1,28 @@
+﻿@page
+@model UtilityManagerProjects.Pages.MeterReadings.DeleteModel
+@{
+}
+<div class="dashboard-container">
+<h3>Delete Meter Reading</h3>
+
+@if(Model.MeterReading != null)
+{
+    <div style="color:aliceblue;" class="h4">
+        Are you sure you want to delete this meter reading?
+    </div>
+
+    <form method="post">
+        <input asp-for="MeterReading.Id" value="@Model.MeterReading.Id" type="hidden" />
+        <div class="form-group">
+            <input type="submit" class="btn btn-danger" value="Delete Reading"  />
+           <a  class="btn btn-secondary" asp-route-id="@Model.MeterReading.Id" asp-page="./Display" >Cancel</a>
+        </div>
+    </form>
+}
+else
+{
+    <h3>
+        Meter reading not found.
+    </h3>
+}
+</div>

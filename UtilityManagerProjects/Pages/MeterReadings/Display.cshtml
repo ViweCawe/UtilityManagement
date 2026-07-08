@@ -1,0 +1,80 @@
+﻿@page
+@model UtilityManagerProjects.Pages.MeterReadings.DisplayModel
+@{
+}
+<div class="dashboard-container">
+    <div class="table-card">
+<h3>Meter Reading Detail</h3>
+
+@if(Model.Reading != null)
+{
+    <table class="table table-hover mb-0">
+      <tr>
+          <th>Meter</th>
+          <td>@Model.Reading.MeterName</td>
+      
+    </tr>
+   
+    <tr>
+         <th>Meter Type</th>
+         <td>@Model.Reading.MeterType</td>
+    </tr>
+
+    <tr>
+            <th>Location</th>
+            <td>@Model.Reading.AreaName</td>
+    </tr>
+
+    <tr>
+            <th>Previous Reading</th>
+            <td>@Model.Reading.PreviousReading</td>
+    </tr>
+
+    <tr>
+            <th>Current Reading</th>
+            <td>@Model.Reading.CurrentReading</td>
+    </tr>
+
+       <tr>
+                <th>Reading Date</th>
+                <td>@Model.Reading.ReadingDate</td>
+        </tr>
+        <tr>
+                <th>Notes</th>
+                <td>@Model.Reading.Notes</td>
+        </tr>
+
+        <tr>
+            <th>Station</th>
+            <th>@Model.Reading.StationName</th>
+        </tr>
+        <tr colspan="2">
+            <a class="btn btn-danger" asp-page="/MeterReadings/Delete" asp-route-id="@Model.Reading.Id">Delete Reading</a>
+        </tr>
+    </table>
+
+    <form  method="post">
+        <div asp-validation-summary="ModelOnly"></div>
+        <input type="hidden" asp-for="ReadingUpdate.Id" value="@Model.Reading.Id" />
+        <div class="form-group">
+            <label asp-for="ReadingUpdate.CurrentReadingUpdate">Meter Reading Update</label>
+            <input asp-for="ReadingUpdate.CurrentReadingUpdate" class="form-control" value="@Model.ReadingUpdate.CurrentReadingUpdate"  />
+            <span asp-validation-for="ReadingUpdate.CurrentReadingUpdate"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="ReadingUpdate.Notes"></label>
+            <textarea asp-for="ReadingUpdate.Notes" class="form-control" >Note Update</textarea>
+            <span asp-validation-for="ReadingUpdate.Notes" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <input type="submit" value="Update Notes" class="btn btn-primary" />
+        </div>
+    </form>
+}
+</div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

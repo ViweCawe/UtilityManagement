@@ -1,0 +1,32 @@
+﻿@page
+@model UtilityManagerProjects.Pages.Stations.IndexModel
+@{
+}
+
+
+<h2>Station</h2>
+
+<a asp-page="Create" class="btn btn-primary">Create New</a>
+
+<table class="table table-striped">
+    <thead class="thead-dark">
+        <tr>
+            <th>Station Name</th>
+            <th>Satus</th>
+            <th>Actions</th>
+        </tr>
+   </thead>
+
+   <tbody>
+        @foreach (var station in Model.StationList)
+        {
+          <tr>
+            <td>@station.StationName</td>
+            <td>@(station.IsActive ? "Active" : "Inactive")</td>
+            <td></td>
+          </tr>
+                
+        }
+
+   </tbody>
+</table>

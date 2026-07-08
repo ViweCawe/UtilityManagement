@@ -1,0 +1,59 @@
+﻿@page
+@model UtilityManagerProjects.Pages.MeterReadings.CreateModel
+@{
+}
+
+<div class="cntainer mt-4">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-header bg-dark text-white">
+            <h3>Create Reaing</h3>
+
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Meter
+                        </label>
+                        <select asp-for="Reading.MeterId"
+                                asp-items="Model.MeterItems"
+                                class="form-select">
+                                <option value="">
+                                    Select Meter
+                                </option>
+
+                        </select>
+                    </div>
+
+                   
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Current Reading
+                        </label>
+                        <input asp-for="Reading.CurrentReading"/>
+                        <span asp-validation-for="Reading.CurrentReading" class="text-danger"></span>
+                  
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Notes
+                        </label>
+                        <textarea asp-for="Reading.Notes" class="form-control" placeholder="Please add notes">
+
+                        </textarea>
+                    </div>
+
+                    <button type="submit"
+                            class="btn btn-success">
+                            Save Reading    
+                    </button>
+                    
+                  
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

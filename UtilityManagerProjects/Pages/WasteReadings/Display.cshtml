@@ -1,0 +1,76 @@
+﻿@page
+@model UtilityManagerProjects.Pages.WasteReadings.DisplayModel
+@{
+}
+}
+<div class="dashboard-container">
+    <div class="table-card">
+        <h3>Meter Reading Detail</h3>
+
+        @if (Model.WasteRecord != null)
+        {
+            <table class="table table-hover mb-0">
+                <tr>
+                    <th>Meter</th>
+                    <td>@Model.WasteRecord.WasteTypeName</td>
+
+                </tr>
+
+                <tr>
+                    <th>Material Type</th>
+                    <td>@Model.WasteRecord.MaterialName</td>
+                </tr>
+
+                <tr>
+                    <th>Location</th>
+                    <td>@Model.WasteRecord.CategoryName</td>
+                </tr>
+
+                <tr>
+                    <th>Waste Amount</th>
+                    <td>@Model.WasteRecord.WasteAmount</td>
+                </tr>
+
+               
+
+                <tr>
+                    <th>Reading Date</th>
+                    <td>@Model.WasteRecord.ReadingDate
+                <tr>
+                    <th>Notes</th>
+                    <td>@Model.WasteRecord.Notes</td>
+                </tr>
+
+          
+                <tr colspan="2">
+                    <a class="btn btn-danger" asp-page="/MeterReadings/Delete" asp-route-id="@Model.WasteRecord.Id">Delete Reading</a>
+                </tr>
+            </table>
+
+            <form method="post">
+                <div asp-validation-summary="ModelOnly"></div>
+                <input type="hidden" asp-for="WasteRecordUpdate.Id" value="@Model.WasteRecord.Id" />
+                <div class="form-group">
+                    <label asp-for="WasteRecordUpdate.wasteReadingUpdate">Meter Reading Update</label>
+                    <input asp-for="WasteRecordUpdate.wasteReadingUpdate" class="form-control" value="@Model.WasteRecordUpdate.wasteReadingUpdate" />
+                    <span asp-validation-for="WasteRecordUpdate.wasteReadingUpdate"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="WasteRecordUpdate.Notes"></label>
+                    <textarea asp-for="WasteRecordUpdate.Notes" class="form-control">Note Update</textarea>
+                    <span asp-validation-for="WasteRecordUpdate.Notes" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <input type="submit" value="Update Notes" class="btn btn-primary" />
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

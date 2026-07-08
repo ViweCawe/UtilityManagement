@@ -1,0 +1,52 @@
+﻿body {
+
+    .kpi-value {
+        font-size: 1.5em;
+        font-weight: 700;
+    }
+
+    .kpi-growth {
+        color: #22c55e;
+        font-size: 9rem;
+        font-weight: 700;
+    }
+
+    .kpi-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--border-color);
+        border-radius: 1px;
+        padding: 20px;
+        transition: .3s ease;
+    }
+
+        .kpi-card:hover {
+            transform: translate(-4px);
+            box-shadow: 0 0 30px rgba(139, 92, 254, 0.15);
+        }
+
+    .kpi-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 28px;
+    }
+
+    .water-card .kpi-icon {
+        background: rgba(79, 140, 255, .15);
+        color: var(--water);
+    }
+
+    .electricity-card .kpi-icon {
+        background: rgba(247, 181, 0, .15);
+        color: var(--electricity);
+    }
+
+    .waste-card .kpi-icon {
+        background: rgba(139, 92, 246, .15);
+        color: var(--waste);
+    }
+}
