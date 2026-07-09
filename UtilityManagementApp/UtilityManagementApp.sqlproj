@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>UtilityManagementApp</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{fc0d47fd-370b-4a19-861b-ef8287f8ec8a}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql150DatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath />
+    <RootNamespace>UtilityManagementApp</RootNamespace>
+    <AssemblyName>UtilityManagementApp</AssemblyName>
+    <ModelCollation>1033, CI</ModelCollation>
+    <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+    <GenerateCreateScript>True</GenerateCreateScript>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="Scripts" />
+    <Folder Include="dbo" />
+    <Folder Include="dbo\StoredProcedures" />
+    <Folder Include="dbo\Tables" />
+    <Folder Include="dbo\Views" />
+    <Folder Include="dbo\Indexes" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="dbo\Tables\Area.sql" />
+    <Build Include="dbo\Tables\Departments.sql" />
+    <Build Include="dbo\Tables\Stations.sql" />
+    <Build Include="dbo\Tables\Employees.sql" />
+    <Build Include="dbo\Tables\Meters.sql" />
+    <Build Include="dbo\Tables\MeterReadings.sql" />
+    <Build Include="dbo\Indexes\ReadingsIndex.sql" />
+    <Build Include="dbo\StoredProcedures\spMeters_All.sql" />
+    <Build Include="dbo\StoredProcedures\spAreas_All.sql" />
+    <Build Include="dbo\StoredProcedures\spMeters_Insert.sql" />
+    <Build Include="dbo\StoredProcedures\spAreas_Insert.sql" />
+    <Build Include="dbo\StoredProcedures\spDepartments_All.sql" />
+    <Build Include="dbo\StoredProcedures\spDepartments_Insert.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReadings_GetById.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReadings_Update.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReadings_Delete.sql" />
+    <Build Include="dbo\StoredProcedures\spArea_Update.sql" />
+    <Build Include="dbo\StoredProcedures\spArea_Delete.sql" />
+    <Build Include="dbo\StoredProcedures\spDepartment_Update.sql" />
+    <Build Include="dbo\StoredProcedures\spMeters_Update.sql" />
+    <Build Include="dbo\StoredProcedures\spMeters_GetById.sql" />
+    <Build Include="dbo\StoredProcedures\spMeters_Delete.sql" />
+    <Build Include="dbo\StoredProcedures\spStation_All.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReading_GetLatestByMeterId.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReadings_Insert.sql" />
+    <Build Include="dbo\StoredProcedures\spEmployees_All.sql" />
+    <Build Include="dbo\StoredProcedures\spEmployees_Insert.sql" />
+    <Build Include="dbo\StoredProcedures\spEmployees_GetById.sql" />
+    <Build Include="dbo\StoredProcedures\spEmployees_Update.sql" />
+    <Build Include="dbo\StoredProcedures\spEmployees_GetByUserId.sql" />
+    <Build Include="dbo\StoredProcedures\spEmployee_Update.sql" />
+    <Build Include="dbo\StoredProcedures\spEmployees_Delete.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReadings_All.sql" />
+    <Build Include="dbo\Tables\WasteType.sql" />
+    <Build Include="dbo\Tables\WasteCategory.sql" />
+    <Build Include="dbo\Tables\WasteReading.sql" />
+    <Build Include="dbo\Tables\WasteMaterial.sql" />
+    <Build Include="dbo\StoredProcedures\spWasteReadings_Insert.sql" />
+    <Build Include="dbo\StoredProcedures\spWasteReadings_Update.sql" />
+    <Build Include="dbo\StoredProcedures\spWasteReadings_All.sql" />
+    <Build Include="dbo\StoredProcedures\spWasteReadings_Delete.sql" />
+    <Build Include="dbo\StoredProcedures\spWasteReadings_GetById.sql" />
+    <Build Include="dbo\StoredProcedures\spWasteType_All.sql" />
+    <Build Include="dbo\Tables\DailyPeopleCount.sql" />
+    <Build Include="dbo\StoredProcedures\spDailyPeolpleCount_Insert.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReadings_GetLatestAll.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="UtilityManagementApp.publish.xml" />
+  </ItemGroup>
+</Project>

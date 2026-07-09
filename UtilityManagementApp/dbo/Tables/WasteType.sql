@@ -1,0 +1,10 @@
+﻿CREATE TABLE [dbo].[WasteType]
+(
+	[Id] INT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	[Name] NVARCHAR(50) NOT NULL,
+	[CategoryId] INT NOT NULL,
+	[WasteMaterialId] INT NOT NULL,
+	[IsActive]  BIT NOT NULL DEFAULT 1,
+	[CreatedAt] DATETIME NOT NULL DEFAULT GETDATE()
+
+)

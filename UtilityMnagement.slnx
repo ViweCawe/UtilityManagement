@@ -1,9 +1,8 @@
 <Solution>
-  <Folder Name="/Solution Items/" />
-  <Project Path="../UtilityManagementApp/UtilityManagementApp.sqlproj" Id="fc0d47fd-370b-4a19-861b-ef8287f8ec8a">
+  <Project Path="DataLibrary/DataLibrary.csproj" />
+  <Project Path="UtilityManagementApp/UtilityManagementApp.sqlproj" Id="fc0d47fd-370b-4a19-861b-ef8287f8ec8a">
     <Build />
     <Deploy />
   </Project>
-  <Project Path="DataLibrary/DataLibrary.csproj" />
   <Project Path="UtilityManagerProjects/UtilityManagerProjects.csproj" Id="bffcf01c-5823-45c7-b98f-529e18e24884" />
 </Solution>
