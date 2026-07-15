@@ -2,7 +2,7 @@
 (
 	
    @CaptureBy INT,
-   @WasteReading DECIMAL(18,2),
+   @WasteAmount DECIMAL(18,2),
    @RecordedAt DATETIME ,
    @UpdatedAt DATETIME2,
    @UpdatedBy NVARCHAR(50),
@@ -25,7 +25,7 @@ BEGIN
 		SET
 			UpdatedAt = @UpdatedAt,
 			UpdatedBy = @UpdatedBy,
-			WasteReading = @WasteReading,
+			WasteAmount = @WasteAmount,
 			Notes = @Notes
 
 			WHERE 

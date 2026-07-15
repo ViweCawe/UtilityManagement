@@ -1,72 +1,80 @@
 using DataLibrary.Data;
-using DataLibrary.Db;
 using DataLibrary.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Threading.Tasks;
-using UtilityManagerProjects.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace UtilityManagerProjects.Pages.MeterReadings
 {
     public class DisplayModel : PageModel
     {
-        private readonly IMeterReadingData meterReading;
-        private readonly ConnectionStringData connection;
-        private readonly IMeterData meterData;
+        private readonly IMeterReadingData meterReadingData;
 
-        [BindProperty(SupportsGet = true)]
-        public int Id { get; set; }
-
-        public MeterReading Reading { get; set; }
-        [BindProperty]
-        public MeterReadingUpdate ReadingUpdate { get; set; }
-
-        public string MeterReadingCaptured { get; set; }
-        public DisplayModel(IMeterReadingData meterReading, ConnectionStringData connection, IMeterData meterData)
+        public DisplayModel(IMeterReadingData meterReadingData)
         {
-            this.meterReading = meterReading;
-            this.connection = connection;
-            this.meterData = meterData;
+            this.meterReadingData = meterReadingData;
         }
 
-        public async Task<IActionResult> OnGet()
+        public MeterReading? Reading { get; set; }
+
+        [BindProperty]
+        public ReadingUpdateInput ReadingUpdate { get; set; } = new();
+
+        public async Task<IActionResult> OnGet(int id)
         {
-            ViewData["HideNavbar"] = true;
-            Reading = await meterReading.GetMeterReadingsById(Id);
+            Reading = await meterReadingData.GetMeterReadingsById(id);
 
-            if (Reading != null)
+            if (Reading == null)
             {
-                // Initialize the update model so Razor can read its properties safely
-                ReadingUpdate = new MeterReadingUpdate
-                {
-                    Id = Reading.Id,
-                    CurrentReadingUpdate = Reading.CurrentReading,
-                    Notes = Reading.Notes,
-                    UpdatedAt = Reading.UpdatedAt,
-                    UpdatedBy = Reading.EmployeeId
-
-                };
-
-                var meter = await meterData.GetMeters();
-               
-                MeterReadingCaptured = meter
-                    .Where(x => x.Id == Reading.MeterId)
-                    .FirstOrDefault()?.MeterName;
+                return RedirectToPage("./List");
             }
+
+            ReadingUpdate = new ReadingUpdateInput
+            {
+                Id = Reading.Id,
+                CurrentReadingUpdate = Reading.CurrentReading,
+                Notes = Reading.Notes
+            };
+
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPost()
         {
             if (!ModelState.IsValid)
             {
+                Reading = await meterReadingData.GetMeterReadingsById(ReadingUpdate.Id);
                 return Page();
             }
-            await meterReading.UpdateMeterReadings(ReadingUpdate.Id, ReadingUpdate.CurrentReadingUpdate, ReadingUpdate.Notes);
 
+            await meterReadingData.UpdateMeterReadings(
+                ReadingUpdate.Id,
+                ReadingUpdate.CurrentReadingUpdate,
+                ReadingUpdate.Notes ?? string.Empty);
 
-            // Pass the Id, not the object
-            return RedirectToPage("/MeterReadings/Display", new { Id = ReadingUpdate.Id });
+            return RedirectToPage("./Display", new { id = ReadingUpdate.Id });
+        }
+
+        public string GetMeterUnit()
+        {
+            if (Reading == null)
+            {
+                return string.Empty;
+            }
+
+            return Reading.MeterType == MeterType.Water ? "L" : "kWh";
+        }
+
+        public class ReadingUpdateInput
+        {
+            public int Id { get; set; }
+
+            [Required]
+            [Display(Name = "Current Reading")]
+            public decimal CurrentReadingUpdate { get; set; }
+
+            [Display(Name = "Notes")]
+            public string? Notes { get; set; }
         }
     }
 }

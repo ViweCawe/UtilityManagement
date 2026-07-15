@@ -1,65 +1,134 @@
-﻿@page
+@page
 @model RegisterModel
+
 @{
     ViewData["Title"] = "Register";
 }
 
-<h1>@ViewData["Title"]</h1>
+<div class="auth-shell">
+    <section class="auth-card auth-card-wide">
 
-<div class="row">
-    <div class="col-md-4">
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+        <div class="auth-brand">
+            <div class="auth-brand-icon">
+                <i class="bi bi-person-plus-fill"></i>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            <div>
+                <h1>Create an account</h1>
+                <p>Register to access the Utility Management system.</p>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.ConfirmPassword">Confirm Password</label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </form>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
+        </div>
+
+        <div class="auth-grid">
+            <div class="auth-main">
+                <div class="auth-heading">
+                    <span class="auth-kicker">Get started</span>
+                    <h2>Register your account</h2>
+                    <p>Use your work email address and create a secure password.</p>
+                </div>
+
+                <form id="registerForm"
+                      asp-route-returnUrl="@Model.ReturnUrl"
+                      method="post"
+                      class="auth-form">
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="auth-validation-summary"
+                         role="alert"></div>
+
+                    <div class="auth-form-group">
+                        <label asp-for="Input.Email">Email address</label>
+                        <div class="auth-input-wrap">
+                            <i class="bi bi-envelope"></i>
+                            <input asp-for="Input.Email"
+                                   class="auth-input"
+                                   autocomplete="username"
+                                   aria-required="true"
+                                   placeholder="name@example.com" />
                         </div>
+                        <span asp-validation-for="Input.Email"
+                              class="auth-field-validation"></span>
+                    </div>
+
+                    <div class="auth-form-group">
+                        <label asp-for="Input.Password">Password</label>
+                        <div class="auth-input-wrap">
+                            <i class="bi bi-lock"></i>
+                            <input asp-for="Input.Password"
+                                   class="auth-input"
+                                   autocomplete="new-password"
+                                   aria-required="true"
+                                   placeholder="Create a password" />
+                        </div>
+                        <span asp-validation-for="Input.Password"
+                              class="auth-field-validation"></span>
+                    </div>
+
+                    <div class="auth-form-group">
+                        <label asp-for="Input.ConfirmPassword">
+                            Confirm password
+                        </label>
+                        <div class="auth-input-wrap">
+                            <i class="bi bi-shield-lock"></i>
+                            <input asp-for="Input.ConfirmPassword"
+                                   class="auth-input"
+                                   autocomplete="new-password"
+                                   aria-required="true"
+                                   placeholder="Repeat your password" />
+                        </div>
+                        <span asp-validation-for="Input.ConfirmPassword"
+                              class="auth-field-validation"></span>
+                    </div>
+
+                    <button id="registerSubmit"
+                            type="submit"
+                            class="auth-primary-btn">
+                        <i class="bi bi-person-check-fill"></i>
+                        Register
+                    </button>
+
+                    <div class="auth-footer-links">
+                        <span>Already registered?</span>
+                        <a asp-page="./Login"
+                           asp-route-returnUrl="@Model.ReturnUrl">
+                            Log in
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <aside class="auth-side-panel">
+                <div class="auth-side-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h3>One connected workspace</h3>
+                <p>
+                    Track water, electricity, waste, environmental performance,
+                    and operational people counts through a consistent dashboard.
+                </p>
+
+                @if ((Model.ExternalLogins?.Count ?? 0) > 0)
+                {
+                    <div class="auth-divider"><span>Or register with</span></div>
+
+                    <form id="external-account"
+                          asp-page="./ExternalLogin"
+                          asp-route-returnUrl="@Model.ReturnUrl"
+                          method="post"
+                          class="auth-external-list">
+                        @foreach (var provider in Model.ExternalLogins!)
+                        {
+                            <button type="submit"
+                                    class="auth-secondary-btn"
+                                    name="provider"
+                                    value="@provider.Name">
+                                @provider.DisplayName
+                            </button>
+                        }
                     </form>
                 }
-            }
-        </section>
-    </div>
+            </aside>
+        </div>
+    </section>
 </div>
 
 @section Scripts {

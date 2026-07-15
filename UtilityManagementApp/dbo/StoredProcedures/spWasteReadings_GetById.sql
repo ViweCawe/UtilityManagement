@@ -11,7 +11,7 @@ BEGIN
         wr.WasteTypeId,
         wt.CategoryId,
         wt.WasteMaterialId,
-        wr.WasteReading,
+        wr.WasteAmount,
         wr.ReadingDate,
         wr.CapturedBy,
         wr.Notes,

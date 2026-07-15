@@ -1,129 +1,322 @@
 ﻿@page
 @model UtilityManagerProjects.Pages.MeterReadings.ListModel
+
 @{
+    ViewData["Title"] = "Meter Readings";
 }
-<div class="dashboard-container">
-    <h3>Readings</h3>
-    <p>Manage and monitor all utitlity readings</p>
-<div class="row g-4 mb-4">
 
-    @foreach (var kpi in Model.MeterTypeKpis)
-    {
-        <div class="col-md-4">
-            <div class="kpi-card">
+<div class="page-shell">
 
-                <div class="d-flex justify-content-between align-items-start">
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Meter Readings</h1>
+            <p>Latest water and electricity reading per meter. Showing @Model.DateRangeLabel.</p>
+        </div>
 
-                    <div>
-                        <div class="kpi-title">
-                            @kpi.MeterType
-                        </div>
+        <div class="page-actions">
+            <a class="utility-btn-secondary" href="#">
+                <i class="bi bi-download"></i>
+                Export
+            </a>
 
-                        <div class="kpi-value">
-                            @kpi.Current7Days
-                        </div>
-                    </div>
+            <a class="utility-btn-primary" asp-page="./Create">
+                <i class="bi bi-plus-lg"></i>
+                Add Reading
+            </a>
+        </div>
+    </div>
 
-                       
+    <form method="get" class="dashboard-filter-card">
 
-                    <div class="kpi-icon">
-                        <i class="bi bi-speedometer2"></i>
-                    </div>
+        <div class="filter-group">
+            <label>Date Range</label>
+            <select name="DateFilter" class="utility-input" id="meterDateFilter">
+                <option value="Last7" selected="@(Model.DateFilter == "Last7" ? "selected" : null)">Latest 7 Days</option>
+                <option value="Last30" selected="@(Model.DateFilter == "Last30" ? "selected" : null)">Latest 30 Days</option>
+                <option value="Custom" selected="@(Model.DateFilter == "Custom" ? "selected" : null)">Custom</option>
+            </select>
+        </div>
 
-                </div>
+        <div class="filter-group meter-custom-date-filter">
+            <label>Start Date</label>
+            <input type="date"
+                   name="StartDate"
+                   value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
 
-                    
+        <div class="filter-group meter-custom-date-filter">
+            <label>End Date</label>
+            <input type="date"
+                   name="EndDate"
+                   value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
 
-                <div class="mt-3">
+        <div class="filter-group">
+            <label>Search</label>
+            <input type="search"
+                   name="SearchTerm"
+                   value="@Model.SearchTerm"
+                   placeholder="Search meter, area, station..."
+                   class="utility-input" />
+        </div>
 
-                    @if (kpi.WeeklyGrowthPercent >= 0)
+        <div class="filter-actions">
+            <button type="submit" class="utility-btn-primary">
+                <i class="bi bi-funnel"></i>
+                Apply
+            </button>
+
+            <a asp-page="./List" class="utility-btn-secondary">
+                Clear
+            </a>
+        </div>
+
+    </form>
+
+    <section class="stats-grid stats-grid-4">
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-droplet-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Water Readings</p>
+                <h2>@Model.WaterCount.ToString("N0")</h2>
+                <span class="@(Model.WaterPercent >= 0 ? "trend-positive" : "trend-negative")">
+                    @(Model.WaterPercent >= 0 ? "▲" : "▼")
+                    @Math.Abs(Model.WaterPercent).ToString("N1")% vs previous period
+                </span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Electricity Readings</p>
+                <h2>@Model.ElectricityCount.ToString("N0")</h2>
+                <span class="@(Model.ElectricityPercent >= 0 ? "trend-positive" : "trend-negative")">
+                    @(Model.ElectricityPercent >= 0 ? "▲" : "▼")
+                    @Math.Abs(Model.ElectricityPercent).ToString("N1")% vs previous period
+                </span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-speedometer2"></i>
+            </div>
+            <div class="stat-content">
+                <p>Latest Meter Rows</p>
+                <h2>@Model.TotalMeters.ToString("N0")</h2>
+                <span>one latest row per meter</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-collection-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Total Readings</p>
+                <h2>@Model.TotalReadings.ToString("N0")</h2>
+                <span class="@(Model.TotalReadingsPercent >= 0 ? "trend-positive" : "trend-negative")">
+                    @(Model.TotalReadingsPercent >= 0 ? "▲" : "▼")
+                    @Math.Abs(Model.TotalReadingsPercent).ToString("N1")% vs previous period
+                </span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="stats-grid stats-grid-3">
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-water"></i>
+            </div>
+            <div class="stat-content">
+                <p>Water Usage</p>
+                <h2>@Model.WaterUsage.ToString("N0") <span>L</span></h2>
+                <span>selected period</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-lightning"></i>
+            </div>
+            <div class="stat-content">
+                <p>Electricity Usage</p>
+                <h2>@Model.ElectricityUsage.ToString("N0") <span>kWh</span></h2>
+                <span>selected period</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-bar-chart-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Total Usage</p>
+                <h2>@Model.TotalUsage.ToString("N0")</h2>
+                <span>water + electricity usage</span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="content-card">
+
+        <div class="content-card-header">
+            <div>
+                <h3>Latest Reading Per Meter</h3>
+                <p>Click the meter name to view all readings for that meter. Click the eye icon to view that specific reading.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Meter</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Station</th>
+                        <th>Department</th>
+                        <th>Reading Date</th>
+                        <th>Previous Reading</th>
+                        <th>Current Reading</th>
+                        <th>Usage</th>
+                        <th>Captured By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.LatestReadings.Any())
                     {
-                        <span class="growth-up">
-                            ▲ @kpi.WeeklyGrowthPercent.ToString("0.0")%
-                        </span>
+                        @foreach (var reading in Model.LatestReadings)
+                        {
+                            var unit = Model.GetMeterUnit(reading.MeterType);
+
+                            var pillClass = reading.MeterType == DataLibrary.Models.MeterType.Water
+                                ? "reading-water"
+                                : "reading-electricity";
+
+                            var meterName = !string.IsNullOrWhiteSpace(reading.MeterName)
+                                ? reading.MeterName
+                                : $"Meter {reading.MeterId}";
+
+                            <tr>
+                                <td>RDG-@reading.Id.ToString("0000")</td>
+
+                                <td>
+                                    <a class="table-main-link"
+                                       asp-page="./History"
+                                       asp-route-meterId="@reading.MeterId">
+                                        @meterName
+                                    </a>
+
+                                    <span class="table-subtext">
+                                        Meter ID: @reading.MeterId
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="reading-pill @pillClass">
+                                        @reading.MeterType
+                                    </span>
+                                </td>
+
+                                <td>@reading.AreaName</td>
+                                <td>@reading.StationName</td>
+                                <td>@reading.DepartmentName</td>
+
+                                <td>
+                                    <div class="table-date">
+                                        <strong>@reading.ReadingDate.ToString("dd MMM yyyy")</strong>
+                                        <span>@reading.ReadingDate.ToString("HH:mm")</span>
+                                    </div>
+                                </td>
+
+                                <td>@reading.PreviousReading.ToString("N0") @unit</td>
+                                <td>@reading.CurrentReading.ToString("N0") @unit</td>
+
+                                <td class="trend-positive">
+                                    @reading.Usage.ToString("N0") @unit
+                                </td>
+
+                                <td>@reading.EmployeeEmail</td>
+
+                                <td>
+                                    <div class="action-buttons">
+                                        <a class="icon-action"
+                                           asp-page="./History"
+                                           asp-route-meterId="@reading.MeterId"
+                                           title="View Meter History">
+                                            <i class="bi bi-clock-history"></i>
+                                        </a>
+
+                                        <a class="icon-action"
+                                           asp-page="./Display"
+                                           asp-route-id="@reading.Id"
+                                           title="View Reading Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a class="icon-action"
+                                           asp-page="./Edit"
+                                           asp-route-id="@reading.Id"
+                                           title="Edit Reading">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <a class="icon-action danger"
+                                           asp-page="./Delete"
+                                           asp-route-id="@reading.Id"
+                                           title="Delete Reading">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                     }
                     else
                     {
-                        <span class="growth-down">
-                            ▼ @Math.Abs(kpi.WeeklyGrowthPercent).ToString("0.0")%
-                        </span>
+                        <tr>
+                            <td colspan="12" class="empty-state">
+                                No meter readings found for the selected filter.
+                            </td>
+                        </tr>
                     }
-
-                    <span class="growth-text">
-                        vs previous week
-                    </span>
-
-                </div>
-                    
-            </div>
+                </tbody>
+            </table>
         </div>
-    }
+
+    </section>
 
 </div>
-<div class="table-container">
-<h3>Meter Readings</h3>
-<div class="table-card">
-<table class="table table-hover mb-0">
-    <thead class="text-white">
-        <tr>
-            <th>Id</th>
-            <th>Meter Name</th>
-            <th>Type</th>
-            <th>Location</th>
-            <th>Reading Date</th>
-            <th>Previouse Reading</th>
-            <th>Current Reading</th>
-            <th>Usage</th>
-            <th>Recorded By</th>
-            <th>Actions</th>
-            
-            
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var reading in Model.MeterReadings)
-        {
-            <tr>
-                <td>@reading.Id</td>
-                <td>@reading.MeterName
-                </td>
-                
-                            
-                           <td>
-                                <span class="meter-tag @reading.MeterType">
-                                    @reading.MeterType
-                                </span>
-                            </td>
-                <td>@reading.AreaName
-                </td>
-                <td>@reading.ReadingDate.ToString("MM/dd/yyyy")</td>
-                <td>@reading.PreviousReading @reading.Unit</td>
-                <td>@reading.CurrentReading @reading.Unit</td>
-                <td>@reading.Usage @reading.Unit </td>
-                <td>@reading.EmployeeId</td>
-                            <td class="action-cell">
 
-                                <a asp-page="./Display"
-                                   asp-route-id="@reading.Id"
-                                   class="btn-action details"
-                                   title="Details">
+@section Scripts {
+    <script>
+        const meterDateFilter = document.getElementById('meterDateFilter');
+        const meterCustomDateFilters = document.querySelectorAll('.meter-custom-date-filter');
 
-                                    <i class="bi bi-eye-fill"></i>
-                                </a>
+        function toggleMeterCustomDates() {
+            const showCustom = meterDateFilter.value === 'Custom';
 
-                                <a asp-page="./Delete"
-                                   asp-route-id="@reading.Id"
-                                   class="btn-action delete"
-                                   title="Delete">
-
-                                    <i class="bi bi-trash-fill"></i>
-                                </a>
-
-                            </td>
-            </tr>
+            meterCustomDateFilters.forEach(item => {
+                item.style.display = showCustom ? 'flex' : 'none';
+            });
         }
-    </tbody>
-      </table>
-  </div>
-</div>
-</div>
+
+        meterDateFilter.addEventListener('change', toggleMeterCustomDates);
+        toggleMeterCustomDates();
+    </script>
+}

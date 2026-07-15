@@ -10,5 +10,7 @@ namespace DataLibrary.Data
         Task<int> CreateWasteReading(WasteReading wasteReading);
         Task<WasteReading?> GetWasteReadingById(int id);
         Task<IEnumerable<WasteReading>> GetAllWasteReadings();
+
+        Task<IEnumerable<WasteReadingDisplay>> GetWasteReadingDisplay();
     }
 }

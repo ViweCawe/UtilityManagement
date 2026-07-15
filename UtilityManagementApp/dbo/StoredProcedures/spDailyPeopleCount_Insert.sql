@@ -1,4 +1,4 @@
-﻿CREATE PROCEDURE [dbo].[spDailyPeolpleCount_Insert]
+﻿CREATE PROCEDURE [dbo].[spDailyPeopleCount_Insert]
 (
 	@Visitors INT,
 	@Employees INT,
@@ -13,7 +13,7 @@ BEGIN
 	
 		INSERT INTO dbo.DailyPeopleCount
 		(
-		Visitor,
+		Visitors,
 		Employees,
 		[Date]
 
@@ -23,6 +23,7 @@ BEGIN
 		@Visitors,
 		@Employees,
 		@Date
+
 	)
 	SET @Id = CAST(SCOPE_IDENTITY() AS INT);
 	

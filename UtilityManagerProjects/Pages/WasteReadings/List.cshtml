@@ -1,4 +1,558 @@
 ﻿@page
 @model UtilityManagerProjects.Pages.WasteReadings.ListModel
+
 @{
+    ViewData["Title"] = "Waste Readings";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Waste Readings</h1>
+            <p>Waste dashboard for categories, materials, recycling split, trends, and captured readings. Showing @Model.DateRangeLabel.</p>
+        </div>
+
+        <div class="page-actions">
+            <a class="utility-btn-secondary" href="#">
+                <i class="bi bi-download"></i>
+                Export
+            </a>
+
+            <a class="utility-btn-primary" asp-page="./Create">
+                <i class="bi bi-plus-lg"></i>
+                Add Waste Reading
+            </a>
+        </div>
+    </div>
+
+    <form method="get" class="dashboard-filter-card">
+
+        <div class="filter-group">
+            <label>Date Range</label>
+            <select name="DateFilter" class="utility-input" id="wasteDateFilter">
+                <option value="Last7" selected="@(Model.DateFilter == "Last7" ? "selected" : null)">Latest 7 Days</option>
+                <option value="Last30" selected="@(Model.DateFilter == "Last30" ? "selected" : null)">Latest 30 Days</option>
+                <option value="Custom" selected="@(Model.DateFilter == "Custom" ? "selected" : null)">Custom</option>
+            </select>
+        </div>
+
+        <div class="filter-group waste-custom-date-filter">
+            <label>Start Date</label>
+            <input type="date"
+                   name="StartDate"
+                   value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
+
+        <div class="filter-group waste-custom-date-filter">
+            <label>End Date</label>
+            <input type="date"
+                   name="EndDate"
+                   value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
+
+        <div class="filter-group">
+            <label>Search</label>
+            <input type="search"
+                   name="SearchTerm"
+                   value="@Model.SearchTerm"
+                   placeholder="Type, category, material, notes..."
+                   class="utility-input" />
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="utility-btn-primary">
+                <i class="bi bi-funnel"></i>
+                Apply
+            </button>
+
+            <a asp-page="./List" class="utility-btn-secondary">
+                Clear
+            </a>
+        </div>
+
+    </form>
+
+    <section class="stats-grid stats-grid-4">
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-trash3-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Total Waste Generated</p>
+                <h2>@Model.TotalWasteGenerated.ToString("N2") <span>kg</span></h2>
+                <span class="@(Model.WasteGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                    @(Model.WasteGrowthPercent >= 0 ? "▲" : "▼")
+                    @Math.Abs(Model.WasteGrowthPercent).ToString("N1")% vs previous period
+                </span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-journal-check"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Total Waste Readings</p>
+                <h2>@Model.TotalReadings.ToString("N0")</h2>
+                <span>@Model.DeletedReadings deleted readings excluded</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-tags-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Waste Categories</p>
+                <h2>@Model.TotalCategories.ToString("N0")</h2>
+                <span>Top: @Model.TopWasteCategory</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-box-seam-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Waste Materials</p>
+                <h2>@Model.TotalMaterials.ToString("N0")</h2>
+                <span>Top: @Model.TopWasteMaterial</span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="stats-grid stats-grid-4">
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-recycle"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Recycling Waste</p>
+                <h2>@Model.RecyclingWaste.ToString("N2") <span>kg</span></h2>
+                <span>@Model.RecyclingPercent.ToString("N1")% of total waste</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="bi bi-trash-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Landfill Waste</p>
+                <h2>@Model.LandfillWaste.ToString("N2") <span>kg</span></h2>
+                <span>classified from category/type/material</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-pie-chart-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Other Waste</p>
+                <h2>@Model.OtherWaste.ToString("N2") <span>kg</span></h2>
+                <span>not recycling or landfill</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-calculator-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Average Per Reading</p>
+                <h2>@Model.AverageWastePerReading.ToString("N2") <span>kg</span></h2>
+                <span>Top type: @Model.TopWasteType</span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="dashboard-grid">
+
+        <div class="figma-card trend-card">
+            <div class="card-header">
+                <h3>Waste Trend</h3>
+                <span>@Model.DateRangeLabel</span>
+            </div>
+
+            <canvas id="dailyWasteChart"></canvas>
+        </div>
+
+        <div class="figma-card distribution-card">
+            <div class="card-header">
+                <h3>Waste Category Distribution</h3>
+                <span>Top categories by kg</span>
+            </div>
+
+            <canvas id="categoryChart"></canvas>
+        </div>
+
+        <div class="figma-card comparison-card">
+            <div class="card-header">
+                <h3>Waste Split</h3>
+                <span>Recycling vs landfill vs other</span>
+            </div>
+
+            <canvas id="wasteSplitChart"></canvas>
+        </div>
+
+        <div class="figma-card alerts-card">
+            <div class="card-header">
+                <h3>Waste Summary</h3>
+                <span>Selected date range</span>
+            </div>
+
+            <div class="kpi-list">
+                <div class="kpi-list-row">
+                    <div>
+                        <strong>Current 7 Days</strong>
+                        <p>@Model.Current7DaysWaste.ToString("N2") kg</p>
+                    </div>
+                    <div>
+                        <span class="@(Model.WeeklyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                            @(Model.WeeklyGrowthPercent >= 0 ? "▲" : "▼")
+                            @Math.Abs(Model.WeeklyGrowthPercent).ToString("N1")%
+                        </span>
+                    </div>
+                </div>
+
+                <div class="kpi-list-row">
+                    <div>
+                        <strong>Current 30 Days</strong>
+                        <p>@Model.Current30DaysWaste.ToString("N2") kg</p>
+                    </div>
+                    <div>
+                        <span class="@(Model.MonthlyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                            @(Model.MonthlyGrowthPercent >= 0 ? "▲" : "▼")
+                            @Math.Abs(Model.MonthlyGrowthPercent).ToString("N1")%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="content-card">
+
+        <div class="content-card-header">
+            <div>
+                <h3>All Waste Readings</h3>
+                <p>Data from <strong>dbo.spWasteReadings_All</strong>.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Waste Type</th>
+                        <th>Category</th>
+                        <th>Material</th>
+                        <th>Waste Reading</th>
+                        <th>Reading Date</th>
+                        <th>Captured By</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.WasteReadings.Any())
+                    {
+                        @foreach (var item in Model.WasteReadings)
+                        {
+                            <tr>
+                                <td>WR-@item.Id.ToString("0000")</td>
+
+                                <td>
+                                    <span class="reading-pill reading-waste">
+                                        @item.WasteTypeName
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="reading-pill reading-waste">
+                                        @item.WasteCategory
+                                    </span>
+                                </td>
+
+                                <td>@item.WasteMaterial</td>
+
+                                <td class="trend-positive">
+                                    @item.WasteAmount.ToString("N2") kg
+                                </td>
+
+                                <td>
+                                    <div class="table-date">
+                                        <strong>@item.ReadingDate.ToString("dd MMM yyyy")</strong>
+                                        <span>@item.ReadingDate.ToString("HH:mm")</span>
+                                    </div>
+                                </td>
+
+                                <td>@item.EmployeeEmail</td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                    {
+                                        <span>@item.Notes</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted-custom">No notes</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="action-buttons">
+                                        <a class="icon-action"
+                                           asp-page="./History"
+                                           asp-route-wasteTypeId="@item.WasteTypeId"
+                                           title="View Waste Type History">
+                                            <i class="bi bi-clock-history"></i>
+                                        </a>
+
+                                        <a class="icon-action"
+                                           asp-page="./Display"
+                                           asp-route-id="@item.Id"
+                                           title="View Reading Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a class="icon-action danger" asp-page="./Delete" asp-route-id="@item.Id" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="empty-state">
+                                No waste readings found for the selected filter.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+    <section class="grid-two">
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Waste Category Summary</h3>
+                    <p>Total amount generated per category.</p>
+                </div>
+            </div>
+
+            <div class="summary-list">
+                @if (Model.WasteCategorySummary.Any())
+                {
+                    @foreach (var item in Model.WasteCategorySummary)
+                    {
+                        <div class="summary-card-row">
+                            <div>
+                                <strong>@item.Name</strong>
+                                <span>@item.ReadingCount readings</span>
+                            </div>
+
+                            <div>
+                                <strong>@item.TotalAmount.ToString("N2") kg</strong>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No category summary available.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Waste Material Summary</h3>
+                    <p>Total amount generated per material.</p>
+                </div>
+            </div>
+
+            <div class="summary-list">
+                @if (Model.WasteMaterialSummary.Any())
+                {
+                    @foreach (var item in Model.WasteMaterialSummary)
+                    {
+                        <div class="summary-card-row">
+                            <div>
+                                <strong>@item.Name</strong>
+                                <span>@item.ReadingCount readings</span>
+                            </div>
+
+                            <div>
+                                <strong>@item.TotalAmount.ToString("N2") kg</strong>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No material summary available.
+                    </div>
+                }
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const wasteDateFilter = document.getElementById('wasteDateFilter');
+        const wasteCustomDateFilters = document.querySelectorAll('.waste-custom-date-filter');
+
+        function toggleWasteCustomDates() {
+        const showCustom = wasteDateFilter.value === 'Custom';
+
+        wasteCustomDateFilters.forEach(item => {
+        item.style.display = showCustom ? 'flex' : 'none';
+        });
+        }
+
+        wasteDateFilter.addEventListener('change', toggleWasteCustomDates);
+        toggleWasteCustomDates();
+
+        const dailyLabels = @Html.Raw(Model.DailyLabelsJson);
+        const dailyWaste = @Html.Raw(Model.DailyWasteJson);
+
+        const categoryLabels = @Html.Raw(Model.CategoryLabelsJson);
+        const categoryData = @Html.Raw(Model.CategoryDataJson);
+
+        const splitLabels = @Html.Raw(Model.WasteSplitLabelsJson);
+        const splitData = @Html.Raw(Model.WasteSplitDataJson);
+
+        Chart.defaults.color = '#8ea2bd';
+        Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
+
+        new Chart(document.getElementById('dailyWasteChart'), {
+        type: 'line',
+        data: {
+        labels: dailyLabels,
+        datasets: [{
+        label: 'Waste kg',
+        data: dailyWaste,
+        borderColor: '#4ade80',
+        backgroundColor: 'rgba(74, 222, 128, 0.14)',
+        borderWidth: 3,
+        pointRadius: 3,
+        tension: 0.45,
+        fill: true
+        }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+        legend: {
+        display: false
+        }
+        },
+        scales: {
+        y: {
+        beginAtZero: true
+        }
+        }
+        }
+        });
+
+        new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+        labels: categoryLabels,
+        datasets: [{
+        data: categoryData,
+        backgroundColor: [
+        '#4ade80',
+        '#22c55e',
+        '#84cc16',
+        '#14b8a6',
+        '#2dd4bf'
+        ],
+        borderWidth: 0
+        }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+        legend: {
+        position: 'right',
+        labels: {
+        usePointStyle: true,
+        boxWidth: 8
+        }
+        }
+        }
+        }
+        });
+
+        new Chart(document.getElementById('wasteSplitChart'), {
+        type: 'bar',
+        data: {
+        labels: splitLabels,
+        datasets: [{
+        label: 'Waste kg',
+        data: splitData,
+        backgroundColor: [
+        '#4ade80',
+        '#ef4444',
+        '#94a3b8'
+        ],
+        borderRadius: 6
+        }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+        legend: {
+        display: false
+        }
+        },
+        scales: {
+        y: {
+        beginAtZero: true
+        }
+        }
+        }
+        });
+    </script>
 }

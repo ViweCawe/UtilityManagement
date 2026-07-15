@@ -107,10 +107,17 @@
     <Build Include="dbo\StoredProcedures\spWasteReadings_GetById.sql" />
     <Build Include="dbo\StoredProcedures\spWasteType_All.sql" />
     <Build Include="dbo\Tables\DailyPeopleCount.sql" />
-    <Build Include="dbo\StoredProcedures\spDailyPeolpleCount_Insert.sql" />
+    <Build Include="dbo\StoredProcedures\spDailyPeopleCount_Insert.sql" />
     <Build Include="dbo\StoredProcedures\spMeterReadings_GetLatestAll.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReadings_GetByMeterId.sql" />
+    <Build Include="dbo\StoredProcedures\spDailyPeopleCount_ByDateRange.sql" />
+    <Build Include="dbo\StoredProcedures\spDailyPeopleCount_GetAll.sql" />
+    <Build Include="dbo\StoredProcedures\spMeterReadings_GetByDateRange.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="UtilityManagementApp.publish.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="UtilityManagementApp.refactorlog" />
   </ItemGroup>
 </Project>

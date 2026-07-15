@@ -11,7 +11,7 @@ namespace DataLibrary.Models
         public int Id { get; set; }
         public int Visitors { get; set; }
         public int Employees { get; set; }
-        public int Total { get; set; }
+        public int TotalPeople => Visitors + Employees;
         public DateTime Date { get; set; } 
     }
 }

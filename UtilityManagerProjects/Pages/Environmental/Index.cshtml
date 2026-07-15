@@ -1,0 +1,351 @@
+﻿@page
+@model UtilityManagerProjects.Pages.Environmental.IndexModel
+
+@{
+    ViewData["Title"] = "Environmental Dashboard";
+}
+
+<div class="page-shell environmental-page">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Environmental Dashboard</h1>
+            <p>Water, electricity, waste, recycling, carbon estimate, and per-person performance. Showing @Model.DateRangeLabel.</p>
+        </div>
+    </div>
+
+    <form method="get" class="dashboard-filter-card">
+
+        <div class="filter-group">
+            <label>Date Range</label>
+            <select name="DateFilter" class="utility-input" id="environmentDateFilter">
+                <option value="Last7" selected="@(Model.DateFilter == "Last7" ? "selected" : null)">Latest 7 Days</option>
+                <option value="Last30" selected="@(Model.DateFilter == "Last30" ? "selected" : null)">Latest 30 Days</option>
+                <option value="Custom" selected="@(Model.DateFilter == "Custom" ? "selected" : null)">Custom</option>
+            </select>
+        </div>
+
+        <div class="filter-group environment-custom-date-filter">
+            <label>Start Date</label>
+            <input type="date"
+                   name="StartDate"
+                   value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
+
+        <div class="filter-group environment-custom-date-filter">
+            <label>End Date</label>
+            <input type="date"
+                   name="EndDate"
+                   value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="utility-btn-primary">
+                <i class="bi bi-funnel"></i>
+                Apply Filter
+            </button>
+
+            <a asp-page="./Index" class="utility-btn-secondary">
+                Clear
+            </a>
+        </div>
+
+    </form>
+
+    <section class="stats-grid stats-grid-4">
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-droplet-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Water Use</p>
+                <h2>@Model.WaterUsage.ToString("N0") <span>L</span></h2>
+                <span class="@(Model.WaterPerPerson <= Model.WaterTarget ? "trend-positive" : "trend-negative")">
+                    @Model.WaterPerPerson.ToString("N2") L/person · Target @Model.WaterTarget.ToString("N2")
+                </span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Electricity Use</p>
+                <h2>@Model.ElectricityUsage.ToString("N0") <span>kWh</span></h2>
+                <span class="@(Model.ElectricityPerPerson <= Model.ElectricityTarget ? "trend-positive" : "trend-negative")">
+                    @Model.ElectricityPerPerson.ToString("N2") kWh/person · Target @Model.ElectricityTarget.ToString("N2")
+                </span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-recycle"></i>
+            </div>
+            <div class="stat-content">
+                <p>Recycling</p>
+                <h2>@Model.RecyclingPercent.ToString("N1") <span>%</span></h2>
+                <span class="@(Model.RecyclingPercent >= Model.RecyclingTarget ? "trend-positive" : "trend-negative")">
+                    Target @Model.RecyclingTarget.ToString("N0")%
+                </span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Total People</p>
+                <h2>@Model.TotalPeople.ToString("N0")</h2>
+                <span>@Model.TotalVisitors.ToString("N0") visitors · @Model.TotalEmployees.ToString("N0") employees</span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="stats-grid stats-grid-4">
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-trash3-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Total Waste</p>
+                <h2>@Model.WasteTotal.ToString("N0") <span>kg</span></h2>
+                <span>selected period</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <div class="stat-content">
+                <p>Recycling Waste</p>
+                <h2>@Model.RecyclingWaste.ToString("N0") <span>kg</span></h2>
+                <span>classified from waste category/type/material</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="bi bi-trash-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Landfill Waste</p>
+                <h2>@Model.LandfillWaste.ToString("N0") <span>kg</span></h2>
+                <span>classified from waste category/type/material</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-cloud-haze2-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Carbon Estimate</p>
+                <h2>@Model.EstimatedCarbonKg.ToString("N0") <span>kg</span></h2>
+                <span class="@(Model.EstimatedCarbonPerPerson <= Model.CarbonTarget ? "trend-positive" : "trend-negative")">
+                    @Model.EstimatedCarbonPerPerson.ToString("N2") kg/person · Target @Model.CarbonTarget.ToString("N2")
+                </span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="dashboard-grid">
+
+        <div class="figma-card trend-card">
+            <div class="card-header">
+                <h3>Environmental Trend</h3>
+                <span>@Model.DateRangeLabel</span>
+            </div>
+
+            <canvas id="environmentTrendChart"></canvas>
+        </div>
+
+        <div class="figma-card distribution-card">
+            <div class="card-header">
+                <h3>Waste Split</h3>
+                <span>Recycling vs Landfill vs Other</span>
+            </div>
+
+            <canvas id="wasteSplitChart"></canvas>
+        </div>
+
+        <div class="figma-card alerts-card">
+            <div class="card-header">
+                <h3>Environmental Alerts</h3>
+                <span>Targets from environmental report</span>
+            </div>
+
+            @foreach (var alert in Model.Alerts)
+            {
+                <div class="alert-item alert-@alert.Type">
+                    <div class="alert-dot"></div>
+                    <div>
+                        <strong>@alert.Title</strong>
+                        <p>@alert.Message</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="figma-card">
+            <div class="card-header">
+                <h3>Manual Metrics Pending</h3>
+                <span>Future database tables</span>
+            </div>
+
+            <div class="kpi-list">
+                <div class="kpi-list-row">
+                    <div>
+                        <strong>LP Gas</strong>
+                        <p>Add table later for cooking/heating gas.</p>
+                    </div>
+                    <div>
+                        <span>Pending</span>
+                    </div>
+                </div>
+
+                <div class="kpi-list-row">
+                    <div>
+                        <strong>Diesel</strong>
+                        <p>Add table later for generator/vehicle diesel.</p>
+                    </div>
+                    <div>
+                        <span>Pending</span>
+                    </div>
+                </div>
+
+                <div class="kpi-list-row">
+                    <div>
+                        <strong>Weather</strong>
+                        <p>Add table later for rainfall, wind, and temperatures.</p>
+                    </div>
+                    <div>
+                        <span>Pending</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const environmentDateFilter = document.getElementById('environmentDateFilter');
+        const environmentCustomDateFilters = document.querySelectorAll('.environment-custom-date-filter');
+
+        function toggleEnvironmentCustomDates() {
+        const showCustom = environmentDateFilter.value === 'Custom';
+
+        environmentCustomDateFilters.forEach(item => {
+        item.style.display = showCustom ? 'flex' : 'none';
+        });
+        }
+
+        environmentDateFilter.addEventListener('change', toggleEnvironmentCustomDates);
+        toggleEnvironmentCustomDates();
+
+        const trendLabels = @Html.Raw(Model.TrendLabelsJson);
+        const waterTrend = @Html.Raw(Model.WaterTrendJson);
+        const electricityTrend = @Html.Raw(Model.ElectricityTrendJson);
+        const wasteTrend = @Html.Raw(Model.WasteTrendJson);
+
+        const wasteSplitLabels = @Html.Raw(Model.WasteSplitLabelsJson);
+        const wasteSplitData = @Html.Raw(Model.WasteSplitDataJson);
+
+        Chart.defaults.color = '#8ea2bd';
+        Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
+
+        new Chart(document.getElementById('environmentTrendChart'), {
+        type: 'line',
+        data: {
+        labels: trendLabels,
+        datasets: [
+        {
+        label: 'Water',
+        data: waterTrend,
+        borderColor: '#28a8ff',
+        backgroundColor: '#28a8ff',
+        tension: 0.45,
+        borderWidth: 3,
+        pointRadius: 2
+        },
+        {
+        label: 'Electricity',
+        data: electricityTrend,
+        borderColor: '#ff9f2a',
+        backgroundColor: '#ff9f2a',
+        tension: 0.45,
+        borderWidth: 3,
+        pointRadius: 2
+        },
+        {
+        label: 'Waste',
+        data: wasteTrend,
+        borderColor: '#4ade80',
+        backgroundColor: '#4ade80',
+        tension: 0.45,
+        borderWidth: 3,
+        pointRadius: 2
+        }
+        ]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+        legend: {
+        position: 'bottom',
+        labels: {
+        usePointStyle: true,
+        boxWidth: 8
+        }
+        }
+        },
+        scales: {
+        y: {
+        beginAtZero: true
+        }
+        }
+        }
+        });
+
+        new Chart(document.getElementById('wasteSplitChart'), {
+        type: 'doughnut',
+        data: {
+        labels: wasteSplitLabels,
+        datasets: [{
+        data: wasteSplitData,
+        backgroundColor: ['#4ade80', '#ef4444', '#94a3b8'],
+        borderWidth: 0
+        }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+        legend: {
+        position: 'right',
+        labels: {
+        usePointStyle: true,
+        boxWidth: 8
+        }
+        }
+        }
+        }
+        });
+    </script>
+}

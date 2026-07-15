@@ -5,13 +5,22 @@ BEGIN
     SET NOCOUNT ON;
 SELECT[wr].[Id], 
       [wr].[WasteTypeId], 
-      [wr].[WasteReading], 
+      [wr].WasteAmount , 
       [wr].[ReadingDate],
-      [wr].[CapturedBy],
+
+
+      [e].[Email] AS EmployeeEmail,
+
+      [e].Id as CapturedBy,
       [wr].[Notes],
       [wr].[IsDeleted],
       [wc].[Name] AS WasteCategory, 
-      [wm].[Name] AS WasteMaterial
+      [wm].[Name] AS WasteMaterial,
+      [wt].[Name] AS WasteTypeName
+
+
+
+      
    
     
 
@@ -27,6 +36,9 @@ INNER JOIN dbo.WasteCategory wc
 
 INNER JOIN dbo.WasteMaterial wm
     ON wt.WasteMaterialId = wm.Id
+
+    INNER JOIN dbo.Employees e
+    ON wr.CapturedBy = e.Id
 
     WHERE [wt].IsActive = 1
 	ORDER BY ReadingDate DESC;

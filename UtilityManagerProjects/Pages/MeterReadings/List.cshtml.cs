@@ -1,119 +1,180 @@
 using DataLibrary.Data;
-using DataLibrary.Db;
 using DataLibrary.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Threading.Tasks;
 
 namespace UtilityManagerProjects.Pages.MeterReadings
 {
     public class ListModel : PageModel
     {
         private readonly IMeterReadingData meterReading;
-        private readonly IWasteReadingData wasteReading;
 
-        public ListModel(IMeterReadingData meterReading, IWasteReadingData wasteReading)
+        public ListModel(IMeterReadingData meterReading)
         {
             this.meterReading = meterReading;
-            this.wasteReading = wasteReading;
         }
-        public int TotalReadings { get; set; }
-        public int TotalWasteReadings { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string DateFilter { get; set; } = "Last30";
+
+        [BindProperty(SupportsGet = true)]
+        public DateTime? StartDate { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public DateTime? EndDate { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? SearchTerm { get; set; }
+
+        public DateTime CurrentStart { get; set; }
+        public DateTime CurrentEnd { get; set; }
+        public DateTime PreviousStart { get; set; }
+        public DateTime PreviousEnd { get; set; }
+
+        public string DateRangeLabel => $"{CurrentStart:dd MMM yyyy} - {CurrentEnd:dd MMM yyyy}";
+
         public int WaterCount { get; set; }
         public int ElectricityCount { get; set; }
-        public int RefuseCount { get; set; }
+        public int TotalReadings { get; set; }
+
         public int TotalMeters { get; set; }
-        public int TotalWasteTypes { get; set; }
+
+        public int WaterUsage { get; set; }
+        public int ElectricityUsage { get; set; }
+        public int TotalUsage { get; set; }
+
         public double WaterPercent { get; set; }
         public double ElectricityPercent { get; set; }
-        public double RefusePercent { get; set; }
-        public Meter Meter { get; set; }
-        public IEnumerable<MeterReading> MeterReadings { get; set; }
-        public IEnumerable<WasteReading> WasteReadings { get; set; }
-        public List<MeterTypeKpi> MeterTypeKpis { get; set; } = new List<MeterTypeKpi>();
+        public double TotalReadingsPercent { get; set; }
 
+        public List<MeterReading> LatestReadings { get; set; } = new();
 
         public async Task OnGet()
         {
-            ViewData["HideNavbar"] = true;
-            MeterReadings = await meterReading.GetAllMeterReading();
-            WasteReadings = await wasteReading.GetAllWasteReadings();
 
+            ResolveDateRange();
 
-            TotalReadings = MeterReadings.Count();
-            TotalWasteReadings = WasteReadings.Count();
-            WaterCount = MeterReadings.Count(x => x.MeterType == MeterType.Water);
-            ElectricityCount = MeterReadings.Count(x => x.MeterType == MeterType.Electricity);
+            var allMeterReadings = (await meterReading.GetAllMeterReading())
+                .Where(x => x.MeterType == MeterType.Water || x.MeterType == MeterType.Electricity)
+                .ToList();
 
-            TotalMeters = MeterReadings
-            .Select(x => x.MeterId)
-            .Distinct()
-            .Count();
+            var currentReadings = allMeterReadings
+                .Where(x => IsInRange(x.ReadingDate, CurrentStart, CurrentEnd))
+                .ToList();
 
-            TotalWasteTypes = WasteReadings
-                .Select(x => x.WasteTypeId)
-                .Distinct()
-                .Count();
+            var previousReadings = allMeterReadings
+                .Where(x => IsInRange(x.ReadingDate, PreviousStart, PreviousEnd))
+                .ToList();
 
+            WaterCount = currentReadings.Count(x => x.MeterType == MeterType.Water);
+            ElectricityCount = currentReadings.Count(x => x.MeterType == MeterType.Electricity);
+            TotalReadings = WaterCount + ElectricityCount;
 
-            var now = DateTime.Now;
+            WaterUsage = currentReadings
+                .Where(x => x.MeterType == MeterType.Water)
+                .Sum(x => x.Usage);
 
-            var last7 = now.AddDays(-7);
-            var last14 = now.AddDays(-14);
+            ElectricityUsage = currentReadings
+                .Where(x => x.MeterType == MeterType.Electricity)
+                .Sum(x => x.Usage);
 
-            var last30 = now.AddDays(-30);
-            var last60 = now.AddDays(-60);
+            TotalUsage = WaterUsage + ElectricityUsage;
 
-            var previouse7Days = WasteReadings.Count(x => x.ReadingDate >= last7 && x.ReadingDate < last14);
+            var previousWaterCount = previousReadings.Count(x => x.MeterType == MeterType.Water);
+            var previousElectricityCount = previousReadings.Count(x => x.MeterType == MeterType.Electricity);
+            var previousTotalCount = previousWaterCount + previousElectricityCount;
 
-            foreach (var type in Enum.GetValues<MeterType>()   )
+            WaterPercent = CalculateGrowth(WaterCount, previousWaterCount);
+            ElectricityPercent = CalculateGrowth(ElectricityCount, previousElectricityCount);
+            TotalReadingsPercent = CalculateGrowth(TotalReadings, previousTotalCount);
+
+            var filteredForTable = currentReadings;
+
+            if (!string.IsNullOrWhiteSpace(SearchTerm))
             {
-                // WEEKLY
-                var current7 = MeterReadings.Count(x =>
-                   x.MeterType == type &&
-                   x.ReadingDate >= last7);
+                var search = SearchTerm.Trim();
 
-                var previous7 = MeterReadings.Count(x =>
-                    x.MeterType == type &&
-                    x.ReadingDate >= last14 &&
-                    x.ReadingDate < last7);
-
-                var weeklyGrowth = previous7 == 0
-                    ? 100
-                    : ((current7 - previous7) * 100.0) / previous7;
-
-                // MONTHLY
-                var current30 = MeterReadings.Count(x =>
-                    x.MeterType == type &&
-                    x.ReadingDate >= last30);
-
-                var previous30 = MeterReadings.Count(x =>
-                    x.MeterType == type &&
-                    x.ReadingDate >= last60 &&
-                    x.ReadingDate < last30);
-
-                var monthlyGrowth = previous30 == 0
-                    ? 100
-                    : ((current30 - previous30) * 100.0) / previous30;
-
-                var count = MeterReadings.Count();
-             
-
-                MeterTypeKpis.Add(new MeterTypeKpi
-                {
-                    MeterType = type,
-
-                    Current7Days = current7,
-                    Previous7Days = previous7,
-                    WeeklyGrowthPercent = weeklyGrowth,
-
-                    Current30Days = current30,
-                    Previous30Days = previous30,
-                    MonthlyGrowthPercent = monthlyGrowth,
-
-                });
+                filteredForTable = filteredForTable
+                    .Where(x =>
+                        ContainsText(x.Id.ToString(), search) ||
+                        ContainsText(x.MeterId.ToString(), search) ||
+                        ContainsText(x.MeterName, search) ||
+                        ContainsText(x.MeterType.ToString(), search) ||
+                        ContainsText(x.AreaName, search) ||
+                        ContainsText(x.StationName, search) ||
+                        ContainsText(x.DepartmentName, search) ||
+                        ContainsText(x.Notes, search))
+                    .ToList();
             }
+
+            LatestReadings = filteredForTable
+                .GroupBy(x => x.MeterId)
+                .Select(group => group
+                    .OrderByDescending(x => x.ReadingDate)
+                    .ThenByDescending(x => x.Id)
+                    .First())
+                .OrderBy(x => x.MeterId)
+                .ToList();
+
+            TotalMeters = LatestReadings.Count;
+        }
+
+        public string GetMeterUnit(MeterType meterType)
+        {
+            return meterType == MeterType.Water ? "L" : "kWh";
+        }
+
+        private void ResolveDateRange()
+        {
+            var today = DateTime.Today;
+
+            if (DateFilter == "Custom" && StartDate.HasValue && EndDate.HasValue)
+            {
+                CurrentStart = StartDate.Value.Date;
+                CurrentEnd = EndDate.Value.Date;
+            }
+            else if (DateFilter == "Last7")
+            {
+                CurrentStart = today.AddDays(-6);
+                CurrentEnd = today;
+            }
+            else
+            {
+                DateFilter = "Last30";
+                CurrentStart = today.AddDays(-29);
+                CurrentEnd = today;
+            }
+
+            if (CurrentStart > CurrentEnd)
+            {
+                (CurrentStart, CurrentEnd) = (CurrentEnd, CurrentStart);
+            }
+
+            var days = (CurrentEnd - CurrentStart).Days + 1;
+
+            PreviousEnd = CurrentStart.AddDays(-1);
+            PreviousStart = PreviousEnd.AddDays(-(days - 1));
+        }
+
+        private static bool IsInRange(DateTime date, DateTime startDate, DateTime endDate)
+        {
+            return date.Date >= startDate.Date && date.Date <= endDate.Date;
+        }
+
+        private static bool ContainsText(string? value, string search)
+        {
+            return !string.IsNullOrWhiteSpace(value) &&
+                   value.Contains(search, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static double CalculateGrowth(int currentValue, int previousValue)
+        {
+            if (previousValue == 0)
+            {
+                return currentValue > 0 ? 100 : 0;
+            }
+
+            return Math.Round(((currentValue - previousValue) * 100.0) / previousValue, 1);
         }
     }
 }

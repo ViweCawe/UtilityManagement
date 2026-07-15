@@ -1,80 +1,230 @@
-﻿@page
+﻿@page "{id:int}"
 @model UtilityManagerProjects.Pages.MeterReadings.DisplayModel
+
 @{
+    ViewData["Title"] = "Meter Reading Detail";
+    var unit = Model.GetMeterUnit();
 }
-<div class="dashboard-container">
-    <div class="table-card">
-<h3>Meter Reading Detail</h3>
 
-@if(Model.Reading != null)
-{
-    <table class="table table-hover mb-0">
-      <tr>
-          <th>Meter</th>
-          <td>@Model.Reading.MeterName</td>
-      
-    </tr>
-   
-    <tr>
-         <th>Meter Type</th>
-         <td>@Model.Reading.MeterType</td>
-    </tr>
+<div class="page-shell">
 
-    <tr>
-            <th>Location</th>
-            <td>@Model.Reading.AreaName</td>
-    </tr>
+    @if (Model.Reading != null)
+    {
+        <div class="page-header-row">
+            <div class="page-title">
+                <h1>Reading RDG-@Model.Reading.Id.ToString("0000")</h1>
+                <p>Full details for this specific meter reading.</p>
+            </div>
 
-    <tr>
-            <th>Previous Reading</th>
-            <td>@Model.Reading.PreviousReading</td>
-    </tr>
+            <div class="page-actions">
+                <a class="utility-btn-secondary"
+                   asp-page="./History"
+                   asp-route-meterId="@Model.Reading.MeterId">
+                    <i class="bi bi-arrow-left"></i>
+                    Back to Meter History
+                </a>
 
-    <tr>
-            <th>Current Reading</th>
-            <td>@Model.Reading.CurrentReading</td>
-    </tr>
-
-       <tr>
-                <th>Reading Date</th>
-                <td>@Model.Reading.ReadingDate</td>
-        </tr>
-        <tr>
-                <th>Notes</th>
-                <td>@Model.Reading.Notes</td>
-        </tr>
-
-        <tr>
-            <th>Station</th>
-            <th>@Model.Reading.StationName</th>
-        </tr>
-        <tr colspan="2">
-            <a class="btn btn-danger" asp-page="/MeterReadings/Delete" asp-route-id="@Model.Reading.Id">Delete Reading</a>
-        </tr>
-    </table>
-
-    <form  method="post">
-        <div asp-validation-summary="ModelOnly"></div>
-        <input type="hidden" asp-for="ReadingUpdate.Id" value="@Model.Reading.Id" />
-        <div class="form-group">
-            <label asp-for="ReadingUpdate.CurrentReadingUpdate">Meter Reading Update</label>
-            <input asp-for="ReadingUpdate.CurrentReadingUpdate" class="form-control" value="@Model.ReadingUpdate.CurrentReadingUpdate"  />
-            <span asp-validation-for="ReadingUpdate.CurrentReadingUpdate"></span>
-        </div>
-        <div class="form-group">
-            <label asp-for="ReadingUpdate.Notes"></label>
-            <textarea asp-for="ReadingUpdate.Notes" class="form-control" >Note Update</textarea>
-            <span asp-validation-for="ReadingUpdate.Notes" class="text-danger"></span>
+                <a class="utility-btn-secondary" asp-page="./List">
+                    <i class="bi bi-list"></i>
+                    Latest Readings
+                </a>
+            </div>
         </div>
 
-        <div class="form-group">
-            <input type="submit" value="Update Notes" class="btn btn-primary" />
-        </div>
-    </form>
-}
-</div>
+        <section class="stats-grid stats-grid-4">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="bi bi-speedometer2"></i>
+                </div>
+                <div class="stat-content">
+                    <p>Meter</p>
+                    <h2>
+                        @if (!string.IsNullOrWhiteSpace(Model.Reading.MeterName))
+                        {
+                            @Model.Reading.MeterName
+                        }
+                        else
+                        {
+                            <span>Meter @Model.Reading.MeterId</span>
+                        }
+                    </h2>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="bi bi-tag-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <p>Meter Type</p>
+                    <h2>@Model.Reading.MeterType</h2>
+                    <span>@unit</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="stat-content">
+                    <p>Usage</p>
+                    <h2>@Model.Reading.Usage.ToString("N2") <span>@unit</span></h2>
+                    <span>calculated from previous to current</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <p>Reading Date</p>
+                    <h2>@Model.Reading.ReadingDate.ToString("dd MMM")</h2>
+                    <span>@Model.Reading.ReadingDate.ToString("yyyy HH:mm")</span>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="grid-two">
+
+            <div class="content-card">
+                <div class="content-card-header">
+                    <div>
+                        <h3>Reading Details</h3>
+                        <p>Meter, location, readings, and captured information.</p>
+                    </div>
+                </div>
+
+                <div class="detail-list">
+
+                    <div class="detail-row">
+                        <span>Meter ID</span>
+                        <strong>@Model.Reading.MeterId</strong>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Meter Name</span>
+                        <strong>
+                            @if (!string.IsNullOrWhiteSpace(Model.Reading.MeterName))
+                            {
+                                @Model.Reading.MeterName
+                            }
+                            else
+                            {
+                                <span>Meter @Model.Reading.MeterId</span>
+                            }
+                        </strong>
+                    </div>
+
+                   
+                    <div class="detail-row">
+                        <span>Meter Type</span>
+                        <strong>@Model.Reading.MeterType</strong>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Area</span>
+                        <strong>@Model.Reading.AreaName</strong>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Station</span>
+                        <strong>@Model.Reading.StationName</strong>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Department</span>
+                        <strong>@Model.Reading.DepartmentName</strong>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Previous Reading</span>
+                        <strong>@Model.Reading.PreviousReading.ToString("N2") @unit</strong>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Current Reading</span>
+                        <strong>@Model.Reading.CurrentReading.ToString("N2") @unit</strong>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Usage</span>
+                        <strong class="trend-positive">@Model.Reading.Usage.ToString("N2") @unit</strong>
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Captured By</span>
+                        <strong >@Model.Reading.EmployeeId</strong>
+                       
+                    </div>
+
+                    <div class="detail-row">
+                        <span>Notes</span>
+                        <strong>
+                            @if (!string.IsNullOrWhiteSpace(Model.Reading.Notes))
+                            {
+                                @Model.Reading.Notes
+                            }
+                            else
+                            {
+                                <span class="text-muted-custom">No notes</span>
+                            }
+                        </strong>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="content-card-header">
+                    <div>
+                        <h3>Update Reading</h3>
+                        <p>Update the current reading and notes for this record.</p>
+                    </div>
+                </div>
+
+                <form method="post" class="utility-form">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <input type="hidden" asp-for="ReadingUpdate.Id" />
+
+                    <div class="form-group">
+                        <label asp-for="ReadingUpdate.CurrentReadingUpdate"></label>
+                        <input asp-for="ReadingUpdate.CurrentReadingUpdate" class="form-control utility-input" />
+                        <span asp-validation-for="ReadingUpdate.CurrentReadingUpdate" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="ReadingUpdate.Notes"></label>
+                        <textarea asp-for="ReadingUpdate.Notes" class="form-control utility-input" rows="5"></textarea>
+                        <span asp-validation-for="ReadingUpdate.Notes" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="utility-btn-primary">
+                            <i class="bi bi-save"></i>
+                            Save Changes
+                        </button>
+
+                        <a class="utility-btn-secondary"
+                           asp-page="./Delete"
+                           asp-route-id="@Model.Reading.Id">
+                            <i class="bi bi-trash"></i>
+                            Delete Reading
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+        </section>
+    }
+
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

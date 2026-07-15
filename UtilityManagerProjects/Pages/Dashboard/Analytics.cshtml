@@ -1,0 +1,67 @@
+﻿@page
+@model UtilityManagerProjects.Pages.Analytics.IndexModel
+
+@{
+    ViewData["Title"] = "Analytics";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Analytics</h1>
+            <p>Compare weekly and monthly utility movement.</p>
+        </div>
+    </div>
+
+    <section class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h3>Performance Analytics</h3>
+                <p>Current periods compared against previous periods.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Current 7 Days</th>
+                        <th>Previous 7 Days</th>
+                        <th>Weekly Growth</th>
+                        <th>Current 30 Days</th>
+                        <th>Previous 30 Days</th>
+                        <th>Monthly Growth</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var row in Model.AnalyticsRows)
+                    {
+                        var pillClass = $"reading-{row.Category.ToLower()}";
+
+                        <tr>
+                            <td>
+                                <span class="reading-pill @pillClass">@row.Category</span>
+                            </td>
+                            <td>@row.Current7Days.ToString("N0") @row.Unit</td>
+                            <td>@row.Previous7Days.ToString("N0") @row.Unit</td>
+                            <td class="@(row.WeeklyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                                @(row.WeeklyGrowthPercent >= 0 ? "▲" : "▼")
+                                @Math.Abs(row.WeeklyGrowthPercent)%
+                            </td>
+                            <td>@row.Current30Days.ToString("N0") @row.Unit</td>
+                            <td>@row.Previous30Days.ToString("N0") @row.Unit</td>
+                            <td class="@(row.MonthlyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                                @(row.MonthlyGrowthPercent >= 0 ? "▲" : "▼")
+                                @Math.Abs(row.MonthlyGrowthPercent)%
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>

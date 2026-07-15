@@ -1,21 +1,63 @@
-﻿@page
+@page
 @model LogoutModel
+
 @{
     ViewData["Title"] = "Log out";
 }
 
-<header>
-    <h1>@ViewData["Title"]</h1>
-    @{
-        if (User.Identity?.IsAuthenticated ?? false)
+<div class="auth-shell">
+    <section class="auth-card auth-card-compact auth-message-card">
+
+        @if (User.Identity?.IsAuthenticated ?? false)
         {
-            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
-                <button type="submit" class="nav-link btn btn-link text-dark">Click here to Logout</button>
+            <div class="auth-message-icon auth-message-warning">
+                <i class="bi bi-box-arrow-right"></i>
+            </div>
+
+            <div class="auth-heading auth-heading-centered">
+                <span class="auth-kicker">End session</span>
+                <h1>Log out of your account?</h1>
+                <p>
+                    You will need to enter your credentials again to access
+                    the Utility Management system.
+                </p>
+            </div>
+
+            <form asp-area="Identity"
+                  asp-page="/Account/Logout"
+                  asp-route-returnUrl="@Url.Page("/", new { area = "" })"
+                  method="post"
+                  class="auth-form">
+
+                <button type="submit" class="auth-danger-btn">
+                    <i class="bi bi-box-arrow-right"></i>
+                    Log out
+                </button>
+
+                <a asp-area=""
+                   asp-page="/Dashboard/Dashboard"
+                   class="auth-secondary-btn">
+                    Cancel
+                </a>
             </form>
         }
         else
         {
-            <p>You have successfully logged out of the application.</p>
+            <div class="auth-message-icon auth-message-success">
+                <i class="bi bi-check-lg"></i>
+            </div>
+
+            <div class="auth-heading auth-heading-centered">
+                <span class="auth-kicker">Session ended</span>
+                <h1>You have logged out</h1>
+                <p>Your session has been closed successfully.</p>
+            </div>
+
+            <a asp-page="./Login" class="auth-primary-btn">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Return to login
+            </a>
         }
-    }
-</header>
+
+    </section>
+</div>

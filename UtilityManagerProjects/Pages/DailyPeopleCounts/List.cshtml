@@ -1,0 +1,199 @@
+﻿@page
+@model UtilityManagerProjects.Pages.DailyPeopleCounts.ListModel
+
+@{
+    ViewData["Title"] = "People Counts";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>People Counts</h1>
+            <p>Daily visitors and employees captured for utility-per-person calculations. Showing @Model.DateRangeLabel.</p>
+        </div>
+
+        <div class="page-actions">
+            <a class="utility-btn-primary" asp-page="./Create">
+                <i class="bi bi-plus-lg"></i>
+                Capture Count
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="content-card success-message-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>@TempData["SuccessMessage"]</h3>
+                    <p>The daily count has been saved.</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <form method="get" class="dashboard-filter-card">
+
+        <div class="filter-group">
+            <label>Date Range</label>
+            <select name="DateFilter" class="utility-input" id="peopleDateFilter">
+                <option value="Last7" selected="@(Model.DateFilter == "Last7" ? "selected" : null)">Latest 7 Days</option>
+                <option value="Last30" selected="@(Model.DateFilter == "Last30" ? "selected" : null)">Latest 30 Days</option>
+                <option value="Custom" selected="@(Model.DateFilter == "Custom" ? "selected" : null)">Custom</option>
+            </select>
+        </div>
+
+        <div class="filter-group people-custom-date-filter">
+            <label>Start Date</label>
+            <input type="date"
+                   name="StartDate"
+                   value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
+
+        <div class="filter-group people-custom-date-filter">
+            <label>End Date</label>
+            <input type="date"
+                   name="EndDate"
+                   value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="utility-btn-primary">
+                <i class="bi bi-funnel"></i>
+                Apply
+            </button>
+
+            <a asp-page="./List" class="utility-btn-secondary">
+                Clear
+            </a>
+        </div>
+
+    </form>
+
+    <section class="stats-grid stats-grid-4">
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-people-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Total People</p>
+                <h2>@Model.TotalPeople.ToString("N0")</h2>
+                <span>visitors + employees</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-person-walking"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Total Visitors</p>
+                <h2>@Model.TotalVisitors.ToString("N0")</h2>
+                <span>@Model.AverageVisitorsPerDay.ToString("N1") average per day</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-person-badge-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Total Employees</p>
+                <h2>@Model.TotalEmployees.ToString("N0")</h2>
+                <span>@Model.AverageEmployeesPerDay.ToString("N1") average per day</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-calendar-check-fill"></i>
+            </div>
+
+            <div class="stat-content">
+                <p>Days Captured</p>
+                <h2>@Model.DaysCaptured.ToString("N0")</h2>
+                <span>@Model.AveragePeoplePerDay.ToString("N1") people average per day</span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="content-card">
+
+        <div class="content-card-header">
+            <div>
+                <h3>Daily People Count Records</h3>
+                <p>These records feed the Environmental Dashboard and per-person usage calculations.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Visitors</th>
+                        <th>Employees</th>
+                        <th>Total People</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.PeopleCounts.Any())
+                    {
+                        @foreach (var item in Model.PeopleCounts)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="table-date">
+                                        <strong>@item.Date.ToString("dd MMM yyyy")</strong>
+                                        <span>@item.Date.ToString("dddd")</span>
+                                    </div>
+                                </td>
+
+                                <td>@item.Visitors.ToString("N0")</td>
+                                <td>@item.Employees.ToString("N0")</td>
+                                <td class="trend-positive">@((item.Visitors + item.Employees).ToString("N0"))</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                No people counts captured for the selected filter.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+</div>
+
+@section Scripts {
+    <script>
+        const peopleDateFilter = document.getElementById('peopleDateFilter');
+        const peopleCustomDateFilters = document.querySelectorAll('.people-custom-date-filter');
+
+        function togglePeopleCustomDates() {
+            const showCustom = peopleDateFilter.value === 'Custom';
+
+            peopleCustomDateFilters.forEach(item => {
+                item.style.display = showCustom ? 'flex' : 'none';
+            });
+        }
+
+        peopleDateFilter.addEventListener('change', togglePeopleCustomDates);
+        togglePeopleCustomDates();
+    </script>
+}

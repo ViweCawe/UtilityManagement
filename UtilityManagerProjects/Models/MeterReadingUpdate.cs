@@ -1,17 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DataLibrary.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace UtilityManagerProjects.Models
 {
-    public class MeterReadingUpdate
+    public class MeterReadingUpdate: BaseModel
     {
         public int Id { get; set; }
         [Required]
 
-        public decimal CurrentReadingUpdate { get; set; } 
+        public int CurrentReadingUpdate { get; set; } 
         public string Notes { get; set; } = string.Empty;
-        public int UpdatedBy { get; set; } 
         public DateTime ReadingDate { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
     }
 }

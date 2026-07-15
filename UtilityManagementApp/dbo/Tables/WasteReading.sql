@@ -3,7 +3,7 @@
 	Id INT IDENTITY(1,1) PRIMARY KEY,
 
     WasteTypeId INT NOT NULL,
-    WasteReading DECIMAL(18,2) NOT NULL,
+    [WasteAmount] DECIMAL(18,2) NOT NULL,
     ReadingDate DATETIME2 NOT NULL,
     CapturedBy INT NOT NULL,
     UpdatedAt DATETIME2 NULL,

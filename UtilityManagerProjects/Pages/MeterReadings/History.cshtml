@@ -1,0 +1,195 @@
+﻿@page "{meterId:int}"
+@model UtilityManagerProjects.Pages.MeterReadings.HistoryModel
+
+@{
+    ViewData["Title"] = "Meter Reading History";
+    var unit = Model.GetMeterUnit();
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>@Model.MeterDisplayName()</h1>
+            <p>Full meter reading history for Meter ID @Model.MeterId.</p>
+        </div>
+
+        <div class="page-actions">
+            <a class="utility-btn-secondary" asp-page="./List">
+                <i class="bi bi-arrow-left"></i>
+                Back to Latest Readings
+            </a>
+
+            <a class="utility-btn-primary" asp-page="./Create" asp-route-meterId="@Model.MeterId">
+                <i class="bi bi-plus-lg"></i>
+                Add Reading
+            </a>
+        </div>
+    </div>
+
+    @if (Model.LatestReading != null)
+    {
+        <section class="stats-grid stats-grid-4">
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="bi bi-speedometer2"></i>
+                </div>
+                <div class="stat-content">
+                    <p>Meter Type</p>
+                    <h2>@Model.LatestReading.MeterType</h2>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="bi bi-journal-check"></i>
+                </div>
+                <div class="stat-content">
+                    <p>Total Readings</p>
+                    <h2>@Model.TotalReadings.ToString("N0")</h2>
+                    <span>captured records</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="stat-content">
+                    <p>Total Usage</p>
+                    <h2>@Model.TotalUsage.ToString("N2") <span>@unit</span></h2>
+                    <span>all readings combined</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <p>Latest Reading</p>
+                    <h2>@Model.LatestReading.CurrentReading.ToString("N2") <span>@unit</span></h2>
+                    <span>@Model.LatestReading.ReadingDate.ToString("dd MMM yyyy")</span>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="content-card">
+
+            <div class="content-card-header">
+                <div>
+                    <h3>Reading History</h3>
+                    <p>
+                        @Model.LatestReading.AreaName ·
+                        @Model.LatestReading.StationName ·
+                        @Model.LatestReading.DepartmentName
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="utility-table">
+                    <thead>
+                        <tr>
+                            <th>Reading ID</th>
+                            <th>Reading Date</th>
+                            <th>Previous Reading</th>
+                            <th>Current Reading</th>
+                            <th>Usage</th>
+                            <th>Captured By</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var reading in Model.ReadingHistory)
+                        {
+                            <tr>
+                                <td>
+                                    <a class="table-main-link"
+                                       asp-page="./Display"
+                                       asp-route-id="@reading.Id">
+                                        RDG-@reading.Id.ToString("0000")
+                                    </a>
+                                </td>
+
+                                <td>
+                                    <div class="table-date">
+                                        <strong>@reading.ReadingDate.ToString("dd MMM yyyy")</strong>
+                                        <span>@reading.ReadingDate.ToString("HH:mm")</span>
+                                    </div>
+                                </td>
+
+                                <td>@reading.PreviousReading.ToString("N2") @unit</td>
+
+                                <td>
+                                    <a class="table-main-link"
+                                       asp-page="./Display"
+                                       asp-route-id="@reading.Id">
+                                        @reading.CurrentReading.ToString("N2") @unit
+                                    </a>
+                                </td>
+
+                                <td class="trend-positive">
+                                    @reading.Usage.ToString("N2") @unit
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(reading.EmployeeEmail))
+                                    {
+                                        @reading.EmployeeEmail
+                                    }
+                                    else
+                                    {
+                                        <span>Employee #@reading.EmployeeId</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(reading.Notes))
+                                    {
+                                        @reading.Notes
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted-custom">No notes</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <div class="action-buttons">
+                                        <a class="icon-action"
+                                           asp-page="./Display"
+                                           asp-route-id="@reading.Id"
+                                           title="View Reading Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <a class="icon-action"
+                                           asp-page="./Edit"
+                                           asp-route-id="@reading.Id"
+                                           title="Edit Reading">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <a class="icon-action danger"
+                                           asp-page="./Delete"
+                                           asp-route-id="@reading.Id"
+                                           title="Delete Reading">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+    }
+
+</div>

@@ -1,10 +1,252 @@
 ﻿@page
 @model IndexModel
+
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Utility Management";
+    ViewData["HideSidebar"] = true;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="utility-landing-page">
+
+    <header class="landing-navbar">
+
+        <a asp-page="/Index" class="landing-brand">
+            <span class="landing-brand-icon">
+                <i class="bi bi-bar-chart-fill"></i>
+            </span>
+
+            <span class="landing-brand-copy">
+                <strong>Utility Manager</strong>
+                <small>Environmental Performance</small>
+            </span>
+        </a>
+
+        <div class="landing-account">
+            <partial name="_LoginPartial" />
+        </div>
+
+    </header>
+
+    <main class="landing-content">
+
+        <section class="landing-hero">
+
+            <div class="landing-hero-copy">
+
+                <span class="landing-eyebrow">
+                    <i class="bi bi-leaf-fill"></i>
+                    Smarter utility monitoring
+                </span>
+
+                <h1>
+                    Understand your utilities.
+                    <span>Improve environmental performance.</span>
+                </h1>
+
+                <p>
+                    Monitor water, electricity, waste, visitors, employees,
+                    and environmental performance through one connected
+                    management system.
+                </p>
+
+                <div class="landing-actions">
+
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <a asp-page="/Dashboard/Dashboard"
+                           class="landing-primary-btn">
+                            <i class="bi bi-grid-1x2-fill"></i>
+                            Open Dashboard
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-area="Identity"
+                           asp-page="/Account/Login"
+                           class="landing-primary-btn">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Log in
+                        </a>
+
+                        <a asp-area="Identity"
+                           asp-page="/Account/Register"
+                           class="landing-secondary-btn">
+                            Create Account
+                        </a>
+                    }
+
+                </div>
+
+                <div class="landing-highlights">
+
+                    <div class="landing-highlight">
+                        <i class="bi bi-check-circle-fill"></i>
+
+                        <span>
+                            <strong>Centralised</strong>
+                            All utility information in one place
+                        </span>
+                    </div>
+
+                    <div class="landing-highlight">
+                        <i class="bi bi-check-circle-fill"></i>
+
+                        <span>
+                            <strong>Measurable</strong>
+                            Trends, usage and performance indicators
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="landing-preview-card">
+
+                <div class="preview-card-header">
+                    <div>
+                        <span>Current overview</span>
+                        <strong>Utility Performance</strong>
+                    </div>
+
+                    <span class="preview-live-status">
+                        <span></span>
+                        System ready
+                    </span>
+                </div>
+
+                <div class="preview-metric-grid">
+
+                    <div class="preview-metric">
+                        <span class="preview-icon blue">
+                            <i class="bi bi-droplet-fill"></i>
+                        </span>
+
+                        <div>
+                            <small>Water</small>
+                            <strong>Consumption</strong>
+                        </div>
+                    </div>
+
+                    <div class="preview-metric">
+                        <span class="preview-icon orange">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                        </span>
+
+                        <div>
+                            <small>Electricity</small>
+                            <strong>Energy Usage</strong>
+                        </div>
+                    </div>
+
+                    <div class="preview-metric">
+                        <span class="preview-icon green">
+                            <i class="bi bi-recycle"></i>
+                        </span>
+
+                        <div>
+                            <small>Waste</small>
+                            <strong>Waste Generated</strong>
+                        </div>
+                    </div>
+
+                    <div class="preview-metric">
+                        <span class="preview-icon purple">
+                            <i class="bi bi-people-fill"></i>
+                        </span>
+
+                        <div>
+                            <small>People</small>
+                            <strong>Daily Counts</strong>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="preview-chart">
+
+                    <div class="preview-chart-heading">
+                        <div>
+                            <strong>Consumption trend</strong>
+                            <span>Utility performance overview</span>
+                        </div>
+
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+
+                    <div class="preview-bars">
+                        <span style="height: 42%"></span>
+                        <span style="height: 58%"></span>
+                        <span style="height: 46%"></span>
+                        <span style="height: 74%"></span>
+                        <span style="height: 62%"></span>
+                        <span style="height: 82%"></span>
+                        <span style="height: 68%"></span>
+                        <span style="height: 91%"></span>
+                        <span style="height: 73%"></span>
+                        <span style="height: 84%"></span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="landing-features">
+
+            <article class="landing-feature-card">
+                <span class="landing-feature-icon blue">
+                    <i class="bi bi-speedometer2"></i>
+                </span>
+
+                <h2>Meter Management</h2>
+
+                <p>
+                    Capture and review water and electricity readings,
+                    calculate usage, and inspect complete meter histories.
+                </p>
+            </article>
+
+            <article class="landing-feature-card">
+                <span class="landing-feature-icon green">
+                    <i class="bi bi-recycle"></i>
+                </span>
+
+                <h2>Waste Monitoring</h2>
+
+                <p>
+                    Track waste by type, category, and material while
+                    monitoring recycling, landfill, and overall trends.
+                </p>
+            </article>
+
+            <article class="landing-feature-card">
+                <span class="landing-feature-icon purple">
+                    <i class="bi bi-globe2"></i>
+                </span>
+
+                <h2>Environmental Insights</h2>
+
+                <p>
+                    Combine utility usage and people counts to understand
+                    performance and consumption per visitor or employee.
+                </p>
+            </article>
+
+        </section>
+
+    </main>
+
+    <footer class="landing-footer">
+        <span>
+            Utility Management System
+        </span>
+
+        <span>
+            <i class="bi bi-shield-check"></i>
+            Secure operational access
+        </span>
+    </footer>
+
 </div>

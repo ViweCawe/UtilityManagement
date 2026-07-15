@@ -1,0 +1,105 @@
+﻿@{
+    var currentPage = (ViewContext.RouteData.Values["page"] ?? "").ToString() ?? "";
+
+    var environmentalActive = currentPage.StartsWith("/Environmental", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var wasteActive = currentPage.StartsWith("/WasteReadings", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var peopleCountsActive = currentPage.StartsWith("/DailyPeopleCounts", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+
+    var dashboardActive = currentPage.StartsWith("/Dashboard", StringComparison.OrdinalIgnoreCase) || currentPage == "/Index" ? "active" : "";
+    var metersActive = currentPage.StartsWith("/Meters", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var meterReadingsActive = currentPage.StartsWith("/MeterReadings", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var wasteReadingsActive = currentPage.StartsWith("/WasteReadings", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var usageActive = currentPage.StartsWith("/Usage", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var analyticsActive = currentPage.StartsWith("/Analytics", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var reportsActive = currentPage.StartsWith("/Reports", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var areasActive = currentPage.StartsWith("/Areas", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var usersActive = currentPage.StartsWith("/Users", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var settingsActive = currentPage.StartsWith("/Settings", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var registerActive = currentPage.StartsWith("/Account/Register", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    
+}
+
+<aside class="utility-sidebar">
+
+    <div class="utility-brand">
+        <div class="utility-brand-icon">
+            <i class="bi bi-droplet-fill"></i>
+        </div>
+
+           
+
+        <div>
+            <h2>UTILITY</h2>
+            <p>Management System</p>
+        </div>
+    </div>
+
+    <nav class="utility-nav">
+
+        <a class="utility-nav-link @dashboardActive" asp-page="/Dashboard/Dashboard">
+            <i class="bi bi-grid-1x2"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a class="utility-nav-link @metersActive" asp-page="/Meters/Index">
+            <i class="bi bi-speedometer2"></i>
+            <span>Meters</span>
+        </a>
+
+        <a class="utility-nav-link @meterReadingsActive" asp-page="/MeterReadings/List">
+            <i class="bi bi-journal-text"></i>
+            <span>Meter Readings</span>
+        </a>
+
+        <a class="utility-nav-link @wasteReadingsActive" asp-page="/WasteReadings/List">
+            <i class="bi bi-trash3"></i>
+            <span>Waste Readings</span>
+        </a>
+    
+
+        <a class="utility-nav-link @environmentalActive" asp-page="/Environmental/Index">
+            <i class="bi bi-globe-africa"></i>
+            <span>Environmental</span>
+        </a>
+
+        <a class="utility-nav-link @usageActive" asp-page="/Dashboard/Usage">
+            <i class="bi bi-activity"></i>
+            <span>Usage</span>
+        </a>
+
+        <a class="utility-nav-link @analyticsActive" asp-page="/Dashboard/Analytics">
+            <i class="bi bi-bar-chart-line"></i>
+            <span>Analytics</span>
+        </a>
+
+        <a class="utility-nav-link @reportsActive" asp-page="/Dashboard/Reports">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>Reports</span>
+        </a>
+
+        <a class="utility-nav-link @peopleCountsActive" asp-page="/DailyPeopleCounts/List">
+            <i class="bi bi-people"></i>
+            <span>People Counts</span>
+        </a>
+
+        <a class="utility-nav-link @areasActive" asp-page="/Dashboard/Areas">
+            <i class="bi bi-geo-alt"></i>
+            <span>Locations</span>
+        </a>
+
+        <a class="utility-nav-link @usersActive" asp-page="/Users">
+            <i class="bi bi-people"></i>
+            <span>Users</span>
+        </a>
+
+        <a class="utility-nav-link @settingsActive" asp-page="/Settings/Index">
+            <i class="bi bi-gear"></i>
+            <span>Settings</span>
+        </a>
+
+    </nav>
+
+    
+
+
+</aside>

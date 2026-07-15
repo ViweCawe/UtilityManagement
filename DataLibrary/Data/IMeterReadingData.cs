@@ -14,5 +14,11 @@ namespace DataLibrary.Data
         Task<IEnumerable<MeterReading>> GetAllMeterReading();
         Task<MeterReading?> GetLatestReadingByMeterId(int id);
         Task<IEnumerable<MeterReading>> GetLatestMeterReadings();
+        Task<IEnumerable<MeterReading>> GetMeterReadingsByMeterId(int meterId);
+
+        Task<IEnumerable<MeterReading>>GetMeterReadingsByDateRange(
+            DateTime startDate,
+            DateTime endDate);
+        //Task UpdateMeterReadings(int id, decimal currentReadingUpdate, int? employeeId, string v);
     }
 }

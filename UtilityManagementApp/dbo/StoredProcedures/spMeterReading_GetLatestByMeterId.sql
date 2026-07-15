@@ -1,5 +1,5 @@
 ﻿CREATE PROCEDURE [dbo].[spMeterReading_GetLatestByMeterId]
-@Id INT
+@Id INT 
 AS
 BEGIN
 	SET NOCOUNT ON;

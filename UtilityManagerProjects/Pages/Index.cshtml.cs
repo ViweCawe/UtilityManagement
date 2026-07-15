@@ -7,7 +7,7 @@ namespace UtilityManagerProjects.Pages
     {
         public void OnGet()
         {
-            ViewData["HideSidebar"] = true;
+            ViewData["HideSidebar"] = false;
         }
     }
 }

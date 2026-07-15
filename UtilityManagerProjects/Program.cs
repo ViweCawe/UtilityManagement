@@ -23,6 +23,7 @@ builder.Services.AddSingleton<IMeterReadingData, MeterReadingData>();
 builder.Services.AddSingleton<IEmployeeData , EmployeeData>();
 builder.Services.AddSingleton<IWasteReadingData, WasteReadingData>();
 builder.Services.AddSingleton<IWasteTypeData, WasteTypeData>();
+builder.Services.AddSingleton<IDailyPeopleCountData, DailyPeopleCountData>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));

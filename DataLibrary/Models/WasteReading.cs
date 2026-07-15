@@ -16,6 +16,7 @@ namespace DataLibrary.Models
         public string MaterialName { get; set; } = string.Empty ;
         public string Unit { get; set; } = "Kg";
         public decimal WasteAmount { get; set; }
+        public string EmployeeEmail { get; set; } = string.Empty;
         public DateTime ReadingDate { get; set; } = DateTime.Now;
         public string? Notes { get; set; }
         public bool IsDeleted { get; set; }

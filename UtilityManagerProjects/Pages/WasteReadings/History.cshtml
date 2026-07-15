@@ -1,0 +1,93 @@
+@page
+@model UtilityManagerProjects.Pages.WasteReadings.HistoryModel
+@{
+    ViewData["Title"] = "Waste Reading History";
+}
+<div class="page-shell">
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Waste Reading History</h1>
+            <p>All readings captured for @Model.WasteTypeName.</p>
+        </div>
+        <div class="page-actions">
+            <a class="utility-btn-secondary" asp-page="./List">
+                <i class="bi bi-arrow-left"></i> Back to Latest Readings
+            </a>
+        </div>
+    </div>
+
+    <section class="stats-grid stats-grid-3">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-collection-fill"></i></div>
+            <div class="stat-content">
+                <p>Total Readings</p>
+                <h2>@Model.Readings.Count.ToString("N0")</h2>
+                <span>historical records</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-trash3-fill"></i></div>
+            <div class="stat-content">
+                <p>Total Waste</p>
+                <h2>@Model.TotalWaste.ToString("N2") <span>kg</span></h2>
+                <span>all readings for this type</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="bi bi-calendar-check-fill"></i></div>
+            <div class="stat-content">
+                <p>Latest Reading</p>
+                <h2>@(Model.LatestReadingDate?.ToString("dd MMM yyyy") ?? "N/A")</h2>
+                <span>most recent captured date</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h3>Reading History</h3>
+                <p>Click the eye icon to open a specific reading.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Waste Type</th><th>Category</th><th>Material</th>
+                        <th>Amount</th><th>Reading Date</th><th>Captured By</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model.Readings)
+                {
+                    <tr>
+                        <td>WR-@item.Id.ToString("0000")</td>
+                        <td><span class="reading-pill reading-waste">@item.WasteTypeName</span></td>
+                        <td>@item.WasteCategory</td>
+                        <td>@item.WasteMaterial</td>
+                        <td class="trend-positive">@item.WasteAmount.ToString("N2") kg</td>
+                        <td>
+                            <div class="table-date">
+                                <strong>@item.ReadingDate.ToString("dd MMM yyyy")</strong>
+                                <span>@item.ReadingDate.ToString("HH:mm")</span>
+                            </div>
+                        </td>
+                        <td>Employee #@item.CapturedBy</td>
+                        <td>
+                            <div class="action-buttons">
+                                <a class="icon-action" asp-page="./Display" asp-route-id="@item.Id">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a class="icon-action danger" asp-page="./Delete" asp-route-id="@item.Id">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

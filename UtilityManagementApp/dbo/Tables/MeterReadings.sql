@@ -9,7 +9,7 @@
 	[Usage] AS (CurrentReading - PreviousReading) PERSISTED,
 	[Notes] NVARCHAR(255) NULL,
 	[IsDeleted] BIT NOT NULL DEFAULT 0,
-	[UpdatedAt] DATETIME2  NULL,
+	[UpdatedAt] DATETIME  NULL,
 	[UpdatedBy] NVARCHAR(50) NULL,
 	CONSTRAINT [FK_MeterReadings_Employees] FOREIGN KEY (EmployeeId) REFERENCES [dbo].Employees(Id),
 	CONSTRAINT [FK_MeterReadings_Meters] FOREIGN KEY (MeterId) REFERENCES [dbo].Meters(Id),

@@ -51,7 +51,7 @@ namespace DataLibrary.Data
               
         }
 
-        public Task<int> UpdateArea(int areaId , string areaName, string discription, int stationId, int depId)
+        public Task<int> UpdateArea(int areaId , string areaName, string discription, int stationId, int depId,int updatedBy)
         {
             return dataAccess.SaveData("dbo.spArea_Update",
                 new
@@ -62,7 +62,7 @@ namespace DataLibrary.Data
                     StationId = stationId,
                     DepartmentId = depId,
                     UpdatedAt = DateTime.Now,
-                    UpdatedBy = "System"  // You can replace this with actual user info if available
+                    UpdatedBy = updatedBy // You can replace this with actual user info if available
                 },
                 connectionString.SqlConnectionName);
         }

@@ -1,56 +1,509 @@
 ﻿@page
 @model UtilityManagerProjects.Pages.Dashboard.DashboardModel
+
 @{
+    ViewData["Title"] = "Dashboard";
 }
 
-@foreach (var kpi in Model.MeterTypeKpis)
-{
-    <div class="col-md-4">
-        <div class="kpi-card">
+<div class="page-shell dashboard-page">
 
-            <div class="d-flex justify-content-between align-items-start">
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Dashboard</h1>
+            <p>Water and electricity performance. Showing @Model.DateRangeLabel.</p>
+        </div>
+    </div>
 
-                <div>
-                    <div class="kpi-title">
-                        @kpi.
-                    </div>
+    <form method="get" class="dashboard-filter-card">
 
-                    <div class="kpi-value">
-                        @kpi.
-                    </div>
-                </div>
+        <div class="filter-group">
+            <label>Date Range</label>
+            <select name="DateFilter" class="utility-input" id="dashboardDateFilter">
+                <option value="Last7" selected="@(Model.DateFilter == "Last7" ? "selected" : null)">Latest 7 Days</option>
+                <option value="Last30" selected="@(Model.DateFilter == "Last30" ? "selected" : null)">Latest 30 Days</option>
+                <option value="Custom" selected="@(Model.DateFilter == "Custom" ? "selected" : null)">Custom</option>
+            </select>
+        </div>
 
-                       
+        <div class="filter-group dashboard-custom-date-filter">
+            <label>Start Date</label>
+            <input type="date"
+                   name="StartDate"
+                   value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
 
-                <div class="kpi-icon">
-                    <i class="bi bi-speedometer2"></i>
-                </div>
+        <div class="filter-group dashboard-custom-date-filter">
+            <label>End Date</label>
+            <input type="date"
+                   name="EndDate"
+                   value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
+                   class="utility-input" />
+        </div>
 
+        <div class="filter-actions">
+            <button type="submit" class="utility-btn-primary">
+                <i class="bi bi-funnel"></i>
+                Apply Filter
+            </button>
+
+            <a asp-page="./Dashboard" class="utility-btn-secondary">
+                Clear
+            </a>
+        </div>
+
+    </form>
+
+    <section class="top-kpi-grid">
+
+        <div class="figma-card kpi-card">
+            <p>Water Consumption</p>
+            <h2>@Model.WaterConsumption.ToString("N0") <span>L</span></h2>
+
+            <div class="mini-trend">
+                <span class="@(Model.WaterWeeklyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                    @(Model.WaterWeeklyGrowthPercent >= 0 ? "▲" : "▼")
+                    @Math.Abs(Model.WaterWeeklyGrowthPercent).ToString("N1")%
+                </span>
+                <small>vs previous matching period</small>
             </div>
 
-                    
+            <canvas id="waterMiniChart"></canvas>
+        </div>
 
-            <div class="mt-3">
+        <div class="figma-card kpi-card">
+            <p>Electricity Consumption</p>
+            <h2>@Model.ElectricityConsumption.ToString("N0") <span>kWh</span></h2>
 
-                @if (kpi.WeeklyGrowthPercent >= 0)
+            <div class="mini-trend">
+                <span class="@(Model.ElectricityWeeklyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                    @(Model.ElectricityWeeklyGrowthPercent >= 0 ? "▲" : "▼")
+                    @Math.Abs(Model.ElectricityWeeklyGrowthPercent).ToString("N1")%
+                </span>
+                <small>vs previous matching period</small>
+            </div>
+
+            <canvas id="electricityMiniChart"></canvas>
+        </div>
+
+    </section>
+
+    <section class="stats-grid stats-grid-3">
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-droplet-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Water Readings</p>
+                <h2>@Model.WaterReadingCount.ToString("N0")</h2>
+                <span>selected period</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Electricity Readings</p>
+                <h2>@Model.ElectricityReadingCount.ToString("N0")</h2>
+                <span>selected period</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-collection-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Total Meter Readings</p>
+                <h2>@Model.TotalMeterReadingCount.ToString("N0")</h2>
+                <span>water + electricity only</span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="dashboard-grid">
+
+        <div class="figma-card trend-card">
+            <div class="card-header">
+                <h3>Consumption Trend</h3>
+                <span>@Model.DateRangeLabel</span>
+            </div>
+
+            <canvas id="consumptionTrendChart"></canvas>
+        </div>
+
+        <div class="figma-card distribution-card">
+            <div class="card-header">
+                <h3>Consumption Distribution</h3>
+                <span>Water vs Electricity</span>
+            </div>
+
+            <canvas id="distributionChart"></canvas>
+        </div>
+
+        <div class="figma-card comparison-card">
+            <div class="card-header">
+                <h3>Monthly Comparison</h3>
+                <span>Previous vs current month</span>
+            </div>
+
+            <canvas id="monthlyComparisonChart"></canvas>
+        </div>
+
+        <div class="figma-card alerts-card">
+            <div class="card-header">
+                <h3>Recent Alerts</h3>
+                <span>15% increase threshold</span>
+            </div>
+
+            @foreach (var alert in Model.Alerts)
+            {
+                <div class="alert-item alert-@alert.Type">
+                    <div class="alert-dot"></div>
+                    <div>
+                        <strong>@alert.Title</strong>
+                        <p>@alert.Message</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+    </section>
+
+    <section class="grid-two">
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Top Water Areas</h3>
+                    <p>Top 3 areas by water consumption.</p>
+                </div>
+            </div>
+
+            <div class="progress-list">
+                @if (Model.TopWaterAreas.Any())
                 {
-                    <span class="growth-up">
-                        ▲ @kpi.WeeklyGrowthPercent.ToString("0.0")%
-                    </span>
+                    @foreach (var area in Model.TopWaterAreas)
+                    {
+                        <div class="progress-row">
+                            <div class="progress-row-header">
+                                <strong>@area.AreaName</strong>
+                                <span>@area.TotalUsage.ToString("N0") L</span>
+                            </div>
+
+                            <div class="utility-progress">
+                                <div style="width:@area.ProgressPercent%"></div>
+                            </div>
+                        </div>
+                    }
                 }
                 else
                 {
-                    <span class="growth-down">
-                        ▼ @Math.Abs(kpi.WeeklyGrowthPercent).ToString("0.0")%
-                    </span>
+                    <div class="empty-state">No water area consumption found for this period.</div>
                 }
+            </div>
+        </div>
 
-                <span class="growth-text">
-                    vs previous week
-                </span>
-
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Top Electricity Areas</h3>
+                    <p>Top 3 areas by electricity consumption.</p>
+                </div>
             </div>
 
+            <div class="progress-list">
+                @if (Model.TopElectricityAreas.Any())
+                {
+                    @foreach (var area in Model.TopElectricityAreas)
+                    {
+                        <div class="progress-row">
+                            <div class="progress-row-header">
+                                <strong>@area.AreaName</strong>
+                                <span>@area.TotalUsage.ToString("N0") kWh</span>
+                            </div>
+
+                            <div class="utility-progress orange">
+                                <div style="width:@area.ProgressPercent%"></div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">No electricity area consumption found for this period.</div>
+                }
+            </div>
         </div>
-    </div>
+
+    </section>
+
+    <section class="bottom-grid">
+
+        <div class="figma-card dashboard-monthly-summary-card">
+            <div class="card-header">
+                <h3>Monthly Summary</h3>
+                <span>@Model.CurrentEnd.ToString("MMM yyyy")</span>
+            </div>
+
+            <div class="summary-list compact-summary-list">
+
+                <div class="summary-card-row">
+                    <div>
+                        <strong>Water</strong>
+                        <span>Last 30 days ending @Model.CurrentEnd.ToString("dd MMM")</span>
+                    </div>
+
+                    <div>
+                        <strong>@Model.WaterCurrent30Days.ToString("N0") L</strong>
+                        <span class="@(Model.WaterWeeklyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                            @(Model.WaterWeeklyGrowthPercent >= 0 ? "▲" : "▼")
+                            @Math.Abs(Model.WaterWeeklyGrowthPercent).ToString("N1")%
+                        </span>
+                    </div>
+                </div>
+
+                <div class="summary-card-row">
+                    <div>
+                        <strong>Electricity</strong>
+                        <span>Last 30 days ending @Model.CurrentEnd.ToString("dd MMM")</span>
+                    </div>
+
+                    <div>
+                        <strong>@Model.ElectricityCurrent30Days.ToString("N0") kWh</strong>
+                        <span class="@(Model.ElectricityWeeklyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
+                            @(Model.ElectricityWeeklyGrowthPercent >= 0 ? "▲" : "▼")
+                            @Math.Abs(Model.ElectricityWeeklyGrowthPercent).ToString("N1")%
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="figma-card">
+            <div class="card-header">
+                <h3>Recent Meter Readings</h3>
+                <span>Latest entries in selected period</span>
+            </div>
+
+            <table class="figma-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Usage</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.RecentMeterReadings.Any())
+                    {
+                        @foreach (var reading in Model.RecentMeterReadings)
+                        {
+                            <tr>
+                                <td>@reading.MeterType</td>
+                                <td>@reading.Usage.ToString("N0") @reading.Unit</td>
+                                <td>@reading.ReadingDate.ToString("dd MMM")</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="3">No meter readings found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const dashboardDateFilter = document.getElementById('dashboardDateFilter');
+        const dashboardCustomDateFilters = document.querySelectorAll('.dashboard-custom-date-filter');
+
+        function toggleDashboardCustomDates() {
+        const showCustom = dashboardDateFilter.value === 'Custom';
+
+        dashboardCustomDateFilters.forEach(item => {
+        item.style.display = showCustom ? 'flex' : 'none';
+        });
+        }
+
+        dashboardDateFilter.addEventListener('change', toggleDashboardCustomDates);
+        toggleDashboardCustomDates();
+
+        const trendLabels = @Html.Raw(Model.TrendLabelsJson);
+        const waterTrend = @Html.Raw(Model.WaterTrendJson);
+        const electricityTrend = @Html.Raw(Model.ElectricityTrendJson);
+
+        const monthLabels = @Html.Raw(Model.MonthLabelsJson);
+        const monthlyWater = @Html.Raw(Model.MonthlyWaterJson);
+        const monthlyElectricity = @Html.Raw(Model.MonthlyElectricityJson);
+
+        const distributionLabels = @Html.Raw(Model.DistributionLabelsJson);
+        const distributionData = @Html.Raw(Model.DistributionDataJson);
+
+        Chart.defaults.color = '#7c8ca5';
+        Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
+
+        function createMiniLineChart(canvasId, labels, data, color) {
+        new Chart(document.getElementById(canvasId), {
+        type: 'line',
+        data: {
+        labels: labels,
+        datasets: [{
+        data: data,
+        borderColor: color,
+        backgroundColor: color,
+        tension: 0.45,
+        pointRadius: 0,
+        borderWidth: 2
+        }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+        legend: {
+        display: false
+        }
+        },
+        scales: {
+        x: { display: false },
+        y: { display: false }
+        }
+        }
+        });
+        }
+
+        createMiniLineChart('waterMiniChart', trendLabels, waterTrend, '#28a8ff');
+        createMiniLineChart('electricityMiniChart', trendLabels, electricityTrend, '#ff9f2a');
+
+        new Chart(document.getElementById('consumptionTrendChart'), {
+        type: 'line',
+        data: {
+        labels: trendLabels,
+        datasets: [
+        {
+        label: 'Water',
+        data: waterTrend,
+        borderColor: '#28a8ff',
+        backgroundColor: '#28a8ff',
+        tension: 0.45,
+        borderWidth: 3,
+        pointRadius: 2
+        },
+        {
+        label: 'Electricity',
+        data: electricityTrend,
+        borderColor: '#ff9f2a',
+        backgroundColor: '#ff9f2a',
+        tension: 0.45,
+        borderWidth: 3,
+        pointRadius: 2
+        }
+        ]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+        legend: {
+        position: 'bottom',
+        labels: {
+        usePointStyle: true,
+        boxWidth: 8
+        }
+        }
+        },
+        scales: {
+        x: {
+        ticks: {
+        maxTicksLimit: 8
+        }
+        },
+        y: {
+        beginAtZero: true
+        }
+        }
+        }
+        });
+
+        new Chart(document.getElementById('distributionChart'), {
+        type: 'doughnut',
+        data: {
+        labels: distributionLabels,
+        datasets: [{
+        data: distributionData,
+        backgroundColor: ['#28a8ff', '#ff9f2a'],
+        borderWidth: 0
+        }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+        legend: {
+        position: 'right',
+        labels: {
+        usePointStyle: true,
+        boxWidth: 8
+        }
+        }
+        }
+        }
+        });
+
+        new Chart(document.getElementById('monthlyComparisonChart'), {
+        type: 'bar',
+        data: {
+        labels: monthLabels,
+        datasets: [
+        {
+        label: 'Water',
+        data: monthlyWater,
+        backgroundColor: '#28a8ff',
+        borderRadius: 4
+        },
+        {
+        label: 'Electricity',
+        data: monthlyElectricity,
+        backgroundColor: '#ff9f2a',
+        borderRadius: 4
+        }
+        ]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+        legend: {
+        position: 'bottom',
+        labels: {
+        usePointStyle: true,
+        boxWidth: 8
+        }
+        }
+        },
+        scales: {
+        y: {
+        beginAtZero: true
+        }
+        }
+        }
+        });
+    </script>
 }

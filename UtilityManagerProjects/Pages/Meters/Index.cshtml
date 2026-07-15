@@ -1,73 +1,141 @@
 ﻿@page
 @model UtilityManagerProjects.Pages.Meters.IndexModel
+
 @{
+    ViewData["Title"] = "Meters";
 }
-<div class="dashboard-container">
-<h3>Meters</h3>
-<p>Manage and monitor all  utility meters</p>
-<a class="btn btn-primary">Create New</a>
-<div class="row g-4 mb-4">
 
-@foreach (var kpi in Model.MeterTypeKpis)
-{
-    <div class="col-md-4">
-        <div class="kpi-card">
+<div class="page-shell">
 
-            <div class="d-flex justify-content-between align-items-start">
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Meters</h1>
+            <p>Manage water and electricity meters across locations.</p>
+        </div>
 
-                <div>
-                    <div class="kpi-title">
-                        @kpi.MeterType
-                    </div>
+        <div class="page-actions">
+            <a class="utility-btn-secondary" href="#">
+                <i class="bi bi-download"></i>
+                Export
+            </a>
 
-                    <div class="kpi-value">
-                        @kpi.Current7Days
-                    </div>
-                </div>
+            <a class="utility-btn-primary" asp-page="./Create">
+                <i class="bi bi-plus-lg"></i>
+                Add Meter
+            </a>
+        </div>
+    </div>
 
-                <div class="kpi-icon">
-                    <i class="bi bi-speedometer2"></i>
-                </div>
+    <section class="stats-grid stats-grid-3">
 
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-speedometer2"></i>
+            </div>
+            <div class="stat-content">
+                <p>Total Meters</p>
+                <h2>@Model.TotalCount.ToString("N0")</h2>
+                <span>registered meters</span>
             </div>
         </div>
-   </div>
 
-}
-</div>
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-droplet-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Water Meters</p>
+                <h2>@Model.WaterCount.ToString("N0")</h2>
+                <span>@Model.WaterPercent% of all meters</span>
+            </div>
+        </div>
 
-<div class="table-container">
-    <h2>All Meters</h2>
-<div class="table-card">
-<table class="table table-hover mb-0">
-    <thead class="theader-dark">
-        <tr>
-            <th>Meter Name </th>
-            <th>Meter Type</th>
-            <th>Unit</th>
-            <th>Area</th>
-            <th>Active</th>
-        </tr>
-    </thead>
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div class="stat-content">
+                <p>Electricity Meters</p>
+                <h2>@Model.ElectricityCount.ToString("N0")</h2>
+                <span>@Model.ElectricityPercent% of all meters</span>
+            </div>
+        </div>
 
-    <tbody>
-            @foreach(var item in Model.MeterList)
-            {
-                <tr>
-                    <td>@item.MeterName</td>
+    </section>
 
-                        <td>
-                            <span class="meter-tag @item.MeterType">
-                                @item.MeterType
-                            </span>
-                        </td>
-                    <td>@item.Unit</td>
-                    <td>@item.AreaName..</td>
-                    <td>@item.IsActive</td>
-                </tr>
-            }
-    </tbody>
-</table>
-</div>
-</div>
+    <section class="content-card">
+
+        <div class="content-card-header">
+            <div>
+                <h3>All Meters</h3>
+                <p>Water and electricity meter register.</p>
+            </div>
+
+            <div class="toolbar">
+                <input class="search-box" type="search" placeholder="Search meters..." />
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Meter ID</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.MeterRows.Any())
+                    {
+                        @foreach (var meter in Model.MeterRows)
+                        {
+                            var pillClass = $"reading-{meter.MeterType.ToLower()}";
+
+                            <tr>
+                                <td>@meter.Reference</td>
+                                <td>@meter.MeterId</td>
+                                <td>
+                                    <span class="reading-pill @pillClass">
+                                        @meter.MeterType
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="reading-pill reading-waste">
+                                        @meter.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a class="icon-action" href="#">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a class="icon-action" href="#">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a class="icon-action" href="#">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                No meters have been added yet.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </section>
+
 </div>

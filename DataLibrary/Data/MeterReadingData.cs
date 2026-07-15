@@ -92,14 +92,19 @@ namespace DataLibrary.Data
                 
         }
 
-        public async Task<MeterReading?> GetLatestReadingByMeterId(int id)
+        public async Task<MeterReading?> GetLatestReadingByMeterId(int meterId)
         {
-            var records = await dataAcces.LoadData<
-                MeterReading, dynamic>("dbo.spMeterReading_GetLatestByMeterId",
+            var p = new DynamicParameters();
+            p.Add("@Id", meterId, DbType.Int32);
+        
+            var records = await dataAcces.LoadData<MeterReading, dynamic>(
+                "dbo.spMeterReading_GetLatestByMeterId",
                 new
                 {
-                    Id = id
-                }, connectionString.SqlConnectionName);
+                    Id = meterId
+                },
+                connectionString.SqlConnectionName);
+
             return records.FirstOrDefault();
         }
 
@@ -108,6 +113,28 @@ namespace DataLibrary.Data
             return await dataAcces.LoadData<MeterReading, dynamic>(
                 "dbo.spMeterReading_GetLatestAll",
                 new { },
+                connectionString.SqlConnectionName);
+        }
+
+        public async Task<IEnumerable<MeterReading>> GetMeterReadingsByMeterId(int meterId)
+        {
+            return await dataAcces.LoadData<MeterReading, dynamic>(
+                "dbo.spMeterReadings_GetByMeterId",
+                new
+                {
+                    MeterId = meterId
+                },
+                connectionString.SqlConnectionName);
+        }
+        public async Task<IEnumerable<MeterReading>> GetMeterReadingsByDateRange(DateTime startDate, DateTime endDate)
+        {
+            return await dataAcces.LoadData<MeterReading, dynamic>(
+                "dbo.spMeterReadings_GetByDateRange",
+                new
+                {
+                    StartDate = startDate,
+                    EndDate = endDate
+                },
                 connectionString.SqlConnectionName);
         }
 

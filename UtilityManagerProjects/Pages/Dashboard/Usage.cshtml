@@ -1,0 +1,57 @@
+﻿@page
+@model UtilityManagerProjects.Pages.Usage.IndexModel
+
+@{
+    ViewData["Title"] = "Usage";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Usage</h1>
+            <p>View utility usage totals across water, electricity, and waste.</p>
+        </div>
+    </div>
+
+    <section class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h3>Usage Summary</h3>
+                <p>Total, weekly, and monthly usage by category.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Total Usage</th>
+                        <th>Current 7 Days</th>
+                        <th>Current 30 Days</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var row in Model.UsageRows)
+                    {
+                        var pillClass = $"reading-{row.Category.ToLower()}";
+
+                        <tr>
+                            <td>
+                                <span class="reading-pill @pillClass">
+                                    @row.Category
+                                </span>
+                            </td>
+                            <td>@row.Total.ToString("N0") @row.Unit</td>
+                            <td>@row.Current7Days.ToString("N0") @row.Unit</td>
+                            <td>@row.Current30Days.ToString("N0") @row.Unit</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>

@@ -17,6 +17,9 @@ BEGIN
 		   [a].[AreaName],
 		   [s].[StationName],
 		   [d].[DepartmentName],
+		   
+
+		   [e].Email AS EmployeeEmail,
 
 		   [e].Id AS EmployeeId
 

@@ -26,7 +26,7 @@ BEGIN
 	(
 	WasteTypeId,
 	CapturedBy,
-	WasteReading,
+	WasteAmount,
 	ReadingDate,
 	Notes
 	)

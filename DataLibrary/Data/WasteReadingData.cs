@@ -28,7 +28,7 @@ namespace DataLibrary.Data
             DynamicParameters dp = new DynamicParameters();
 
             dp.Add("WasteTypeId", wasteDataReading.WasteTypeId);
-            dp.Add("CreatedBy", wasteDataReading.CreatedBy);
+            dp.Add("CreatedBy", wasteDataReading.ReadingDate);
             dp.Add("WasteAmount", wasteDataReading.WasteAmount);
             dp.Add("RecordedAt", wasteDataReading.CreatedAt);
             dp.Add("Notes", wasteDataReading.Notes);
@@ -61,9 +61,19 @@ namespace DataLibrary.Data
         public async Task<IEnumerable<WasteReading>> GetAllWasteReadings()
         {
             var records = await dataAccess.LoadData<WasteReading, dynamic>(
-                "dbo.spWasteReadings_GetAll",
+                "dbo.spWasteReadings_All",
                 new { },
                 connectionString.SqlConnectionName);
+            return records;
+        }
+
+        public  async Task<IEnumerable<WasteReadingDisplay>> GetWasteReadingDisplay()
+        {
+            var records= await dataAccess.LoadData<WasteReadingDisplay, dynamic>(
+                "dbo.spWasteReadings_All",
+                new { },
+                connectionString.SqlConnectionName);
+
             return records;
         }
 

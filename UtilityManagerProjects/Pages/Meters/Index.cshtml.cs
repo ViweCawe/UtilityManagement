@@ -1,7 +1,5 @@
 using DataLibrary.Data;
 using DataLibrary.Models;
-using DataLibrary.Db;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace UtilityManagerProjects.Pages.Meters
@@ -15,38 +13,69 @@ namespace UtilityManagerProjects.Pages.Meters
             this.meterData = meterData;
         }
 
-        public int waterCount { get; set; }
-        public int electricityCount { get; set; }
-        public int wasteCount {  get; set; }
+        public int WaterCount { get; set; }
+        public int ElectricityCount { get; set; }
+        public int TotalCount { get; set; }
 
-        public int totalCount { get; set; }
-        public Meter Meters { get; set; }
-        public IEnumerable<Meter> MeterList { get; set; } 
-        public List<MeterTypeKpi> MeterTypeKpis { get; set; } = new List<MeterTypeKpi>();
+        public double WaterPercent { get; set; }
+        public double ElectricityPercent { get; set; }
+
+        public IEnumerable<Meter> MeterList { get; set; } = Enumerable.Empty<Meter>();
+        public List<MeterTypeKpi> MeterTypeKpis { get; set; } = new();
+        public List<MeterRow> MeterRows { get; set; } = new();
 
         public async Task OnGet()
         {
-            ViewData["HideNavbar"] = true;
-            MeterList =await meterData.GetMeters();
+            var meters = (await meterData.GetMeters()).ToList();
 
-            totalCount = MeterList.Count();
-            waterCount = MeterList.Count( x => x.MeterType == MeterType.Water);
-            electricityCount = MeterList.Count(x => x.MeterType == MeterType.Electricity);
+            MeterList = meters;
 
+            TotalCount = meters.Count;
+            WaterCount = meters.Count(x => x.MeterType == MeterType.Water);
+            ElectricityCount = meters.Count(x => x.MeterType == MeterType.Electricity);
+
+            WaterPercent = CalculatePercent(WaterCount, TotalCount);
+            ElectricityPercent = CalculatePercent(ElectricityCount, TotalCount);
 
             foreach (var type in Enum.GetValues<MeterType>())
             {
-                var meterType = MeterList.Count(x => x.MeterType == type);
-
+                var meterTypeCount = meters.Count(x => x.MeterType == type);
 
                 MeterTypeKpis.Add(new MeterTypeKpi
                 {
                     MeterType = type,
-                    Current7Days = meterType
+                    Current7Days = meterTypeCount,
+                    Current30Days = meterTypeCount
                 });
-
             }
+
+            MeterRows = meters
+                .Select((x, index) => new MeterRow
+                {
+                    Reference = $"MTR-{index + 1:0000}",
+                    MeterId = x.Id.ToString(),
+                    MeterType = x.MeterType.ToString(),
+                    Status = "Active"
+                })
+                .ToList();
         }
 
+        private static double CalculatePercent(int value, int total)
+        {
+            if (total == 0)
+            {
+                return 0;
+            }
+
+            return Math.Round((value * 100.0) / total, 1);
+        }
+
+        public class MeterRow
+        {
+            public string Reference { get; set; } = string.Empty;
+            public string MeterId { get; set; } = string.Empty;
+            public string MeterType { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+        }
     }
 }

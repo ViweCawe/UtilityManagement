@@ -1,0 +1,107 @@
+﻿@page
+@model UtilityManagerProjects.Pages.DailyPeopleCounts.CreateModel
+
+@{
+    ViewData["Title"] = "Capture People Count";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Capture People Count</h1>
+            <p>Capture daily visitors and employees for per-person utility calculations.</p>
+        </div>
+
+        <div class="page-actions">
+            <a class="utility-btn-secondary" asp-page="./List">
+                <i class="bi bi-list"></i>
+                View Counts
+            </a>
+        </div>
+    </div>
+
+    <section class="grid-two">
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Daily Count</h3>
+                    <p>This data is used for environmental and per-person dashboard calculations.</p>
+                </div>
+            </div>
+
+            <form method="post" class="utility-form">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group">
+                    <label asp-for="Input.Date"></label>
+                    <input asp-for="Input.Date" type="date" class="form-control utility-input" />
+                    <span asp-validation-for="Input.Date" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.Visitors"></label>
+                    <input asp-for="Input.Visitors" class="form-control utility-input" />
+                    <span asp-validation-for="Input.Visitors" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Input.Employees"></label>
+                    <input asp-for="Input.Employees" class="form-control utility-input" />
+                    <span asp-validation-for="Input.Employees" class="text-danger"></span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="utility-btn-primary">
+                        <i class="bi bi-save"></i>
+                        Save Count
+                    </button>
+
+                    <a asp-page="./List" class="utility-btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>How this is used</h3>
+                    <p>Example utility per-person calculation.</p>
+                </div>
+            </div>
+
+            <div class="detail-list">
+                <div class="detail-row">
+                    <span>Example</span>
+                    <strong>1,000 L water / 10 people = 100 L/person</strong>
+                </div>
+
+                <div class="detail-row">
+                    <span>Water Target</span>
+                    <strong>5 L/person</strong>
+                </div>
+
+                <div class="detail-row">
+                    <span>Electricity Target</span>
+                    <strong>1 kWh/person</strong>
+                </div>
+
+                <div class="detail-row">
+                    <span>Recycling Target</span>
+                    <strong>80%</strong>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
