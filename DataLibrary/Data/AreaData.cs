@@ -22,7 +22,7 @@ namespace DataLibrary.Data
 
         public Task<List<Models.Area>> GetAreas()
         {
-            return dataAccess.LoadData<Area, dynamic>("dbo.spArea_All",
+            return dataAccess.LoadData<Area, dynamic>("dbo.spAreas_All",
                 new { }, connectionString.SqlConnectionName);
 
         }
@@ -51,14 +51,13 @@ namespace DataLibrary.Data
               
         }
 
-        public Task<int> UpdateArea(int areaId , string areaName, string discription, int stationId, int depId,int updatedBy)
+        public Task<int> UpdateArea(int areaId , string areaName, int stationId, int depId,int updatedBy)
         {
             return dataAccess.SaveData("dbo.spArea_Update",
                 new
                 {
                     Id = areaId,
                     AreaName =areaName,
-                    AreadDiscription = discription,
                     StationId = stationId,
                     DepartmentId = depId,
                     UpdatedAt = DateTime.Now,

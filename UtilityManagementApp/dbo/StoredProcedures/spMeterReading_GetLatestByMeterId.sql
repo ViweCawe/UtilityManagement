@@ -1,23 +1,17 @@
-﻿CREATE PROCEDURE [dbo].[spMeterReading_GetLatestByMeterId]
-@Id INT 
+﻿CREATE  PROCEDURE [dbo].[spMeterReading_GetLatestByMeterId]
+(
+    @MeterId INT
+)
 AS
 BEGIN
-	SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-SELECT mr.*
-FROM MeterReadings mr
-INNER JOIN
-(
-    SELECT
-        MeterId,
-        MAX(ReadingDate) AS LatestDate
-    FROM MeterReadings
-    GROUP BY MeterId
-) latest
-
-ON mr.MeterId = latest.MeterId
-AND mr.ReadingDate = latest.LatestDate
-
-ORDER BY mr.ReadingDate;
-
-END
+    SELECT TOP (1)
+        mr.*
+    FROM dbo.MeterReadings AS mr
+    WHERE mr.MeterId = @MeterId
+    ORDER BY
+        mr.ReadingDate DESC,
+        mr.Id DESC;
+END;
+GO

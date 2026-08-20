@@ -1,7 +1,7 @@
-﻿CREATE PROCEDURE [dbo].[spMeter_Insert]
+﻿CREATE PROCEDURE [dbo].[spMeters_Insert]
 	(
 	@MeterName NVARCHAR(100),
-	@MeterType NVARCHAR(50),
+	@MeterType INT,
 	@Unit NVARCHAR(20),
 	@AreaId INT,
 	@DepartmentId INT,

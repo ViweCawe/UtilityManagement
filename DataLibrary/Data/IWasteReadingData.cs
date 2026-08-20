@@ -1,16 +1,25 @@
 ﻿using DataLibrary.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DataLibrary.Data
 {
     public interface IWasteReadingData
     {
-        Task<int> CreateWasteReading(WasteReading wasteReading);
-        Task<WasteReading?> GetWasteReadingById(int id);
-        Task<IEnumerable<WasteReading>> GetAllWasteReadings();
+        Task<int> CreateWasteReading(
+            WasteReading wasteReading);
 
-        Task<IEnumerable<WasteReadingDisplay>> GetWasteReadingDisplay();
+        Task<int> UpdateWasteReadings(
+            int id,
+            decimal wasteAmount,
+            string notes,
+            int updatedByEmployeeId);
+
+        Task<WasteReading?> GetWasteReadingById(
+            int id);
+
+        Task<IEnumerable<WasteReading>>
+            GetAllWasteReadings();
+
+        Task<IEnumerable<WasteReadingDisplay>>
+            GetWasteReadingDisplay();
     }
 }

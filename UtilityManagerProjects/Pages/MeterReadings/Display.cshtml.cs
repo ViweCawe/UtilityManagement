@@ -1,24 +1,30 @@
 using DataLibrary.Data;
 using DataLibrary.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using UtilityManagerProjects.Models;
 
 namespace UtilityManagerProjects.Pages.MeterReadings
 {
     public class DisplayModel : PageModel
     {
         private readonly IMeterReadingData meterReadingData;
+        private readonly UserManager<IdentityUser> userManager;
+        private readonly IEmployeeData employeeData;
 
-        public DisplayModel(IMeterReadingData meterReadingData)
+        public DisplayModel(IMeterReadingData meterReadingData, UserManager<IdentityUser> userManager, IEmployeeData employeeData)
         {
             this.meterReadingData = meterReadingData;
+            this.userManager = userManager;
+            this.employeeData = employeeData;
         }
 
         public MeterReading? Reading { get; set; }
 
         [BindProperty]
-        public ReadingUpdateInput ReadingUpdate { get; set; } = new();
+        public MeterReadingUpdate ReadingUpdate { get; set; } = new();
 
         public async Task<IActionResult> OnGet(int id)
         {
@@ -29,7 +35,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                 return RedirectToPage("./List");
             }
 
-            ReadingUpdate = new ReadingUpdateInput
+            ReadingUpdate = new MeterReadingUpdate
             {
                 Id = Reading.Id,
                 CurrentReadingUpdate = Reading.CurrentReading,
@@ -43,38 +49,47 @@ namespace UtilityManagerProjects.Pages.MeterReadings
         {
             if (!ModelState.IsValid)
             {
-                Reading = await meterReadingData.GetMeterReadingsById(ReadingUpdate.Id);
+                Reading = await meterReadingData
+                    .GetMeterReadingsById(ReadingUpdate.Id);
+
+                return Page();
+            }
+
+            var identityUserId =
+                userManager.GetUserId(User);
+
+            if (string.IsNullOrWhiteSpace(identityUserId))
+            {
+                return Challenge();
+            }
+
+            var employee =
+                await employeeData
+                    .GetEmployeeByUserId(identityUserId);
+
+            if (employee == null)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "No employee record is linked to the signed-in user.");
+
+                Reading = await meterReadingData
+                    .GetMeterReadingsById(ReadingUpdate.Id);
+
                 return Page();
             }
 
             await meterReadingData.UpdateMeterReadings(
                 ReadingUpdate.Id,
                 ReadingUpdate.CurrentReadingUpdate,
-                ReadingUpdate.Notes ?? string.Empty);
+                ReadingUpdate.Notes ?? string.Empty,
+                employee.Id);
 
-            return RedirectToPage("./Display", new { id = ReadingUpdate.Id });
+            return RedirectToPage(
+                "./Display",
+                new { id = ReadingUpdate.Id });
         }
 
-        public string GetMeterUnit()
-        {
-            if (Reading == null)
-            {
-                return string.Empty;
-            }
 
-            return Reading.MeterType == MeterType.Water ? "L" : "kWh";
-        }
-
-        public class ReadingUpdateInput
-        {
-            public int Id { get; set; }
-
-            [Required]
-            [Display(Name = "Current Reading")]
-            public decimal CurrentReadingUpdate { get; set; }
-
-            [Display(Name = "Notes")]
-            public string? Notes { get; set; }
-        }
     }
 }

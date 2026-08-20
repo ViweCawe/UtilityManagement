@@ -9,7 +9,7 @@ namespace DataLibrary.Data
     {
         Task<MeterReading?> GetMeterReadingsById(int  id); 
         Task<int> CreateMeterReadings(MeterReading meterReading);
-        Task<int> UpdateMeterReadings(int id ,decimal readingUpdate ,string notes);
+        Task<int> UpdateMeterReadings(int id ,int readingUpdate ,string notes,int updatedByEmployeeId);
         Task<int> DeleteMeterReadings(int id);
         Task<IEnumerable<MeterReading>> GetAllMeterReading();
         Task<MeterReading?> GetLatestReadingByMeterId(int id);

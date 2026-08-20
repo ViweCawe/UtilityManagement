@@ -5,12 +5,135 @@
     ViewData["Title"] = "Environmental Dashboard";
 }
 
+<style>
+    .management-chart-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 1.25rem;
+        margin-top: 1.25rem;
+    }
+
+    .management-chart-grid > .figma-card {
+        min-width: 0;
+    }
+
+    .meter-trend-card { grid-column: span 8; }
+    .waste-trend-card { grid-column: span 4; }
+    .alerts-card { grid-column: span 7; }
+    .distribution-card { grid-column: span 5; }
+
+    .meter-chart-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .chart-panel {
+        min-width: 0;
+        padding: .9rem;
+        border: 1px solid rgba(148, 163, 184, .14);
+        border-radius: .85rem;
+        background: rgba(15, 23, 42, .22);
+    }
+
+    .chart-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        margin-bottom: .5rem;
+    }
+
+    .chart-panel-header strong { font-size: .9rem; }
+    .chart-panel-header span { color: #8ea2bd; font-size: .75rem; }
+
+    .trend-chart-shell { height: 270px; }
+    .mini-trend-chart-shell { height: 230px; }
+
+    .dashboard-data-section {
+        display: grid;
+        gap: 1.25rem;
+        margin-top: 1.25rem;
+    }
+
+    .table-card { overflow: hidden; }
+
+    .dashboard-table-wrap {
+        overflow-x: auto;
+        max-height: 430px;
+    }
+
+    .management-table {
+        width: 100%;
+        border-collapse: collapse;
+        white-space: nowrap;
+    }
+
+    .management-table th,
+    .management-table td {
+        padding: .85rem 1rem;
+        border-bottom: 1px solid rgba(148, 163, 184, .12);
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    .management-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        color: #8ea2bd;
+        background: #111c2f;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .management-table td { font-size: .87rem; }
+    .management-table .numeric { text-align: right; }
+    .management-table tbody tr:hover { background: rgba(148, 163, 184, .05); }
+
+    .metric-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: .25rem .55rem;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 700;
+    }
+
+    .metric-badge-water { color: #38bdf8; background: rgba(56, 189, 248, .12); }
+    .metric-badge-electricity { color: #fbbf24; background: rgba(251, 191, 36, .12); }
+    .metric-badge-recycling { color: #4ade80; background: rgba(74, 222, 128, .12); }
+    .metric-badge-landfill { color: #fb7185; background: rgba(251, 113, 133, .12); }
+    .metric-badge-other { color: #cbd5e1; background: rgba(203, 213, 225, .12); }
+
+    .table-empty-state {
+        padding: 2rem;
+        color: #8ea2bd;
+        text-align: center;
+    }
+
+    @@media (max-width: 1100px) {
+        .meter-trend-card,
+        .waste-trend-card,
+        .alerts-card,
+        .distribution-card { grid-column: span 12; }
+    }
+
+    @@media (max-width: 720px) {
+        .meter-chart-grid { grid-template-columns: 1fr; }
+        .trend-chart-shell,
+        .mini-trend-chart-shell { height: 235px; }
+    }
+</style>
+
 <div class="page-shell environmental-page">
 
     <div class="page-header-row">
         <div class="page-title">
             <h1>Environmental Dashboard</h1>
-            <p>Water, electricity, waste, recycling, carbon estimate, and per-person performance. Showing @Model.DateRangeLabel.</p>
+            <p>Management view of resource consumption, waste diversion, carbon estimate, and per-person performance. Showing @Model.DateRangeLabel.</p>
         </div>
     </div>
 
@@ -158,30 +281,52 @@
 
     </section>
 
-    <section class="dashboard-grid">
+    <section class="management-chart-grid">
 
-        <div class="figma-card trend-card">
+        <div class="figma-card meter-trend-card">
             <div class="card-header">
-                <h3>Environmental Trend</h3>
+                <h3>Meter Reading Trends</h3>
                 <span>@Model.DateRangeLabel</span>
             </div>
 
-            <canvas id="environmentTrendChart"></canvas>
+            <div class="meter-chart-grid">
+                <div class="chart-panel">
+                    <div class="chart-panel-header">
+                        <strong>Water consumption</strong>
+                        <span>Litres (L)</span>
+                    </div>
+                    <div class="mini-trend-chart-shell">
+                        <canvas id="waterTrendChart" aria-label="Water consumption trend" role="img"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-panel">
+                    <div class="chart-panel-header">
+                        <strong>Electricity consumption</strong>
+                        <span>Kilowatt-hours (kWh)</span>
+                    </div>
+                    <div class="mini-trend-chart-shell">
+                        <canvas id="electricityTrendChart" aria-label="Electricity consumption trend" role="img"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="figma-card distribution-card">
+        <div class="figma-card waste-trend-card">
             <div class="card-header">
-                <h3>Waste Split</h3>
-                <span>Recycling vs Landfill vs Other</span>
+                <h3>Waste Trend</h3>
+                <span>Stacked by destination · kg</span>
             </div>
 
-            <canvas id="wasteSplitChart"></canvas>
+            <div class="trend-chart-shell">
+                <canvas id="wasteTrendChart" aria-label="Waste trend by destination" role="img"></canvas>
+            </div>
         </div>
 
         <div class="figma-card alerts-card">
             <div class="card-header">
-                <h3>Environmental Alerts</h3>
-                <span>Targets from environmental report</span>
+                <h3>Management Attention</h3>
+                <span>Performance against current targets</span>
             </div>
 
             @foreach (var alert in Model.Alerts)
@@ -196,45 +341,105 @@
             }
         </div>
 
-        <div class="figma-card">
+        <div class="figma-card distribution-card">
             <div class="card-header">
-                <h3>Manual Metrics Pending</h3>
-                <span>Future database tables</span>
+                <h3>Waste Destination Mix</h3>
+                <span>Selected period</span>
             </div>
 
-            <div class="kpi-list">
-                <div class="kpi-list-row">
-                    <div>
-                        <strong>LP Gas</strong>
-                        <p>Add table later for cooking/heating gas.</p>
-                    </div>
-                    <div>
-                        <span>Pending</span>
-                    </div>
-                </div>
-
-                <div class="kpi-list-row">
-                    <div>
-                        <strong>Diesel</strong>
-                        <p>Add table later for generator/vehicle diesel.</p>
-                    </div>
-                    <div>
-                        <span>Pending</span>
-                    </div>
-                </div>
-
-                <div class="kpi-list-row">
-                    <div>
-                        <strong>Weather</strong>
-                        <p>Add table later for rainfall, wind, and temperatures.</p>
-                    </div>
-                    <div>
-                        <span>Pending</span>
-                    </div>
-                </div>
+            <div class="trend-chart-shell">
+                <canvas id="wasteSplitChart" aria-label="Waste destination mix" role="img"></canvas>
             </div>
         </div>
 
+    </section>
+
+    <section class="dashboard-data-section">
+        <div class="figma-card table-card">
+            <div class="card-header">
+                <h3>Meter Readings</h3>
+                <span>@Model.MeterReadingRows.Count records · Water and electricity</span>
+            </div>
+
+            @if (Model.MeterReadingRows.Any())
+            {
+                <div class="dashboard-table-wrap">
+                    <table class="management-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Meter</th>
+                                <th class="numeric">Consumption</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var reading in Model.MeterReadingRows)
+                            {
+                                <tr>
+                                    <td>@reading.ReadingDate.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <span class="metric-badge metric-badge-@reading.MeterType.ToLowerInvariant()">
+                                            @reading.MeterType
+                                        </span>
+                                    </td>
+                                    <td class="numeric"><strong>@reading.Usage.ToString("N2")</strong> @reading.Unit</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="table-empty-state">No water or electricity meter readings were recorded in this period.</div>
+            }
+        </div>
+
+        <div class="figma-card table-card">
+            <div class="card-header">
+                <h3>Waste Readings</h3>
+                <span>@Model.WasteReadingRows.Count records · @Model.WasteTotal.ToString("N0") kg total</span>
+            </div>
+
+            @if (Model.WasteReadingRows.Any())
+            {
+                <div class="dashboard-table-wrap">
+                    <table class="management-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Type</th>
+                                <th>Material</th>
+                                <th>Destination</th>
+                                <th class="numeric">Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var reading in Model.WasteReadingRows)
+                            {
+                                <tr>
+                                    <td>@reading.ReadingDate.ToString("dd MMM yyyy")</td>
+                                    <td>@reading.Category</td>
+                                    <td>@reading.WasteType</td>
+                                    <td>@reading.Material</td>
+                                    <td>
+                                        <span class="metric-badge metric-badge-@reading.Classification.ToLowerInvariant()">
+                                            @reading.Classification
+                                        </span>
+                                    </td>
+                                    <td class="numeric"><strong>@reading.WeightKg.ToString("N2")</strong> kg</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="table-empty-state">No waste readings were recorded in this period.</div>
+            }
+        </div>
     </section>
 
 </div>
@@ -260,7 +465,9 @@
         const trendLabels = @Html.Raw(Model.TrendLabelsJson);
         const waterTrend = @Html.Raw(Model.WaterTrendJson);
         const electricityTrend = @Html.Raw(Model.ElectricityTrendJson);
-        const wasteTrend = @Html.Raw(Model.WasteTrendJson);
+        const recyclingWasteTrend = @Html.Raw(Model.RecyclingWasteTrendJson);
+        const landfillWasteTrend = @Html.Raw(Model.LandfillWasteTrendJson);
+        const otherWasteTrend = @Html.Raw(Model.OtherWasteTrendJson);
 
         const wasteSplitLabels = @Html.Raw(Model.WasteSplitLabelsJson);
         const wasteSplitData = @Html.Raw(Model.WasteSplitDataJson);
@@ -268,55 +475,112 @@
         Chart.defaults.color = '#8ea2bd';
         Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
 
-        new Chart(document.getElementById('environmentTrendChart'), {
+        function createConsumptionTrend(canvasId, label, data, color, unit) {
+        return new Chart(document.getElementById(canvasId), {
         type: 'line',
+        data: {
+        labels: trendLabels,
+        datasets: [{
+        label,
+        data,
+        borderColor: color,
+        backgroundColor: `${color}1f`,
+        fill: true,
+        tension: 0.35,
+        borderWidth: 2.5,
+        pointRadius: trendLabels.length > 31 ? 0 : 2,
+        pointHoverRadius: 5
+        }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+        mode: 'index',
+        intersect: false
+        },
+        plugins: {
+        legend: { display: false },
+        tooltip: {
+        callbacks: {
+        label: context => `${label}: ${context.parsed.y.toLocaleString()} ${unit}`
+        }
+        }
+        },
+        scales: {
+        x: {
+        grid: { display: false },
+        ticks: { maxTicksLimit: 7, maxRotation: 0 }
+        },
+        y: {
+        beginAtZero: true,
+        ticks: {
+        callback: value => `${Number(value).toLocaleString()} ${unit}`
+        }
+        }
+        }
+        }
+        });
+        }
+
+        createConsumptionTrend('waterTrendChart', 'Water', waterTrend, '#28a8ff', 'L');
+        createConsumptionTrend('electricityTrendChart', 'Electricity', electricityTrend, '#ff9f2a', 'kWh');
+
+        new Chart(document.getElementById('wasteTrendChart'), {
+        type: 'bar',
         data: {
         labels: trendLabels,
         datasets: [
         {
-        label: 'Water',
-        data: waterTrend,
-        borderColor: '#28a8ff',
-        backgroundColor: '#28a8ff',
-        tension: 0.45,
-        borderWidth: 3,
-        pointRadius: 2
-        },
-        {
-        label: 'Electricity',
-        data: electricityTrend,
-        borderColor: '#ff9f2a',
-        backgroundColor: '#ff9f2a',
-        tension: 0.45,
-        borderWidth: 3,
-        pointRadius: 2
-        },
-        {
-        label: 'Waste',
-        data: wasteTrend,
-        borderColor: '#4ade80',
+        label: 'Recycling',
+        data: recyclingWasteTrend,
         backgroundColor: '#4ade80',
-        tension: 0.45,
-        borderWidth: 3,
-        pointRadius: 2
+        borderRadius: 4
+        },
+        {
+        label: 'Landfill',
+        data: landfillWasteTrend,
+        backgroundColor: '#ef4444',
+        borderRadius: 4
+        },
+        {
+        label: 'Other',
+        data: otherWasteTrend,
+        backgroundColor: '#94a3b8',
+        borderRadius: 4
         }
         ]
         },
         options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+        mode: 'index',
+        intersect: false
+        },
         plugins: {
         legend: {
         position: 'bottom',
-        labels: {
-        usePointStyle: true,
-        boxWidth: 8
+        labels: { usePointStyle: true, boxWidth: 8 }
+        },
+        tooltip: {
+        callbacks: {
+        label: context => `${context.dataset.label}: ${context.parsed.y.toLocaleString()} kg`
         }
         }
         },
         scales: {
+        x: {
+        stacked: true,
+        grid: { display: false },
+        ticks: { maxTicksLimit: 7, maxRotation: 0 }
+        },
         y: {
-        beginAtZero: true
+        stacked: true,
+        beginAtZero: true,
+        ticks: {
+        callback: value => `${Number(value).toLocaleString()} kg`
+        }
         }
         }
         }
@@ -329,7 +593,8 @@
         datasets: [{
         data: wasteSplitData,
         backgroundColor: ['#4ade80', '#ef4444', '#94a3b8'],
-        borderWidth: 0
+        borderWidth: 0,
+        hoverOffset: 6
         }]
         },
         options: {
@@ -339,9 +604,11 @@
         plugins: {
         legend: {
         position: 'right',
-        labels: {
-        usePointStyle: true,
-        boxWidth: 8
+        labels: { usePointStyle: true, boxWidth: 8 }
+        },
+        tooltip: {
+        callbacks: {
+        label: context => `${context.label}: ${context.parsed.toLocaleString()} kg`
         }
         }
         }

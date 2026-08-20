@@ -1,0 +1,83 @@
+﻿@page
+@model UtilityManagerProjects.Pages.Areas.IndexModel
+
+@{
+    ViewData["Title"] = "Areas";
+}
+
+<div class="page-shell">
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success" role="status">@successMessage</div>
+    }
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Areas</h1>
+            <p>Manage physical areas and their stations.</p>
+        </div>
+        <div class="page-actions">
+            <a class="utility-btn-primary" asp-page="./Create">
+                <i class="bi bi-plus-lg"></i>
+                Add Area
+            </a>
+        </div>
+    </div>
+
+    <section class="stats-grid stats-grid-3">
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-geo-alt-fill"></i></div>
+            <div class="stat-content">
+                <p>Total Areas</p>
+                <h2>@Model.TotalAreas</h2>
+                <span>registered areas</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-building"></i></div>
+            <div class="stat-content">
+                <p>Stations Used</p>
+                <h2>@Model.TotalStations</h2>
+                <span>stations with areas</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h3>All Areas</h3>
+                <p>Areas are physical locations. Department is assigned at meter level.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Area</th>
+                        <th>Station</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Areas.Any())
+                    {
+                        @foreach (var area in Model.Areas)
+                        {
+                            <tr>
+                                <td>@area.Id</td>
+                                <td>@area.AreaName</td>
+                                <td>@area.StationName</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="3" class="empty-state">No areas have been created yet.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

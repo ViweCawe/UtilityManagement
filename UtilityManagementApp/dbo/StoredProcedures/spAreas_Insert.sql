@@ -14,6 +14,7 @@ BEGIN
 		VALUES
 		(
 			@AreaName
+
 		);
 		SET @Id = SCOPE_IDENTITY();
 

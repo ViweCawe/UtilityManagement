@@ -1,11 +1,13 @@
 using DataLibrary.Data;
 using DataLibrary.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
 
 namespace UtilityManagerProjects.Pages.Dashboard
 {
+    [Authorize(Roles = "Admin")]
     public class DashboardModel : PageModel
     {
         private readonly IMeterReadingData readingData;
@@ -43,9 +45,25 @@ namespace UtilityManagerProjects.Pages.Dashboard
         public int WaterCurrent30Days { get; set; }
         public int ElectricityCurrent30Days { get; set; }
 
+        public int PreviousMonthWaterConsumption { get; set; }
+        public int CurrentMonthWaterConsumption { get; set; }
+        public int PreviousMonthElectricityConsumption { get; set; }
+        public int CurrentMonthElectricityConsumption { get; set; }
+        public double WaterMonthlyGrowthPercent { get; set; }
+        public double ElectricityMonthlyGrowthPercent { get; set; }
+        public string PreviousMonthLabel { get; set; } = string.Empty;
+        public string CurrentMonthLabel { get; set; } = string.Empty;
+        public string MonthComparisonLabelsJson { get; set; } = "[]";
+
         public int WaterReadingCount { get; set; }
         public int ElectricityReadingCount { get; set; }
         public int TotalMeterReadingCount { get; set; }
+
+        public int SelectedDayCount { get; set; }
+        public int CompleteCoverageDays { get; set; }
+        public double DataCoveragePercent { get; set; }
+        public double AverageDailyWater { get; set; }
+        public double AverageDailyElectricity { get; set; }
 
         public List<MeterReading> MeterReadings { get; set; } = new();
         public List<MeterReading> RecentMeterReadings { get; set; } = new();
@@ -61,12 +79,10 @@ namespace UtilityManagerProjects.Pages.Dashboard
         public string WaterTrendJson { get; set; } = "[]";
         public string ElectricityTrendJson { get; set; } = "[]";
 
-        public string MonthLabelsJson { get; set; } = "[]";
-        public string MonthlyWaterJson { get; set; } = "[]";
-        public string MonthlyElectricityJson { get; set; } = "[]";
-
-        public string DistributionLabelsJson { get; set; } = "[]";
-        public string DistributionDataJson { get; set; } = "[]";
+        public string WaterAreaLabelsJson { get; set; } = "[]";
+        public string WaterAreaDataJson { get; set; } = "[]";
+        public string ElectricityAreaLabelsJson { get; set; } = "[]";
+        public string ElectricityAreaDataJson { get; set; } = "[]";
 
         public async Task OnGet()
         {
@@ -80,7 +96,9 @@ namespace UtilityManagerProjects.Pages.Dashboard
                 .Where(x => x.MeterType == MeterType.Water || x.MeterType == MeterType.Electricity)
                 .ToList();
 
-            var last60Start = CurrentEnd.AddDays(-59);
+            // The extra days cover the full previous calendar month plus the
+            // current month-to-date, including adjacent 31-day months.
+            var last60Start = CurrentEnd.AddDays(-62);
 
             var last60Readings = (await readingData.GetMeterReadingsByDateRange(last60Start, CurrentEnd))
                 .Where(x => x.MeterType == MeterType.Water || x.MeterType == MeterType.Electricity)
@@ -101,6 +119,17 @@ namespace UtilityManagerProjects.Pages.Dashboard
             ElectricityReadingCount = currentReadings.Count(x => x.MeterType == MeterType.Electricity);
             TotalMeterReadingCount = WaterReadingCount + ElectricityReadingCount;
 
+            SelectedDayCount = Math.Max(1, (CurrentEnd.Date - CurrentStart.Date).Days + 1);
+            CompleteCoverageDays = currentReadings
+                .GroupBy(x => x.ReadingDate.Date)
+                .Count(day =>
+                    day.Any(x => x.MeterType == MeterType.Water) &&
+                    day.Any(x => x.MeterType == MeterType.Electricity));
+
+            DataCoveragePercent = Math.Round(CompleteCoverageDays * 100.0 / SelectedDayCount, 1);
+            AverageDailyWater = Math.Round(WaterConsumption * 1.0 / SelectedDayCount, 1);
+            AverageDailyElectricity = Math.Round(ElectricityConsumption * 1.0 / SelectedDayCount, 1);
+
             MeterTypeKpis = new List<MeterTypeKpi>
             {
                 BuildMeterTypeKpi(last60Readings, MeterType.Water, CurrentEnd),
@@ -110,9 +139,11 @@ namespace UtilityManagerProjects.Pages.Dashboard
             WaterCurrent30Days = MeterTypeKpis.First(x => x.MeterType == MeterType.Water).Current30Days;
             ElectricityCurrent30Days = MeterTypeKpis.First(x => x.MeterType == MeterType.Electricity).Current30Days;
 
+            BuildCalendarMonthComparison(last60Readings);
+
             RecentMeterReadings = currentReadings
                 .OrderByDescending(x => x.ReadingDate)
-                .Take(5)
+                .Take(8)
                 .ToList();
 
             TopWaterAreas = BuildTopAreas(currentReadings, MeterType.Water);
@@ -120,8 +151,7 @@ namespace UtilityManagerProjects.Pages.Dashboard
 
             BuildAlerts();
             BuildTrendChartData(currentReadings);
-            BuildMonthlyChartData(last60Readings, CurrentEnd);
-            BuildDistributionChartData();
+            BuildAreaChartData();
         }
 
         private void ResolveDateRange()
@@ -213,6 +243,56 @@ namespace UtilityManagerProjects.Pages.Dashboard
             };
         }
 
+        private void BuildCalendarMonthComparison(List<MeterReading> meterReadings)
+        {
+            var currentMonthStart = new DateTime(CurrentEnd.Year, CurrentEnd.Month, 1);
+            var previousMonthStart = currentMonthStart.AddMonths(-1);
+            var previousMonthEnd = currentMonthStart.AddDays(-1);
+
+            PreviousMonthLabel = previousMonthStart.ToString("MMM yyyy");
+            CurrentMonthLabel = CurrentEnd.Day == DateTime.DaysInMonth(CurrentEnd.Year, CurrentEnd.Month)
+                ? CurrentEnd.ToString("MMM yyyy")
+                : $"{CurrentEnd:MMM yyyy} (to {CurrentEnd:dd MMM})";
+
+            PreviousMonthWaterConsumption = GetMeterTotal(
+                meterReadings,
+                MeterType.Water,
+                previousMonthStart,
+                previousMonthEnd);
+
+            CurrentMonthWaterConsumption = GetMeterTotal(
+                meterReadings,
+                MeterType.Water,
+                currentMonthStart,
+                CurrentEnd);
+
+            PreviousMonthElectricityConsumption = GetMeterTotal(
+                meterReadings,
+                MeterType.Electricity,
+                previousMonthStart,
+                previousMonthEnd);
+
+            CurrentMonthElectricityConsumption = GetMeterTotal(
+                meterReadings,
+                MeterType.Electricity,
+                currentMonthStart,
+                CurrentEnd);
+
+            WaterMonthlyGrowthPercent = CalculateGrowth(
+                CurrentMonthWaterConsumption,
+                PreviousMonthWaterConsumption);
+
+            ElectricityMonthlyGrowthPercent = CalculateGrowth(
+                CurrentMonthElectricityConsumption,
+                PreviousMonthElectricityConsumption);
+
+            MonthComparisonLabelsJson = JsonSerializer.Serialize(new[]
+            {
+                PreviousMonthLabel,
+                CurrentMonthLabel
+            });
+        }
+
         private void BuildAlerts()
         {
             AddIncreaseAlert(
@@ -228,6 +308,16 @@ namespace UtilityManagerProjects.Pages.Dashboard
                 WaterConsumption,
                 WaterWeeklyGrowthPercent,
                 "L");
+
+            if (DataCoveragePercent < 90)
+            {
+                Alerts.Add(new DashboardAlert
+                {
+                    Title = "Meter data coverage needs attention",
+                    Message = $"Both utilities were recorded on {CompleteCoverageDays:N0} of {SelectedDayCount:N0} days ({DataCoveragePercent:N1}%).",
+                    Type = "warning"
+                });
+            }
 
             if (!Alerts.Any())
             {
@@ -341,34 +431,6 @@ namespace UtilityManagerProjects.Pages.Dashboard
             return buckets;
         }
 
-        private void BuildMonthlyChartData(List<MeterReading> meterReadings, DateTime referenceDate)
-        {
-            var currentMonth = new DateTime(referenceDate.Year, referenceDate.Month, 1);
-            var previousMonth = currentMonth.AddMonths(-1);
-
-            var months = new List<DateTime>
-            {
-                previousMonth,
-                currentMonth
-            };
-
-            MonthLabelsJson = JsonSerializer.Serialize(months.Select(x => x.ToString("MMM yyyy")));
-
-            MonthlyWaterJson = JsonSerializer.Serialize(months.Select(month =>
-                meterReadings
-                    .Where(x => x.MeterType == MeterType.Water &&
-                                x.ReadingDate.Year == month.Year &&
-                                x.ReadingDate.Month == month.Month)
-                    .Sum(x => x.Usage)));
-
-            MonthlyElectricityJson = JsonSerializer.Serialize(months.Select(month =>
-                meterReadings
-                    .Where(x => x.MeterType == MeterType.Electricity &&
-                                x.ReadingDate.Year == month.Year &&
-                                x.ReadingDate.Month == month.Month)
-                    .Sum(x => x.Usage)));
-        }
-
         private static List<AreaConsumptionRow> BuildTopAreas(List<MeterReading> meterReadings, MeterType meterType)
         {
             var rows = meterReadings
@@ -380,7 +442,6 @@ namespace UtilityManagerProjects.Pages.Dashboard
                     TotalUsage = group.Sum(x => x.Usage)
                 })
                 .OrderByDescending(x => x.TotalUsage)
-                .Take(3)
                 .ToList();
 
             var max = rows.Any() ? rows.Max(x => x.TotalUsage) : 0;
@@ -395,19 +456,13 @@ namespace UtilityManagerProjects.Pages.Dashboard
             return rows;
         }
 
-        private void BuildDistributionChartData()
+        private void BuildAreaChartData()
         {
-            DistributionLabelsJson = JsonSerializer.Serialize(new[]
-            {
-                "Water",
-                "Electricity"
-            });
+            WaterAreaLabelsJson = JsonSerializer.Serialize(TopWaterAreas.Select(x => x.AreaName));
+            WaterAreaDataJson = JsonSerializer.Serialize(TopWaterAreas.Select(x => x.TotalUsage));
 
-            DistributionDataJson = JsonSerializer.Serialize(new decimal[]
-            {
-                WaterConsumption,
-                ElectricityConsumption
-            });
+            ElectricityAreaLabelsJson = JsonSerializer.Serialize(TopElectricityAreas.Select(x => x.AreaName));
+            ElectricityAreaDataJson = JsonSerializer.Serialize(TopElectricityAreas.Select(x => x.TotalUsage));
         }
 
         public class DashboardAlert

@@ -1,18 +1,18 @@
 ﻿CREATE PROCEDURE [dbo].[spMeterReadings_Update]
 (
 	@Id INT,
-	@ReadingDate DATETIME2,
-	@CurrentReading FLOAT,
+	@ReadingDate DATETIME,
+	@CurrentReading INT,
 	@Notes NVARCHAR(255),
-	@UpdatedAt DATETIME2,
-	@UpdatedBy NVARCHAR(50)
+	@UpdatedAt DATETIME,
+	@UpdatedBy INT
 
 )
 AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @PreviousReading decimal(18,1);
+	DECLARE @PreviousReading INT;
 
 	DECLARE @MeterId INT;
 
@@ -30,7 +30,7 @@ BEGIN
 
 	SET @PreviousReading = ISNULL(@PreviousReading, 0);
 
-	DECLARE @Usage DECIMAL;
+	DECLARE @Usage INT;
 
 	SET @Usage = @CurrentReading - @PreviousReading;
 

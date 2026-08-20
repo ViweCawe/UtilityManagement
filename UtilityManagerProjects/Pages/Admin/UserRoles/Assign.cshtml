@@ -1,0 +1,92 @@
+@page
+@model UtilityManagerProjects.Pages.Admin.UserRoles.AssignModel
+
+@{
+    ViewData["Title"] = "Assign Roles";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Assign Roles</h1>
+            <p>Manage role access for @Model.UserEmail.</p>
+        </div>
+
+        <div class="page-actions">
+            <a asp-page="./Index"
+               class="utility-btn-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Back to Users
+            </a>
+        </div>
+    </div>
+
+    <section class="content-card role-assignment-card">
+        <div class="content-card-header">
+            <div>
+                <h3>@Model.UserEmail</h3>
+                <p>Select every role this user should have.</p>
+            </div>
+
+            <div class="stat-icon blue">
+                <i class="bi bi-person-check-fill"></i>
+            </div>
+        </div>
+
+        <form method="post"
+              class="utility-form">
+
+            <input type="hidden"
+                   asp-for="UserId" />
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-summary"></div>
+
+            <div class="role-selection-grid">
+                @for (var index = 0;
+                      index < Model.Roles.Count;
+                      index++)
+                {
+                    <label class="role-selection-card">
+
+                        <input type="hidden"
+                               asp-for="Roles[index].RoleName" />
+
+                        <input asp-for="Roles[index].IsSelected" />
+
+                        <span class="role-selection-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </span>
+
+                        <span>
+                            <strong>@Model.Roles[index].RoleName</strong>
+                            <small>
+                                Assign this role to the selected user
+                            </small>
+                        </span>
+
+                    </label>
+                }
+            </div>
+
+            <div class="form-actions">
+                <button type="submit"
+                        class="utility-btn-primary">
+                    <i class="bi bi-check-lg"></i>
+                    Save Role Assignments
+                </button>
+
+                <a asp-page="./Index"
+                   class="utility-btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </section>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

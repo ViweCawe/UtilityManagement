@@ -73,7 +73,7 @@
                                 <span>@item.ReadingDate.ToString("HH:mm")</span>
                             </div>
                         </td>
-                        <td>Employee #@item.CapturedBy</td>
+                        <td>@item.EmployeeEmail</td>
                         <td>
                             <div class="action-buttons">
                                 <a class="icon-action" asp-page="./Display" asp-route-id="@item.Id">

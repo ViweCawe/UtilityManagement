@@ -1,0 +1,127 @@
+@page
+@model UtilityManagerProjects.Pages.Admin.UserRoles.IndexModel
+
+@{
+    ViewData["Title"] = "Assign User Roles";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Assign User Roles</h1>
+            <p>Select an existing user and manage their assigned roles.</p>
+        </div>
+
+        <div class="page-actions">
+            <a asp-page="/Admin/Roles/Index"
+               class="utility-btn-secondary">
+                <i class="bi bi-shield-plus"></i>
+                Create Roles
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <section class="content-card role-status-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>@Model.StatusMessage</h3>
+                </div>
+            </div>
+        </section>
+    }
+
+    <section class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h3>Registered Users</h3>
+                <p>Choose a user to assign or remove roles.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email Confirmed</th>
+                        <th>Current Roles</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Users.Any())
+                    {
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@user.Email</strong>
+                                    <span class="table-subtext">
+                                        User ID: @user.Id
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if (user.EmailConfirmed)
+                                    {
+                                        <span class="reading-pill reading-waste">
+                                            Confirmed
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="reading-pill role-warning-pill">
+                                            Not Confirmed
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (user.Roles.Any())
+                                    {
+                                        <div class="role-pill-list">
+                                            @foreach (var role in user.Roles)
+                                            {
+                                                <span class="reading-pill role-assigned-pill">
+                                                    @role
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted-custom">
+                                            No roles assigned
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <a asp-page="./Assign"
+                                       asp-route-userId="@user.Id"
+                                       class="utility-btn-primary">
+                                        <i class="bi bi-person-gear"></i>
+                                        Assign Roles
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                No users were found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>

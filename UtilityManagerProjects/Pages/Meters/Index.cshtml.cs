@@ -53,6 +53,7 @@ namespace UtilityManagerProjects.Pages.Meters
                 .Select((x, index) => new MeterRow
                 {
                     Reference = $"MTR-{index + 1:0000}",
+                    MeterName = x.MeterName,
                     MeterId = x.Id.ToString(),
                     MeterType = x.MeterType.ToString(),
                     Status = "Active"
@@ -73,6 +74,7 @@ namespace UtilityManagerProjects.Pages.Meters
         public class MeterRow
         {
             public string Reference { get; set; } = string.Empty;
+            public string MeterName { get; set; } = string.Empty;
             public string MeterId { get; set; } = string.Empty;
             public string MeterType { get; set; } = string.Empty;
             public string Status { get; set; } = string.Empty;

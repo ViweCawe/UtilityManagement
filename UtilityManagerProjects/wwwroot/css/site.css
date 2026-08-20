@@ -807,8 +807,8 @@ body {
     }
 }*/
 :root {
-    --utility-muted: #b8c7db;
-    --utility-muted-strong: #d6e1ef;
+    --utility-muted: #a8bbd2;
+    --utility-muted-strong: #a8bbd2;
     --utility-border: rgba(184, 199, 219, 0.20);
     --utility-red-soft: rgba(239, 68, 68, 0.18);
     /* Bootstrap muted/secondary text on the dark dashboard */

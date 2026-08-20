@@ -12,16 +12,19 @@ BEGIN
 
 		   [m].Id AS MeterId,
 		   [m].[MeterType],
+		   [m].MeterName,
 
 
 		   [a].[AreaName],
 		   [s].[StationName],
 		   [d].[DepartmentName],
 		   
+		   
 
-		   [e].Email AS EmployeeEmail,
+		   [capturedEmployee].Email AS EmployeeEmail,
+		   [updatedEmployee].Email AS UpdatedByEmail,
 
-		   [e].Id AS EmployeeId
+		   [capturedEmployee].Id AS EmployeeId
 
 
 	FROM dbo.MeterReadings [mr]
@@ -34,8 +37,11 @@ BEGIN
 	LEFT JOIN dbo.Stations [s]
 	ON [m].StationId = [s].Id
 
-	LEFT JOIN dbo.Employees [e]
-	ON [mr].EmployeeId = [e].Id
+	LEFT JOIN dbo.Employees [capturedEmployee]
+	ON [mr].EmployeeId = [capturedEmployee].Id
+
+	LEFT JOIN dbo.Employees [updatedEmployee]
+	ON [mr].UpdatedBy = [updatedEmployee].Id
 
 	LEFT JOIN dbo.Departments [d]
 	ON [m].DepartmentId = [d].Id

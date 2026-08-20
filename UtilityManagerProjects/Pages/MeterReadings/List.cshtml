@@ -37,7 +37,7 @@
             </select>
         </div>
 
-        <div class="filter-group meter-custom-date-filter">
+        <div class="filter-group meter-custom-date-filter" >
             <label>Start Date</label>
             <input type="date"
                    name="StartDate"
@@ -210,7 +210,7 @@
 
                             var meterName = !string.IsNullOrWhiteSpace(reading.MeterName)
                                 ? reading.MeterName
-                                : $"Meter {reading.MeterId}";
+                                : $"Meter {reading.MeterNameWithUnit}";
 
                             <tr>
                                 <td>RDG-@reading.Id.ToString("0000")</td>
@@ -219,11 +219,11 @@
                                     <a class="table-main-link"
                                        asp-page="./History"
                                        asp-route-meterId="@reading.MeterId">
-                                        @meterName
+                                        @reading.MeterName
                                     </a>
 
                                     <span class="table-subtext">
-                                        Meter ID: @reading.MeterId
+                                         @reading.MeterNameWithUnit
                                     </span>
                                 </td>
 

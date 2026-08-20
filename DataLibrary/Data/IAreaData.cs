@@ -9,7 +9,7 @@ namespace DataLibrary.Data
     {
         Task<List<Area>> GetAreas();
         Task<int> InsertAreas(Area area);
-        Task<int> UpdateArea(int areadId, string areaName, string discription, int stationId, int depId, int updatedBy);
+        Task<int> UpdateArea(int areadId, string areaName, int stationId, int depId, int updatedBy);
         Task<int> DeleteArea(int areadId);
     }
 }

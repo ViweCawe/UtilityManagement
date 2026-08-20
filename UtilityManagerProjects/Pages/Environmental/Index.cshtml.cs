@@ -67,10 +67,15 @@ namespace UtilityManagerProjects.Pages.Environmental
 
         public List<EnvironmentalAlert> Alerts { get; set; } = new();
 
+        public List<MeterReadingTableRow> MeterReadingRows { get; set; } = new();
+        public List<WasteReadingTableRow> WasteReadingRows { get; set; } = new();
+
         public string TrendLabelsJson { get; set; } = "[]";
         public string WaterTrendJson { get; set; } = "[]";
         public string ElectricityTrendJson { get; set; } = "[]";
-        public string WasteTrendJson { get; set; } = "[]";
+        public string RecyclingWasteTrendJson { get; set; } = "[]";
+        public string LandfillWasteTrendJson { get; set; } = "[]";
+        public string OtherWasteTrendJson { get; set; } = "[]";
         public string WasteSplitLabelsJson { get; set; } = "[]";
         public string WasteSplitDataJson { get; set; } = "[]";
 
@@ -106,9 +111,17 @@ namespace UtilityManagerProjects.Pages.Environmental
             WaterPerPerson = CalculatePerPerson(WaterUsage, TotalPeople);
             ElectricityPerPerson = CalculatePerPerson(ElectricityUsage, TotalPeople);
 
-            RecyclingWaste = wasteReadings.Where(IsRecycling).Sum(x => x.WasteReading);
-            LandfillWaste = wasteReadings.Where(IsLandfill).Sum(x => x.WasteReading);
-            OtherWaste = WasteTotal - RecyclingWaste - LandfillWaste;
+            RecyclingWaste = wasteReadings
+                .Where(x => GetWasteClassification(x) == "Recycling")
+                .Sum(x => x.WasteReading);
+
+            LandfillWaste = wasteReadings
+                .Where(x => GetWasteClassification(x) == "Landfill")
+                .Sum(x => x.WasteReading);
+
+            OtherWaste = wasteReadings
+                .Where(x => GetWasteClassification(x) == "Other")
+                .Sum(x => x.WasteReading);
 
             RecyclingPercent = WasteTotal == 0
                 ? 0
@@ -118,6 +131,7 @@ namespace UtilityManagerProjects.Pages.Environmental
             EstimatedCarbonPerPerson = CalculatePerPerson(EstimatedCarbonKg, TotalPeople);
 
             BuildAlerts();
+            BuildTableRows(meterReadings, wasteReadings);
             BuildTrendChartData(meterReadings, wasteReadings);
             BuildWasteSplitChart();
         }
@@ -193,6 +207,26 @@ namespace UtilityManagerProjects.Pages.Environmental
                    value.Contains(search, StringComparison.OrdinalIgnoreCase);
         }
 
+        private static string GetWasteClassification(WasteReadingDisplay item)
+        {
+            if (IsRecycling(item))
+            {
+                return "Recycling";
+            }
+
+            if (IsLandfill(item))
+            {
+                return "Landfill";
+            }
+
+            return "Other";
+        }
+
+        private static string DisplayValue(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "—" : value;
+        }
+
         private void BuildAlerts()
         {
             if (TotalPeople == 0)
@@ -256,6 +290,34 @@ namespace UtilityManagerProjects.Pages.Environmental
             }
         }
 
+        private void BuildTableRows(List<MeterReading> meterReadings, List<WasteReadingDisplay> wasteReadings)
+        {
+            MeterReadingRows = meterReadings
+                .OrderByDescending(x => x.ReadingDate)
+                .ThenBy(x => x.MeterType)
+                .Select(x => new MeterReadingTableRow
+                {
+                    ReadingDate = x.ReadingDate,
+                    MeterType = x.MeterType.ToString(),
+                    Usage = x.Usage,
+                    Unit = x.MeterType == MeterType.Water ? "L" : "kWh"
+                })
+                .ToList();
+
+            WasteReadingRows = wasteReadings
+                .OrderByDescending(x => x.ReadingDate)
+                .Select(x => new WasteReadingTableRow
+                {
+                    ReadingDate = x.ReadingDate,
+                    Category = DisplayValue(x.WasteCategory),
+                    WasteType = DisplayValue(x.WasteTypeName),
+                    Material = DisplayValue(x.WasteMaterial),
+                    Classification = GetWasteClassification(x),
+                    WeightKg = x.WasteReading
+                })
+                .ToList();
+        }
+
         private void BuildTrendChartData(List<MeterReading> meterReadings, List<WasteReadingDisplay> wasteReadings)
         {
             var buckets = BuildTrendBuckets(CurrentStart, CurrentEnd);
@@ -272,9 +334,22 @@ namespace UtilityManagerProjects.Pages.Environmental
                     .Where(x => x.MeterType == MeterType.Electricity && IsInRange(x.ReadingDate, bucket.Start, bucket.End))
                     .Sum(x => x.Usage)));
 
-            WasteTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
+            RecyclingWasteTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
                 wasteReadings
-                    .Where(x => IsInRange(x.ReadingDate, bucket.Start, bucket.End))
+                    .Where(x => IsInRange(x.ReadingDate, bucket.Start, bucket.End) &&
+                                GetWasteClassification(x) == "Recycling")
+                    .Sum(x => x.WasteReading)));
+
+            LandfillWasteTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
+                wasteReadings
+                    .Where(x => IsInRange(x.ReadingDate, bucket.Start, bucket.End) &&
+                                GetWasteClassification(x) == "Landfill")
+                    .Sum(x => x.WasteReading)));
+
+            OtherWasteTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
+                wasteReadings
+                    .Where(x => IsInRange(x.ReadingDate, bucket.Start, bucket.End) &&
+                                GetWasteClassification(x) == "Other")
                     .Sum(x => x.WasteReading)));
         }
 
@@ -343,7 +418,7 @@ namespace UtilityManagerProjects.Pages.Environmental
             {
                 "Recycling",
                 "Landfill",
-                "Other"
+                "Wet Recycling"
             });
 
             WasteSplitDataJson = JsonSerializer.Serialize(new[]
@@ -359,6 +434,24 @@ namespace UtilityManagerProjects.Pages.Environmental
             public string Title { get; set; } = string.Empty;
             public string Message { get; set; } = string.Empty;
             public string Type { get; set; } = "info";
+        }
+
+        public class MeterReadingTableRow
+        {
+            public DateTime ReadingDate { get; set; }
+            public string MeterType { get; set; } = string.Empty;
+            public decimal Usage { get; set; }
+            public string Unit { get; set; } = string.Empty;
+        }
+
+        public class WasteReadingTableRow
+        {
+            public DateTime ReadingDate { get; set; }
+            public string Category { get; set; } = string.Empty;
+            public string WasteType { get; set; } = string.Empty;
+            public string Material { get; set; } = string.Empty;
+            public string Classification { get; set; } = string.Empty;
+            public decimal WeightKg { get; set; }
         }
 
         private class TrendBucket

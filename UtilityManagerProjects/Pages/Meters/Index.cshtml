@@ -82,6 +82,7 @@
                     <tr>
                         <th>Reference</th>
                         <th>Meter ID</th>
+                        <th>Meter Name</th>
                         <th>Type</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -96,7 +97,7 @@
                             var pillClass = $"reading-{meter.MeterType.ToLower()}";
 
                             <tr>
-                                <td>@meter.Reference</td>
+                                <td>@meter.MeterName</td>
                                 <td>@meter.MeterId</td>
                                 <td>
                                     <span class="reading-pill @pillClass">

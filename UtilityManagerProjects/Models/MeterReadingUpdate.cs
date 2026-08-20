@@ -6,11 +6,12 @@ namespace UtilityManagerProjects.Models
     public class MeterReadingUpdate: BaseModel
     {
         public int Id { get; set; }
+
         [Required]
+        [Display(Name = "Current Reading")]
+        public int CurrentReadingUpdate { get; set; }
 
-        public int CurrentReadingUpdate { get; set; } 
-        public string Notes { get; set; } = string.Empty;
-        public DateTime ReadingDate { get; set; } = DateTime.Now;
-
+        [Display(Name = "Notes")]
+        public string? Notes { get; set; }
     }
 }

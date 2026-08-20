@@ -10,7 +10,8 @@
 	[Notes] NVARCHAR(255) NULL,
 	[IsDeleted] BIT NOT NULL DEFAULT 0,
 	[UpdatedAt] DATETIME  NULL,
-	[UpdatedBy] NVARCHAR(50) NULL,
+	[UpdatedBy] INT NULL,
 	CONSTRAINT [FK_MeterReadings_Employees] FOREIGN KEY (EmployeeId) REFERENCES [dbo].Employees(Id),
 	CONSTRAINT [FK_MeterReadings_Meters] FOREIGN KEY (MeterId) REFERENCES [dbo].Meters(Id),
+	CONSTRAINT [FK_MeterReadings_UpdatedBy] FOREIGN KEY (UpdatedBy) REFERENCES [dbo].Employees(Id)
 	)

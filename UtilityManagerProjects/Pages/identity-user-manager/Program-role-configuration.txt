@@ -1,0 +1,47 @@
+Your Identity registration must include role services.
+
+If you currently have:
+
+builder.Services
+    .AddDefaultIdentity<IdentityUser>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = true;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+Change it to:
+
+builder.Services
+    .AddDefaultIdentity<IdentityUser>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = true;
+    })
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+Also ensure middleware order is:
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+After building the app:
+
+await RoleSeeder.SeedRolesAndAdminAsync(
+    app.Services,
+    "your-admin-email@example.com");
+
+Then:
+
+app.Run();
+
+If you use AddIdentity instead of AddDefaultIdentity:
+
+builder.Services
+    .AddIdentity<IdentityUser, IdentityRole>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = true;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();

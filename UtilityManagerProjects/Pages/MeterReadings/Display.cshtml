@@ -3,7 +3,6 @@
 
 @{
     ViewData["Title"] = "Meter Reading Detail";
-    var unit = Model.GetMeterUnit();
 }
 
 <div class="page-shell">
@@ -59,7 +58,7 @@
                 <div class="stat-content">
                     <p>Meter Type</p>
                     <h2>@Model.Reading.MeterType</h2>
-                    <span>@unit</span>
+                    <span>@Model.Reading.Unit</span>
                 </div>
             </div>
 
@@ -69,7 +68,7 @@
                 </div>
                 <div class="stat-content">
                     <p>Usage</p>
-                    <h2>@Model.Reading.Usage.ToString("N2") <span>@unit</span></h2>
+                    <h2>@Model.Reading.Usage.ToString("N2") <span>@Model.Reading.Unit</span></h2>
                     <span>calculated from previous to current</span>
                 </div>
             </div>
@@ -141,24 +140,33 @@
 
                     <div class="detail-row">
                         <span>Previous Reading</span>
-                        <strong>@Model.Reading.PreviousReading.ToString("N2") @unit</strong>
+                        <strong>@Model.Reading.PreviousReading.ToString("N2") @Model.Reading.Unit</strong>
                     </div>
 
                     <div class="detail-row">
                         <span>Current Reading</span>
-                        <strong>@Model.Reading.CurrentReading.ToString("N2") @unit</strong>
+                        <strong>@Model.Reading.CurrentReading.ToString("N2") @Model.Reading.Unit</strong>
                     </div>
 
                     <div class="detail-row">
                         <span>Usage</span>
-                        <strong class="trend-positive">@Model.Reading.Usage.ToString("N2") @unit</strong>
+                        <strong class="trend-positive">@Model.Reading.Usage.ToString("N2") @Model.Reading.Unit</strong>
                     </div>
 
                     <div class="detail-row">
                         <span>Captured By</span>
-                        <strong >@Model.Reading.EmployeeId</strong>
-                       
+                        <strong>@Model.Reading.EmployeeEmail</strong>
                     </div>
+
+                    <div class="detail-row">
+                        <span>Last Updated By</span>
+                        <strong>
+                            @(string.IsNullOrWhiteSpace(Model.Reading.UpdatedByEmployeeEmail)
+                                ? "Not updated"
+                                : Model.Reading.UpdatedByEmployeeEmail)
+                        </strong>
+                    </div>
+
 
                     <div class="detail-row">
                         <span>Notes</span>
@@ -201,6 +209,7 @@
                         <textarea asp-for="ReadingUpdate.Notes" class="form-control utility-input" rows="5"></textarea>
                         <span asp-validation-for="ReadingUpdate.Notes" class="text-danger"></span>
                     </div>
+
 
                     <div class="form-actions">
                         <button type="submit" class="utility-btn-primary">

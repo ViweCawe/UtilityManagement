@@ -1,0 +1,216 @@
+@page
+@model UtilityManagerProjects.Pages.Admin.UserManagement.IndexModel
+
+@{
+    ViewData["Title"] = "User Manager";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>User Manager</h1>
+            <p>Create roles and manage role assignments for registered users.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <section class="content-card user-manager-message">
+            <div class="content-card-header">
+                <div>
+                    <h3>@Model.StatusMessage</h3>
+                </div>
+            </div>
+        </section>
+    }
+
+    <section class="grid-two user-manager-top-grid">
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Create Role</h3>
+                    <p>Add a new application role.</p>
+                </div>
+
+                <div class="stat-icon purple">
+                    <i class="bi bi-shield-plus"></i>
+                </div>
+            </div>
+
+            <form method="post"
+                  asp-page-handler="CreateRole"
+                  class="utility-form">
+
+                <div asp-validation-summary="ModelOnly"
+                     class="validation-summary"></div>
+
+                <div class="form-group">
+                    <label asp-for="NewRoleName">Role name</label>
+
+                    <input asp-for="NewRoleName"
+                           class="utility-input"
+                           placeholder="Example: Admin" />
+
+                    <span asp-validation-for="NewRoleName"
+                          class="field-validation"></span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit"
+                            class="utility-btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        Create Role
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Available Roles</h3>
+                    <p>@Model.Roles.Count role(s) configured.</p>
+                </div>
+            </div>
+
+            <div class="summary-list">
+                @if (Model.Roles.Any())
+                {
+                    @foreach (var role in Model.Roles)
+                    {
+                        <div class="summary-card-row">
+                            <div>
+                                <strong>@role.Name</strong>
+                                <span>
+                                    Concurrency stamp:
+                                    @(string.IsNullOrWhiteSpace(role.ConcurrencyStamp)
+                                        ? "Missing"
+                                        : "Present")
+                                </span>
+                            </div>
+
+                            <form method="post"
+                                  asp-page-handler="DeleteRole">
+                                <input type="hidden"
+                                       name="roleId"
+                                       value="@role.Id" />
+
+                                <button type="submit"
+                                        class="icon-action danger"
+                                        title="Delete role"
+                                        onclick="return confirm('Delete this role?');">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No roles have been created.
+                    </div>
+                }
+            </div>
+        </div>
+
+    </section>
+
+    <section class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h3>Registered Users</h3>
+                <p>Assign or remove roles for each Identity user.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="utility-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email confirmed</th>
+                        <th>Current roles</th>
+                        <th>Manage</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Users.Any())
+                    {
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@user.Email</strong>
+                                    <span class="table-subtext">
+                                        User ID: @user.Id
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if (user.EmailConfirmed)
+                                    {
+                                        <span class="reading-pill reading-waste">
+                                            Confirmed
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="reading-pill user-role-warning">
+                                            Not confirmed
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (user.Roles.Any())
+                                    {
+                                        <div class="user-role-list">
+                                            @foreach (var role in user.Roles)
+                                            {
+                                                <span class="reading-pill user-role-pill">
+                                                    @role
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted-custom">
+                                            No roles assigned
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <a class="utility-btn-secondary"
+                                       asp-page="./EditRoles"
+                                       asp-route-userId="@user.Id">
+                                        <i class="bi bi-person-gear"></i>
+                                        Manage Roles
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                No Identity users found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

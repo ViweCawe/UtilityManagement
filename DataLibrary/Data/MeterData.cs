@@ -33,11 +33,15 @@ namespace DataLibrary.Data
         {
              
             DynamicParameters p = new DynamicParameters();
-            p.Add("AreaId",meter.AreaId);
-            p.Add("MeterType", meter.MeterType);
-            p.Add("CreatedAt",meter.CreatedAt);
-            p.Add("Id",
-                dbType: DbType.Int32,
+
+            p.Add("MeterName", meter.MeterName);
+            p.Add("MeterType", (int)meter.MeterType);
+            p.Add("Unit", meter.Unit);
+            p.Add("AreaId", meter.AreaId);
+            p.Add("DepartmentId", meter.DepartmentId);
+            p.Add("StationId", meter.StationId);
+            p.Add("IsCumulative", meter.IsCumulative);
+            p.Add("Id",dbType: DbType.Int32,
                 direction: ParameterDirection.Output);
             await dataAccess.SaveData("dbo.spMeters_Insert",
                 p,

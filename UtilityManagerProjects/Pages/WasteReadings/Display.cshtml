@@ -15,6 +15,17 @@
             </a>
         </div>
     </div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="content-card success-message-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>@TempData["SuccessMessage"]</h3>
+                    <p>The latest values are displayed below.</p>
+                </div>
+            </div>
+        </div>
+    }
 
     @if (Model.WasteRecord != null)
     {
@@ -53,9 +64,9 @@
                     <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
                     <input type="hidden" asp-for="WasteRecordUpdate.Id" />
                     <div class="form-group">
-                        <label asp-for="WasteRecordUpdate.wasteReadingUpdate">Waste Amount</label>
-                        <input asp-for="WasteRecordUpdate.wasteReadingUpdate" class="utility-input" type="number" step="0.01" min="0" />
-                        <span asp-validation-for="WasteRecordUpdate.wasteReadingUpdate" class="field-validation"></span>
+                        <label asp-for="WasteRecordUpdate.WasteAmount">Waste Amount</label>
+                        <input asp-for="WasteRecordUpdate.WasteAmount" class="utility-input" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="WasteRecordUpdate.WasteAmount" class="field-validation"></span>
                     </div>
                     <div class="form-group">
                         <label asp-for="WasteRecordUpdate.Notes">Notes</label>

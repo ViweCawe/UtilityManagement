@@ -92,10 +92,24 @@
             <span>Users</span>
         </a>
 
-        <a class="utility-nav-link @settingsActive" asp-page="/Settings/Index">
-            <i class="bi bi-gear"></i>
-            <span>Settings</span>
-        </a>
+        @if (User.IsInRole("Admin"))
+        {
+            <a class="utility-nav-link @usersActive" asp-page="/Employees">
+                <i class="bi bi-people"></i>
+                <span>Users</span>
+            </a>
+            <a asp-page="/Admin/Roles/Index"
+               class="nav-item">
+                <i class="bi bi-shield-plus"></i>
+                Role Creator
+            </a>
+
+            <a asp-page="/Admin/UserRoles/Index"
+               class="nav-item">
+                <i class="bi bi-person-gear"></i>
+                Assign User Roles
+            </a>
+        }
 
     </nav>
 

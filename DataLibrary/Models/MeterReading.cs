@@ -26,7 +26,9 @@ namespace DataLibrary.Models
         [Range(0, Int32.MaxValue)]
         public int CurrentReading { get; set; }
         public int PreviousReading { get; set; }
+        public string MeterNameWithUnit => $"{MeterName} ({Unit})";
         public string EmployeeEmail { get; set; } = string.Empty;
+        public string UpdatedByEmployeeEmail { get; set; } = string.Empty;
         public int Usage { get; set; }
         public string? Notes { get; set; } = string.Empty;
         public bool IsDeleted { get; set; } = false;

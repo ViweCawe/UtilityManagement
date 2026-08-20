@@ -1,10 +1,12 @@
 using DataLibrary.Data;
 using DataLibrary.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace UtilityManagerProjects.Pages.MeterReadings
 {
+    [Authorize(Roles ="Admin")]
     public class ListModel : PageModel
     {
         private readonly IMeterReadingData meterReading;
@@ -98,7 +100,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                     .Where(x =>
                         ContainsText(x.Id.ToString(), search) ||
                         ContainsText(x.MeterId.ToString(), search) ||
-                        ContainsText(x.MeterName, search) ||
+                        ContainsText(x.MeterNameWithUnit, search) ||
                         ContainsText(x.MeterType.ToString(), search) ||
                         ContainsText(x.AreaName, search) ||
                         ContainsText(x.StationName, search) ||

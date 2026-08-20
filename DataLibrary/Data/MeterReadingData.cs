@@ -38,18 +38,18 @@ namespace DataLibrary.Data
             return p.Get<int>("Id");
         }
 
-        public Task<int> UpdateMeterReadings(int readingId, decimal readingUpdate,string notes)
+        public Task<int> UpdateMeterReadings(int readingId, int readingUpdate,string notes, int updatedByEmployeeId)
         {
             return dataAcces.SaveData("dbo.spMeterReadings_Update",
                 new
                 {
-                   
+
                     Id = readingId,
                     CurrentReading = readingUpdate,
                     Notes = notes,
                     ReadingDate = DateTime.Now,
                     UpdatedAt = DateTime.Now,
-                    UpdatedBy = "System"  // You can replace this with actual user info if available
+                    UpdatedBy = updatedByEmployeeId // You can replace this with actual user info if available
 
                 },
                 connectionString.SqlConnectionName);
@@ -101,7 +101,7 @@ namespace DataLibrary.Data
                 "dbo.spMeterReading_GetLatestByMeterId",
                 new
                 {
-                    Id = meterId
+                    MeterId = meterId
                 },
                 connectionString.SqlConnectionName);
 

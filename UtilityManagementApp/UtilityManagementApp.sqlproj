@@ -113,6 +113,8 @@
     <Build Include="dbo\StoredProcedures\spDailyPeopleCount_ByDateRange.sql" />
     <Build Include="dbo\StoredProcedures\spDailyPeopleCount_GetAll.sql" />
     <Build Include="dbo\StoredProcedures\spMeterReadings_GetByDateRange.sql" />
+    <Build Include="dbo\StoredProcedures\spDepartments_GetAll.sql" />
+    <None Include="Scripts\ScriptsIgnoredOnImport.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="UtilityManagementApp.publish.xml" />

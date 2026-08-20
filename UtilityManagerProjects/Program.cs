@@ -24,12 +24,14 @@ builder.Services.AddSingleton<IEmployeeData , EmployeeData>();
 builder.Services.AddSingleton<IWasteReadingData, WasteReadingData>();
 builder.Services.AddSingleton<IWasteTypeData, WasteTypeData>();
 builder.Services.AddSingleton<IDailyPeopleCountData, DailyPeopleCountData>();
+builder.Services.AddScoped<IDepartmentData, DepartmentData>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+       .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddRazorPages();
 

@@ -14,7 +14,10 @@ BEGIN
 		   [a].[AreaName],
 		   [s].[StationName],
 		   [d].[DepartmentName],
-		   [e].Id AS EmployeeId
+		   [e].Id AS EmployeeId,
+		   [m].[MeterName]
+
+
 	FROM dbo.MeterReadings [mr]
 	INNER JOIN dbo.Meters [m]
 	ON [mr].MeterId = [m].Id

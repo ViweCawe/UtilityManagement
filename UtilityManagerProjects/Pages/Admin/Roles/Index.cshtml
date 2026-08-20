@@ -1,0 +1,131 @@
+@page
+@model UtilityManagerProjects.Pages.Admin.Roles.IndexModel
+
+@{
+    ViewData["Title"] = "Role Creator";
+}
+
+<div class="page-shell">
+
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Role Creator</h1>
+            <p>Create and manage application roles.</p>
+        </div>
+
+        <div class="page-actions">
+            <a asp-page="/Admin/UserRoles/Index"
+               class="utility-btn-secondary">
+                <i class="bi bi-person-gear"></i>
+                Assign User Roles
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <section class="content-card role-status-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>@Model.StatusMessage</h3>
+                </div>
+            </div>
+        </section>
+    }
+
+    <section class="grid-two role-page-grid">
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Create New Role</h3>
+                    <p>Enter the role name you want to add.</p>
+                </div>
+
+                <div class="stat-icon purple">
+                    <i class="bi bi-shield-plus"></i>
+                </div>
+            </div>
+
+            <form method="post"
+                  asp-page-handler="Create"
+                  class="utility-form">
+
+                <div asp-validation-summary="ModelOnly"
+                     class="validation-summary"></div>
+
+                <div class="form-group">
+                    <label asp-for="RoleName">Role Name</label>
+
+                    <input asp-for="RoleName"
+                           class="utility-input"
+                           placeholder="Example: Admin" />
+
+                    <span asp-validation-for="RoleName"
+                          class="field-validation"></span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit"
+                            class="utility-btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        Create Role
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h3>Existing Roles</h3>
+                    <p>@Model.Roles.Count configured role(s).</p>
+                </div>
+            </div>
+
+            <div class="summary-list">
+                @if (Model.Roles.Any())
+                {
+                    @foreach (var role in Model.Roles)
+                    {
+                        <div class="summary-card-row">
+                            <div>
+                                <strong>@role.Name</strong>
+                                <span>
+                                    Normalized:
+                                    @(role.NormalizedName ?? "Not set")
+                                </span>
+                            </div>
+
+                            <form method="post"
+                                  asp-page-handler="Delete">
+                                <input type="hidden"
+                                       name="roleId"
+                                       value="@role.Id" />
+
+                                <button type="submit"
+                                        class="icon-action danger"
+                                        title="Delete role"
+                                        onclick="return confirm('Delete this role?');">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No roles have been created.
+                    </div>
+                }
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

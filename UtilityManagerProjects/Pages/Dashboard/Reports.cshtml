@@ -2,106 +2,591 @@
 @model UtilityManagerProjects.Pages.Reports.IndexModel
 
 @{
-    ViewData["Title"] = "Reports";
+    ViewData["Title"] = "Management Reports";
+    var diversionChange = Model.WasteDiversionPercent - Model.PreviousWasteDiversionPercent;
 }
 
-<div class="page-shell">
+<style>
+    .report-bi {
+        --r-card: #ffffff;
+        --r-ink: #172033;
+        --r-muted: #68768b;
+        --r-line: #e3e9f1;
+        --r-blue: #1976d2;
+        --r-orange: #f59e0b;
+        --r-green: #16a34a;
+        --r-red: #dc2626;
+        color: var(--r-ink);
+    }
 
+        .report-bi .page-header-row {
+            align-items: flex-start;
+        }
+
+    .report-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        margin-bottom: .45rem;
+        color: var(--r-blue);
+        font-size: .73rem;
+        font-weight: 800;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+    }
+
+    .report-actions {
+        display: flex;
+        gap: .7rem;
+        flex-wrap: wrap;
+    }
+
+    .report-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: 1.1rem;
+    }
+
+    .report-kpi {
+        position: relative;
+        min-width: 0;
+        padding: 1.1rem;
+        overflow: hidden;
+        border: 1px solid var(--r-line);
+        border-radius: 15px;
+        background: var(--r-card);
+        box-shadow: 0 8px 24px rgba(39, 55, 82, .06);
+    }
+
+        .report-kpi::after {
+            position: absolute;
+            right: -28px;
+            bottom: -32px;
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            content: "";
+            background: color-mix(in srgb, var(--accent) 8%, white);
+        }
+
+        .report-kpi.water {
+            --accent: var(--r-blue);
+        }
+
+        .report-kpi.electricity {
+            --accent: var(--r-orange);
+        }
+
+        .report-kpi.waste {
+            --accent: #7c3aed;
+        }
+
+        .report-kpi.diversion {
+            --accent: var(--r-green);
+        }
+
+    .report-kpi-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        color: var(--r-muted);
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .045em;
+        text-transform: uppercase;
+    }
+
+        .report-kpi-label i {
+            color: var(--accent);
+            font-size: 1rem;
+        }
+
+    .report-kpi h2 {
+        margin: .7rem 0 .55rem;
+        font-size: clamp(1.55rem, 2.8vw, 2.05rem);
+        letter-spacing: -.04em;
+    }
+
+        .report-kpi h2 span {
+            color: var(--r-muted);
+            font-size: .78rem;
+            letter-spacing: 0;
+        }
+
+    .report-variance {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        padding: .2rem .46rem;
+        border-radius: 999px;
+        font-size: .69rem;
+        font-weight: 800;
+    }
+
+        .report-variance.good {
+            color: #15803d;
+            background: #dcfce7;
+        }
+
+        .report-variance.bad {
+            color: #b91c1c;
+            background: #fee2e2;
+        }
+
+    .report-kpi small {
+        margin-left: .35rem;
+        color: var(--r-muted);
+        font-size: .69rem;
+    }
+
+    .report-health-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin: 1rem 0;
+        overflow: hidden;
+        border: 1px solid var(--r-line);
+        border-radius: 13px;
+        background: var(--r-card);
+    }
+
+    .health-item {
+        padding: .85rem 1rem;
+        border-right: 1px solid var(--r-line);
+    }
+
+        .health-item:last-child {
+            border-right: 0;
+        }
+
+        .health-item span {
+            display: block;
+            color: var(--r-muted);
+            font-size: .69rem;
+        }
+
+        .health-item strong {
+            display: block;
+            margin-top: .25rem;
+            font-size: .92rem;
+        }
+
+    .report-chart-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .report-card {
+        min-width: 0;
+        padding: 1rem;
+        border: 1px solid var(--r-line);
+        border-radius: 15px;
+        background: var(--r-card);
+        box-shadow: 0 7px 20px rgba(39, 55, 82, .05);
+    }
+
+    .report-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: .8rem;
+        margin-bottom: .75rem;
+    }
+
+        .report-card-header h3 {
+            margin: 0;
+            font-size: .92rem;
+        }
+
+        .report-card-header p {
+            margin: .2rem 0 0;
+            color: var(--r-muted);
+            font-size: .7rem;
+        }
+
+    .unit-tag {
+        flex: 0 0 auto;
+        padding: .22rem .45rem;
+        border-radius: 7px;
+        color: var(--r-muted);
+        background: #f0f4f8;
+        font-size: .65rem;
+        font-weight: 800;
+    }
+
+    .report-chart-shell {
+        height: 235px;
+    }
+
+    .summary-report-card {
+        margin-top: 1rem;
+        padding: 0;
+        overflow: hidden;
+    }
+
+        .summary-report-card .report-card-header {
+            padding: 1rem 1.1rem 0;
+        }
+
+    .report-table-wrap {
+        overflow-x: auto;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        white-space: nowrap;
+    }
+
+        .report-table th, .report-table td {
+            padding: .82rem 1rem;
+            border-bottom: 1px solid var(--r-line);
+            text-align: left;
+        }
+
+        .report-table th {
+            color: var(--r-muted);
+            background: #f8fafc;
+            font-size: .66rem;
+            letter-spacing: .055em;
+            text-transform: uppercase;
+        }
+
+        .report-table td {
+            font-size: .76rem;
+        }
+
+        .report-table .numeric {
+            text-align: right;
+        }
+
+        .report-table .note-cell {
+            min-width: 260px;
+            max-width: 360px;
+            color: var(--r-muted);
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+    .dataset-pill {
+        display: inline-flex;
+        padding: .23rem .5rem;
+        border-radius: 999px;
+        font-size: .68rem;
+        font-weight: 800;
+    }
+
+    .dataset-water {
+        color: #0369a1;
+        background: #e0f2fe;
+    }
+
+    .dataset-electricity {
+        color: #a16207;
+        background: #fef3c7;
+    }
+
+    .dataset-waste {
+        color: #6d28d9;
+        background: #ede9fe;
+    }
+
+    .export-callout {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid #bfdbfe;
+        border-radius: 13px;
+        background: #eff6ff;
+    }
+
+        .export-callout strong {
+            display: block;
+            font-size: .82rem;
+        }
+
+        .export-callout p {
+            margin: .2rem 0 0;
+            color: #53657d;
+            font-size: .72rem;
+        }
+
+    @@media (max-width: 1100px) {
+        .report-kpi-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .report-chart-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .report-chart-shell {
+            height: 260px;
+        }
+    }
+
+    @@media (max-width: 720px) {
+        .report-kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .report-health-strip {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .health-item:nth-child(2) {
+            border-right: 0;
+        }
+
+        .health-item:nth-child(-n+2) {
+            border-bottom: 1px solid var(--r-line);
+        }
+
+        .export-callout {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+
+    @@media print {
+        .dashboard-filter-card,
+        .report-actions,
+        .export-callout,
+        nav,
+        aside {
+            display: none !important;
+        }
+
+        .report-card,
+        .report-kpi {
+            box-shadow: none;
+            break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="page-shell report-bi">
     <div class="page-header-row">
         <div class="page-title">
-            <h1>Reports</h1>
-            <p>Generate and review utility management reports.</p>
+            <span class="report-eyebrow"><i class="bi bi-file-earmark-bar-graph-fill"></i> Management reporting</span>
+            <h1>Utility Performance Reports</h1>
+            <p>Water, electricity, and waste analysis for @Model.DateRangeLabel.</p>
         </div>
 
-        <div class="page-actions">
-            <a class="utility-btn-secondary" href="#">
-                <i class="bi bi-filetype-pdf"></i>
-                PDF
-            </a>
-
-            <a class="utility-btn-primary" href="#">
-                <i class="bi bi-download"></i>
-                Export Report
+        <div class="report-actions">
+            <button type="button" class="utility-btn-secondary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Print / PDF
+            </button>
+            <a class="utility-btn-primary"
+               asp-page-handler="ExportExcel"
+               asp-route-DateFilter="@Model.DateFilter"
+               asp-route-StartDate="@Model.CurrentStart.ToString("yyyy-MM-dd")"
+               asp-route-EndDate="@Model.CurrentEnd.ToString("yyyy-MM-dd")">
+                <i class="bi bi-file-earmark-excel"></i> Download Excel
             </a>
         </div>
     </div>
 
-    <section class="stats-grid stats-grid-3">
-
-        <div class="stat-card">
-            <div class="stat-icon blue">
-                <i class="bi bi-droplet-fill"></i>
-            </div>
-            <div class="stat-content">
-                <p>Water Total</p>
-                <h2>@Model.WaterTotal.ToString("N0")</h2>
-                <span>L total usage</span>
-            </div>
+    <form method="get" class="dashboard-filter-card">
+        <div class="filter-group">
+            <label>Date Range</label>
+            <select name="DateFilter" class="utility-input" id="reportDateFilter">
+                <option value="Last7" selected="@(Model.DateFilter == "Last7" ? "selected" : null)">Latest 7 Days</option>
+                <option value="Last30" selected="@(Model.DateFilter == "Last30" ? "selected" : null)">Latest 30 Days</option>
+                <option value="Custom" selected="@(Model.DateFilter == "Custom" ? "selected" : null)">Custom</option>
+            </select>
         </div>
-
-        <div class="stat-card">
-            <div class="stat-icon orange">
-                <i class="bi bi-lightning-charge-fill"></i>
-            </div>
-            <div class="stat-content">
-                <p>Electricity Total</p>
-                <h2>@Model.ElectricityTotal.ToString("N0")</h2>
-                <span>kWh total usage</span>
-            </div>
+        <div class="filter-group report-custom-date-filter">
+            <label>Start Date</label>
+            <input type="date" name="StartDate" value="@Model.CurrentStart.ToString("yyyy-MM-dd")" class="utility-input" />
         </div>
-
-        <div class="stat-card">
-            <div class="stat-icon green">
-                <i class="bi bi-trash3-fill"></i>
-            </div>
-            <div class="stat-content">
-                <p>Waste Total</p>
-                <h2>@Model.WasteTotal.ToString("N0")</h2>
-                <span>kg total generated</span>
-            </div>
+        <div class="filter-group report-custom-date-filter">
+            <label>End Date</label>
+            <input type="date" name="EndDate" value="@Model.CurrentEnd.ToString("yyyy-MM-dd")" class="utility-input" />
         </div>
+        <div class="filter-actions">
+            <button type="submit" class="utility-btn-primary"><i class="bi bi-funnel"></i> Apply</button>
+            <a asp-page="./Index" class="utility-btn-secondary">Reset</a>
+        </div>
+    </form>
 
+    <section class="report-kpi-grid">
+        <article class="report-kpi water">
+            <div class="report-kpi-label"><span>Water Consumption</span><i class="bi bi-droplet-fill"></i></div>
+            <h2>@Model.WaterTotal.ToString("N0") <span>L</span></h2>
+            <span class="report-variance @(Model.WaterChangePercent <= 0 ? "good" : "bad")">
+                @(Model.WaterChangePercent <= 0 ? "↓" : "↑") @Math.Abs(Model.WaterChangePercent).ToString("N1")%
+            </span><small>vs previous period</small>
+        </article>
+
+        <article class="report-kpi electricity">
+            <div class="report-kpi-label"><span>Electricity Consumption</span><i class="bi bi-lightning-charge-fill"></i></div>
+            <h2>@Model.ElectricityTotal.ToString("N0") <span>kWh</span></h2>
+            <span class="report-variance @(Model.ElectricityChangePercent <= 0 ? "good" : "bad")">
+                @(Model.ElectricityChangePercent <= 0 ? "↓" : "↑") @Math.Abs(Model.ElectricityChangePercent).ToString("N1")%
+            </span><small>vs previous period</small>
+        </article>
+
+        <article class="report-kpi waste">
+            <div class="report-kpi-label"><span>Waste Generated</span><i class="bi bi-trash3-fill"></i></div>
+            <h2>@Model.WasteTotal.ToString("N0") <span>kg</span></h2>
+            <span class="report-variance @(Model.WasteChangePercent <= 0 ? "good" : "bad")">
+                @(Model.WasteChangePercent <= 0 ? "↓" : "↑") @Math.Abs(Model.WasteChangePercent).ToString("N1")%
+            </span><small>vs previous period</small>
+        </article>
+
+        <article class="report-kpi diversion">
+            <div class="report-kpi-label"><span>Waste Diversion</span><i class="bi bi-recycle"></i></div>
+            <h2>@Model.WasteDiversionPercent.ToString("N1") <span>%</span></h2>
+            <span class="report-variance @(diversionChange >= 0 ? "good" : "bad")">
+                @(diversionChange >= 0 ? "↑" : "↓") @Math.Abs(diversionChange).ToString("N1") pts
+            </span><small>vs previous period</small>
+        </article>
     </section>
 
-    <section class="content-card">
-        <div class="content-card-header">
-            <div>
-                <h3>Report Summary</h3>
-                <p>Generated on @Model.GeneratedOn.ToString("dd MMM yyyy HH:mm")</p>
-            </div>
+    <section class="report-health-strip">
+        <div class="health-item"><span>Total source records</span><strong>@Model.TotalReadings.ToString("N0")</strong></div>
+        <div class="health-item"><span>Meter data coverage</span><strong>@Model.DataCoveragePercent.ToString("N1")%</strong></div>
+        <div class="health-item"><span>Complete meter days</span><strong>@Model.CompleteMeterDays of @Model.SelectedDayCount</strong></div>
+        <div class="health-item"><span>Report generated</span><strong>@Model.GeneratedOn.ToString("dd MMM · HH:mm")</strong></div>
+    </section>
+
+    <section class="report-chart-grid">
+        <article class="report-card">
+            <div class="report-card-header"><div><h3>Water Trend</h3><p>Consumption over the reporting period</p></div><span class="unit-tag">LITRES</span></div>
+            <div class="report-chart-shell"><canvas id="reportWaterChart" aria-label="Water trend" role="img"></canvas></div>
+        </article>
+        <article class="report-card">
+            <div class="report-card-header"><div><h3>Electricity Trend</h3><p>Consumption over the reporting period</p></div><span class="unit-tag">KWH</span></div>
+            <div class="report-chart-shell"><canvas id="reportElectricityChart" aria-label="Electricity trend" role="img"></canvas></div>
+        </article>
+        <article class="report-card">
+            <div class="report-card-header"><div><h3>Waste Trend</h3><p>Waste generated over the reporting period</p></div><span class="unit-tag">KG</span></div>
+            <div class="report-chart-shell"><canvas id="reportWasteChart" aria-label="Waste trend" role="img"></canvas></div>
+        </article>
+    </section>
+
+    <section class="report-card summary-report-card">
+        <div class="report-card-header">
+            <div><h3>Executive Performance Summary</h3><p>Averages, peaks, changes, and management interpretation</p></div>
+            <span class="unit-tag">@Model.SummaryRows.Count DATASETS</span>
         </div>
-
-        <div class="table-wrap">
-            <table class="utility-table">
+        <div class="report-table-wrap">
+            <table class="report-table">
                 <thead>
-                    <tr>
-                        <th>Report Area</th>
-                        <th>Total Records</th>
-                        <th>Description</th>
-                    </tr>
+                    <tr><th>Dataset</th><th class="numeric">Records</th><th class="numeric">Total</th><th class="numeric">Daily Average</th><th class="numeric">Peak Day</th><th>Management Interpretation</th></tr>
                 </thead>
-
                 <tbody>
-                    <tr>
-                        <td>Meter Readings</td>
-                        <td>@Model.TotalMeterReadings.ToString("N0")</td>
-                        <td>Water and electricity readings captured in the system.</td>
-                    </tr>
-
-                    <tr>
-                        <td>Waste Readings</td>
-                        <td>@Model.TotalWasteReadings.ToString("N0")</td>
-                        <td>Waste readings captured in the system.</td>
-                    </tr>
-
-                    <tr>
-                        <td>All Readings</td>
-                        <td>@Model.TotalReadings.ToString("N0")</td>
-                        <td>Combined utility reading records.</td>
-                    </tr>
+                    @foreach (var row in Model.SummaryRows)
+                    {
+                        <tr>
+                            <td><span class="dataset-pill dataset-@row.ReportArea.ToLowerInvariant()">@row.ReportArea</span></td>
+                            <td class="numeric">@row.RecordCount.ToString("N0")</td>
+                            <td class="numeric"><strong>@row.Total.ToString("N1")</strong> @row.Unit</td>
+                            <td class="numeric">@row.DailyAverage.ToString("N1") @row.Unit</td>
+                            <td class="numeric">
+                                @row.PeakValue.ToString("N1") @row.Unit
+                                @if (row.PeakDate.HasValue)
+                                {
+                                    <small> · @row.PeakDate.Value.ToString("dd MMM")</small>
+                                }
+                            </td>
+                            <td class="note-cell">@row.ManagementNote</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
     </section>
 
+    <div class="export-callout">
+        <div>
+            <strong>Import-ready Excel workbook</strong>
+            <p>The download contains Executive Summary, Meter Readings, and Waste Readings sheets with typed dates, numeric values, filters, and frozen headers.</p>
+        </div>
+        <a class="utility-btn-primary"
+           asp-page-handler="ExportExcel"
+           asp-route-DateFilter="@Model.DateFilter"
+           asp-route-StartDate="@Model.CurrentStart.ToString("yyyy-MM-dd")"
+           asp-route-EndDate="@Model.CurrentEnd.ToString("yyyy-MM-dd")">
+            <i class="bi bi-download"></i> Download .xlsx
+        </a>
+    </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const reportDateFilter = document.getElementById('reportDateFilter');
+        const reportCustomDateFilters = document.querySelectorAll('.report-custom-date-filter');
+
+        function toggleReportCustomDates() {
+        const isCustom = reportDateFilter.value === 'Custom';
+        reportCustomDateFilters.forEach(item => item.style.display = isCustom ? 'flex' : 'none');
+        }
+
+        reportDateFilter.addEventListener('change', toggleReportCustomDates);
+        toggleReportCustomDates();
+
+        const reportTrendLabels = @Html.Raw(Model.TrendLabelsJson);
+        const reportWaterTrend = @Html.Raw(Model.WaterTrendJson);
+        const reportElectricityTrend = @Html.Raw(Model.ElectricityTrendJson);
+        const reportWasteTrend = @Html.Raw(Model.WasteTrendJson);
+
+        Chart.defaults.color = '#708096';
+        Chart.defaults.font.family = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        Chart.defaults.borderColor = 'rgba(148, 163, 184, .18)';
+
+        function createReportTrend(canvasId, label, values, color, unit, chartType) {
+        const canvas = document.getElementById(canvasId);
+        const context = canvas.getContext('2d');
+        const gradient = context.createLinearGradient(0, 0, 0, 230);
+        gradient.addColorStop(0, `${color}38`);
+        gradient.addColorStop(1, `${color}04`);
+
+        return new Chart(canvas, {
+        type: chartType,
+        data: {
+        labels: reportTrendLabels,
+        datasets: [{
+        label,
+        data: values,
+        borderColor: color,
+        backgroundColor: chartType === 'bar' ? `${color}cc` : gradient,
+        fill: chartType !== 'bar',
+        tension: .35,
+        borderWidth: 2.3,
+        borderRadius: chartType === 'bar' ? 4 : 0,
+        pointRadius: reportTrendLabels.length > 31 ? 0 : 2,
+        pointHoverRadius: 5
+        }]
+        },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+        legend: { display: false },
+        tooltip: {
+        displayColors: false,
+        callbacks: { label: item => `${label}: ${item.parsed.y.toLocaleString()} ${unit}` }
+        }
+        },
+        scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 6, maxRotation: 0 } },
+        y: { beginAtZero: true, ticks: { callback: value => `${Number(value).toLocaleString()} ${unit}` } }
+        }
+        }
+        });
+        }
+
+        createReportTrend('reportWaterChart', 'Water', reportWaterTrend, '#1976d2', 'L', 'line');
+        createReportTrend('reportElectricityChart', 'Electricity', reportElectricityTrend, '#f59e0b', 'kWh', 'line');
+        createReportTrend('reportWasteChart', 'Waste', reportWasteTrend, '#7c3aed', 'kg', 'bar');
+    </script>
+}
