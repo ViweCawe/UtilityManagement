@@ -32,6 +32,12 @@ namespace UtilityManagerProjects.Pages.Reports
         [BindProperty(SupportsGet = true)]
         public DateTime? EndDate { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public int? MeterId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? Department { get; set; }
+
         public DateTime CurrentStart { get; set; }
         public DateTime CurrentEnd { get; set; }
         public DateTime PreviousStart { get; set; }
@@ -64,6 +70,9 @@ namespace UtilityManagerProjects.Pages.Reports
         public List<MeterReading> MeterReadings { get; set; } = new();
         public List<WasteReadingDisplay> WasteReadings { get; set; } = new();
         public List<ReportSummaryRow> SummaryRows { get; set; } = new();
+        public List<MeterDailyAverageRow> MeterDailyAverages { get; set; } = new();
+        public List<MeterReading> MeterOptions { get; set; } = new();
+        public List<string> DepartmentOptions { get; set; } = new();
 
         public string TrendLabelsJson { get; set; } = "[]";
         public string WaterTrendJson { get; set; } = "[]";
@@ -88,14 +97,21 @@ namespace UtilityManagerProjects.Pages.Reports
 
         private async Task LoadReportData()
         {
-            MeterReadings = (await meterReadingData.GetMeterReadingsByDateRange(CurrentStart, CurrentEnd))
+            var unfilteredCurrent = (await meterReadingData.GetMeterReadingsByDateRange(CurrentStart, CurrentEnd))
                 .Where(IsSupportedMeter)
-                .OrderByDescending(x => x.ReadingDate)
                 .ToList();
 
-            var previousMeterReadings = (await meterReadingData.GetMeterReadingsByDateRange(PreviousStart, PreviousEnd))
-                .Where(IsSupportedMeter)
-                .ToList();
+            MeterOptions = unfilteredCurrent.GroupBy(x => x.MeterId).Select(x => x.First())
+                .OrderBy(x => x.MeterName).ToList();
+            DepartmentOptions = unfilteredCurrent.Select(x => x.DepartmentName)
+                .Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x).ToList();
+
+            MeterReadings = ApplyMeterFilters(unfilteredCurrent)
+                .OrderByDescending(x => x.ReadingDate).ToList();
+
+            var previousMeterReadings = ApplyMeterFilters((await meterReadingData
+                .GetMeterReadingsByDateRange(PreviousStart, PreviousEnd)).Where(IsSupportedMeter)).ToList();
 
             var allWasteReadings = (await wasteReadingData.GetWasteReadingDisplay())
                 .Where(x => x.IsDeleted == false)
@@ -150,6 +166,7 @@ namespace UtilityManagerProjects.Pages.Reports
                 : Math.Round((decimal)CompleteMeterDays / SelectedDayCount * 100, 1);
 
             BuildSummaryRows();
+            BuildMeterDailyAverages();
             BuildTrendData();
             GeneratedOn = DateTime.Now;
         }
@@ -188,6 +205,33 @@ namespace UtilityManagerProjects.Pages.Reports
         private static bool IsSupportedMeter(MeterReading reading)
         {
             return reading.MeterType == MeterType.Water || reading.MeterType == MeterType.Electricity;
+        }
+
+        private IEnumerable<MeterReading> ApplyMeterFilters(IEnumerable<MeterReading> readings)
+        {
+            if (MeterId.HasValue)
+                readings = readings.Where(x => x.MeterId == MeterId.Value);
+
+            if (!string.IsNullOrWhiteSpace(Department))
+                readings = readings.Where(x => string.Equals(x.DepartmentName, Department,
+                    StringComparison.OrdinalIgnoreCase));
+
+            return readings;
+        }
+
+        private void BuildMeterDailyAverages()
+        {
+            MeterDailyAverages = MeterReadings.GroupBy(x => new { x.MeterId, x.MeterName, x.MeterType, x.DepartmentName })
+                .Select(group => new MeterDailyAverageRow
+                {
+                    MeterId = group.Key.MeterId,
+                    MeterName = group.Key.MeterName,
+                    MeterType = group.Key.MeterType,
+                    DepartmentName = group.Key.DepartmentName,
+                    ReadingCount = group.Count(),
+                    TotalUsage = group.Sum(x => x.Usage),
+                    DailyAverage = SelectedDayCount == 0 ? 0 : Math.Round((decimal)group.Sum(x => x.Usage) / SelectedDayCount, 1)
+                }).OrderBy(x => x.DepartmentName).ThenBy(x => x.MeterName).ToList();
         }
 
         private static bool IsInRange(DateTime date, DateTime startDate, DateTime endDate)
@@ -686,6 +730,18 @@ namespace UtilityManagerProjects.Pages.Reports
             public DateTime? PeakDate { get; set; }
             public double ChangePercent { get; set; }
             public string ManagementNote { get; set; } = string.Empty;
+        }
+
+        public class MeterDailyAverageRow
+        {
+            public int MeterId { get; set; }
+            public string MeterName { get; set; } = string.Empty;
+            public MeterType MeterType { get; set; }
+            public string DepartmentName { get; set; } = string.Empty;
+            public int ReadingCount { get; set; }
+            public int TotalUsage { get; set; }
+            public decimal DailyAverage { get; set; }
+            public string Unit => MeterType == MeterType.Water ? "L" : "kWh";
         }
 
         private class PeakDay
