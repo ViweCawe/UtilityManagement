@@ -28,6 +28,12 @@ namespace UtilityManagerProjects.Pages.MeterReadings
         [BindProperty(SupportsGet = true)]
         public string? SearchTerm { get; set; }
 
+        [BindProperty(SupportsGet = true)] public int? MeterId { get; set; }
+        [BindProperty(SupportsGet = true)] public string? Department { get; set; }
+        public List<MeterReading> MeterOptions { get; set; } = new();
+        public List<string> DepartmentOptions { get; set; } = new();
+        public List<MeterDailyAverageRow> DailyAverages { get; set; } = new();
+
         public DateTime CurrentStart { get; set; }
         public DateTime CurrentEnd { get; set; }
         public DateTime PreviousStart { get; set; }
@@ -64,8 +70,15 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                 .Where(x => IsInRange(x.ReadingDate, CurrentStart, CurrentEnd))
                 .ToList();
 
+            MeterOptions = currentReadings.GroupBy(x => x.MeterId).Select(x => x.First()).OrderBy(x => x.MeterName).ToList();
+            DepartmentOptions = currentReadings.Select(x => x.DepartmentName).Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+            currentReadings = ApplyMeterFilters(currentReadings).ToList();
+
             var previousReadings = allMeterReadings
                 .Where(x => IsInRange(x.ReadingDate, PreviousStart, PreviousEnd))
+                .Where(x => !MeterId.HasValue || x.MeterId == MeterId.Value)
+                .Where(x => string.IsNullOrWhiteSpace(Department) || string.Equals(x.DepartmentName, Department, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             WaterCount = currentReadings.Count(x => x.MeterType == MeterType.Water);
@@ -121,6 +134,34 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                 .ToList();
 
             TotalMeters = LatestReadings.Count;
+
+            var selectedDays = Math.Max(1, (CurrentEnd.Date - CurrentStart.Date).Days + 1);
+            DailyAverages = currentReadings.GroupBy(x => new { x.MeterId, x.MeterName, x.MeterType, x.DepartmentName })
+                .Select(g => new MeterDailyAverageRow
+                {
+                    MeterId = g.Key.MeterId, MeterName = g.Key.MeterName, MeterType = g.Key.MeterType,
+                    DepartmentName = g.Key.DepartmentName, ReadingCount = g.Count(), TotalUsage = g.Sum(x => x.Usage),
+                    DailyAverage = Math.Round(g.Sum(x => x.Usage) * 1.0 / selectedDays, 1)
+                }).OrderBy(x => x.DepartmentName).ThenBy(x => x.MeterName).ToList();
+        }
+
+        private IEnumerable<MeterReading> ApplyMeterFilters(IEnumerable<MeterReading> readings)
+        {
+            if (MeterId.HasValue) readings = readings.Where(x => x.MeterId == MeterId.Value);
+            if (!string.IsNullOrWhiteSpace(Department)) readings = readings.Where(x => string.Equals(x.DepartmentName, Department, StringComparison.OrdinalIgnoreCase));
+            return readings;
+        }
+
+        public class MeterDailyAverageRow
+        {
+            public int MeterId { get; set; }
+            public string MeterName { get; set; } = string.Empty;
+            public MeterType MeterType { get; set; }
+            public string DepartmentName { get; set; } = string.Empty;
+            public int ReadingCount { get; set; }
+            public int TotalUsage { get; set; }
+            public double DailyAverage { get; set; }
+            public string Unit => MeterType == MeterType.Water ? "L" : "kWh";
         }
 
         public string GetMeterUnit(MeterType meterType)

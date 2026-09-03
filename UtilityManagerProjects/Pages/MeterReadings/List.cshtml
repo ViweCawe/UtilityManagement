@@ -62,6 +62,19 @@
                    class="utility-input" />
         </div>
 
+        <div class="filter-group">
+            <label>Meter</label>
+            <select name="MeterId" class="utility-input"><option value="">All meters</option>
+                @foreach (var meter in Model.MeterOptions) { <option value="@meter.MeterId" selected="@(Model.MeterId == meter.MeterId ? "selected" : null)">@meter.MeterName (#@meter.MeterId)</option> }
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Department</label>
+            <select name="Department" class="utility-input"><option value="">All departments</option>
+                @foreach (var department in Model.DepartmentOptions) { <option value="@department" selected="@(Model.Department == department ? "selected" : null)">@department</option> }
+            </select>
+        </div>
+
         <div class="filter-actions">
             <button type="submit" class="utility-btn-primary">
                 <i class="bi bi-funnel"></i>
@@ -74,6 +87,14 @@
         </div>
 
     </form>
+
+    <section class="content-card">
+        <div class="content-card-header"><div><h3>Daily Average by Meter</h3><p>Average consumption per calendar day in the selected period, even when readings were captured intermittently.</p></div></div>
+        <div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter</th><th>Department</th><th>Type</th><th>Readings</th><th>Total Usage</th><th>Daily Average</th></tr></thead><tbody>
+        @foreach (var row in Model.DailyAverages) { <tr><td>@row.MeterName (#@row.MeterId)</td><td>@row.DepartmentName</td><td>@row.MeterType</td><td>@row.ReadingCount</td><td>@row.TotalUsage.ToString("N0") @row.Unit</td><td><strong>@row.DailyAverage.ToString("N1") @row.Unit/day</strong></td></tr> }
+        @if (!Model.DailyAverages.Any()) { <tr><td colspan="6" class="empty-state">No readings found for this filter.</td></tr> }
+        </tbody></table></div>
+    </section>
 
     <section class="stats-grid stats-grid-4">
 

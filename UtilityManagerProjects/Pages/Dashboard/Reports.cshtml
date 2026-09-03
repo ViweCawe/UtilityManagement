@@ -386,7 +386,8 @@
                asp-page-handler="ExportExcel"
                asp-route-DateFilter="@Model.DateFilter"
                asp-route-StartDate="@Model.CurrentStart.ToString("yyyy-MM-dd")"
-               asp-route-EndDate="@Model.CurrentEnd.ToString("yyyy-MM-dd")">
+               asp-route-EndDate="@Model.CurrentEnd.ToString("yyyy-MM-dd")"
+               asp-route-MeterId="@Model.MeterId" asp-route-Department="@Model.Department">
                 <i class="bi bi-file-earmark-excel"></i> Download Excel
             </a>
         </div>
@@ -405,6 +406,26 @@
             <label>Start Date</label>
             <input type="date" name="StartDate" value="@Model.CurrentStart.ToString("yyyy-MM-dd")" class="utility-input" />
         </div>
+        <div class="filter-group">
+            <label>Meter</label>
+            <select name="MeterId" class="utility-input">
+                <option value="">All meters</option>
+                @foreach (var meter in Model.MeterOptions)
+                {
+                    <option value="@meter.MeterId" selected="@(Model.MeterId == meter.MeterId ? "selected" : null)">@meter.MeterName (#@meter.MeterId)</option>
+                }
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Department</label>
+            <select name="Department" class="utility-input">
+                <option value="">All departments</option>
+                @foreach (var department in Model.DepartmentOptions)
+                {
+                    <option value="@department" selected="@(Model.Department == department ? "selected" : null)">@department</option>
+                }
+            </select>
+        </div>
         <div class="filter-group report-custom-date-filter">
             <label>End Date</label>
             <input type="date" name="EndDate" value="@Model.CurrentEnd.ToString("yyyy-MM-dd")" class="utility-input" />
@@ -414,6 +435,17 @@
             <a asp-page="./Index" class="utility-btn-secondary">Reset</a>
         </div>
     </form>
+
+    <section class="content-card">
+        <div class="content-card-header"><div><h3>Daily Average by Meter</h3><p>Total interval usage divided by @Model.SelectedDayCount calendar days; missing capture days are not treated as extra readings.</p></div></div>
+        <div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter</th><th>Department</th><th>Type</th><th>Captured readings</th><th>Total usage</th><th>Daily average</th></tr></thead><tbody>
+        @foreach (var row in Model.MeterDailyAverages)
+        {
+            <tr><td>@row.MeterName (#@row.MeterId)</td><td>@row.DepartmentName</td><td>@row.MeterType</td><td>@row.ReadingCount</td><td>@row.TotalUsage.ToString("N0") @row.Unit</td><td><strong>@row.DailyAverage.ToString("N1") @row.Unit/day</strong></td></tr>
+        }
+        @if (!Model.MeterDailyAverages.Any()) { <tr><td colspan="6" class="empty-state">No meter readings found for this filter.</td></tr> }
+        </tbody></table></div>
+    </section>
 
     <section class="report-kpi-grid">
         <article class="report-kpi water">

@@ -26,6 +26,11 @@ namespace UtilityManagerProjects.Pages.Dashboard
         [BindProperty(SupportsGet = true)]
         public DateTime? EndDate { get; set; }
 
+        [BindProperty(SupportsGet = true)] public int? MeterId { get; set; }
+        [BindProperty(SupportsGet = true)] public string? Department { get; set; }
+        public List<MeterReading> MeterOptions { get; set; } = new();
+        public List<string> DepartmentOptions { get; set; } = new();
+
         public DateTime CurrentStart { get; set; }
         public DateTime CurrentEnd { get; set; }
         public DateTime PreviousStart { get; set; }
@@ -88,21 +93,26 @@ namespace UtilityManagerProjects.Pages.Dashboard
         {
             ResolveDateRange();
 
-            var currentReadings = (await readingData.GetMeterReadingsByDateRange(CurrentStart, CurrentEnd))
+            var unfilteredCurrent = (await readingData.GetMeterReadingsByDateRange(CurrentStart, CurrentEnd))
                 .Where(x => x.MeterType == MeterType.Water || x.MeterType == MeterType.Electricity)
                 .ToList();
 
-            var previousReadings = (await readingData.GetMeterReadingsByDateRange(PreviousStart, PreviousEnd))
+            MeterOptions = unfilteredCurrent.GroupBy(x => x.MeterId).Select(x => x.First()).OrderBy(x => x.MeterName).ToList();
+            DepartmentOptions = unfilteredCurrent.Select(x => x.DepartmentName).Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+            var currentReadings = ApplyMeterFilters(unfilteredCurrent).ToList();
+
+            var previousReadings = ApplyMeterFilters((await readingData.GetMeterReadingsByDateRange(PreviousStart, PreviousEnd))
                 .Where(x => x.MeterType == MeterType.Water || x.MeterType == MeterType.Electricity)
-                .ToList();
+                ).ToList();
 
             // The extra days cover the full previous calendar month plus the
             // current month-to-date, including adjacent 31-day months.
             var last60Start = CurrentEnd.AddDays(-62);
 
-            var last60Readings = (await readingData.GetMeterReadingsByDateRange(last60Start, CurrentEnd))
+            var last60Readings = ApplyMeterFilters((await readingData.GetMeterReadingsByDateRange(last60Start, CurrentEnd))
                 .Where(x => x.MeterType == MeterType.Water || x.MeterType == MeterType.Electricity)
-                .ToList();
+                ).ToList();
 
             MeterReadings = currentReadings;
 
@@ -189,6 +199,14 @@ namespace UtilityManagerProjects.Pages.Dashboard
         private static bool IsInRange(DateTime date, DateTime startDate, DateTime endDate)
         {
             return date.Date >= startDate.Date && date.Date <= endDate.Date;
+        }
+
+        private IEnumerable<MeterReading> ApplyMeterFilters(IEnumerable<MeterReading> readings)
+        {
+            if (MeterId.HasValue) readings = readings.Where(x => x.MeterId == MeterId.Value);
+            if (!string.IsNullOrWhiteSpace(Department))
+                readings = readings.Where(x => string.Equals(x.DepartmentName, Department, StringComparison.OrdinalIgnoreCase));
+            return readings;
         }
 
         private static int GetMeterTotal(List<MeterReading> meterReadings, MeterType meterType)

@@ -469,6 +469,19 @@
                    class="utility-input" />
         </div>
 
+        <div class="filter-group">
+            <label>Meter</label>
+            <select name="MeterId" class="utility-input"><option value="">All meters</option>
+                @foreach (var meter in Model.MeterOptions) { <option value="@meter.MeterId" selected="@(Model.MeterId == meter.MeterId ? "selected" : null)">@meter.MeterName (#@meter.MeterId)</option> }
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Department</label>
+            <select name="Department" class="utility-input"><option value="">All departments</option>
+                @foreach (var department in Model.DepartmentOptions) { <option value="@department" selected="@(Model.Department == department ? "selected" : null)">@department</option> }
+            </select>
+        </div>
+
         <div class="filter-group dashboard-custom-date-filter">
             <label>End Date</label>
             <input type="date"
