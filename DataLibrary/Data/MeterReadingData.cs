@@ -38,7 +38,7 @@ namespace DataLibrary.Data
             return p.Get<int>("Id");
         }
 
-        public Task<int> UpdateMeterReadings(int readingId, int readingUpdate,string notes, int updatedByEmployeeId)
+        public Task<int> UpdateMeterReadings(int readingId, int readingUpdate,string notes, int updatedByEmployeeId,DateTime dateReadingUpdate)
         {
             return dataAcces.SaveData("dbo.spMeterReadings_Update",
                 new
@@ -47,7 +47,7 @@ namespace DataLibrary.Data
                     Id = readingId,
                     CurrentReading = readingUpdate,
                     Notes = notes,
-                    ReadingDate = DateTime.Now,
+                    ReadingDate = dateReadingUpdate ,
                     UpdatedAt = DateTime.Now,
                     UpdatedBy = updatedByEmployeeId // You can replace this with actual user info if available
 

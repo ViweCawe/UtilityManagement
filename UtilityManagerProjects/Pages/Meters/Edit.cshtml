@@ -1,4 +1,148 @@
-﻿@page
+@page "{id:int}"
 @model UtilityManagerProjects.Pages.Meters.EditModel
+@using DataLibrary.Models
+
 @{
+    ViewData["Title"] = "Edit Meter";
+}
+
+<style>
+    .meter-edit-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+    .meter-form-card, .meter-side-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .meter-form-card { padding: 28px; }
+    .meter-form-section + .meter-form-section { margin-top: 28px; padding-top: 28px; border-top: 1px solid #e5e7eb; }
+    .meter-form-section h2, .meter-side-panel h2 { margin: 0 0 6px; color: #111827; font-size: 1rem; font-weight: 700; }
+    .meter-form-section > p, .meter-side-panel p { margin: 0 0 20px; color: #6b7280; font-size: .9rem; line-height: 1.55; }
+    .meter-field { margin-top: 20px; }
+    .meter-label, .meter-field > label:first-child { display: block; margin-bottom: 8px; color: #374151; font-size: .875rem; font-weight: 600; }
+    .meter-required { color: #dc2626; }
+    .meter-input, .meter-select { width: 100%; min-height: 44px; padding: 10px 12px; color: #111827; background: #fff; border: 1px solid #d1d5db; border-radius: 6px; outline: none; }
+    .meter-input:focus, .meter-select:focus { border-color: #6d5bd0; box-shadow: 0 0 0 3px rgba(109, 91, 208, .14); }
+    .meter-type-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .meter-type-option { position: relative; display: flex; gap: 12px; align-items: center; min-height: 76px; padding: 14px; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; }
+    .meter-type-option:has(input:checked) { border-color: #6d5bd0; background: #f7f5ff; box-shadow: 0 0 0 1px #6d5bd0; }
+    .meter-type-option input { position: absolute; opacity: 0; pointer-events: none; }
+    .meter-type-icon { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 50%; font-size: 1.15rem; }
+    .meter-type-icon.water { color: #0369a1; background: #e0f2fe; }
+    .meter-type-icon.electricity { color: #b45309; background: #fef3c7; }
+    .meter-type-copy strong, .meter-type-copy span { display: block; }
+    .meter-type-copy strong { color: #111827; font-size: .9rem; }
+    .meter-type-copy span { margin-top: 3px; color: #6b7280; font-size: .8rem; }
+    .meter-toggle-row { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .meter-toggle-row strong, .meter-toggle-row span { display: block; }
+    .meter-toggle-row strong { color: #374151; font-size: .875rem; }
+    .meter-toggle-row span { margin-top: 3px; color: #6b7280; font-size: .8rem; }
+    .meter-toggle-row input { width: 18px; height: 18px; accent-color: #6d5bd0; }
+    .meter-form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+    .meter-side-panel { padding: 22px; }
+    .meter-status { display: inline-flex; align-items: center; gap: 7px; margin: 8px 0 22px; padding: 6px 10px; border-radius: 999px; color: #166534; background: #dcfce7; font-size: .8rem; font-weight: 700; }
+    .meter-status.disabled { color: #6b7280; background: #f3f4f6; }
+    .meter-danger { width: 100%; justify-content: center; color: #b91c1c; background: #fff; border: 1px solid #fecaca; }
+    .field-validation-error, .validation-summary-errors { color: #b91c1c; font-size: .8rem; }
+    .field-validation-error { display: block; margin-top: 6px; }
+    @@media (max-width: 900px) { .meter-edit-layout { grid-template-columns: 1fr; } }
+    @@media (max-width: 600px) { .meter-form-card { padding: 20px; } .meter-type-grid { grid-template-columns: 1fr; } .meter-form-actions { flex-direction: column-reverse; } }
+</style>
+
+<div class="page-shell">
+    <div class="page-header-row">
+        <div class="page-title">
+            <h1>Edit Meter</h1>
+            <p>Update meter details and placement.</p>
+        </div>
+        <div class="page-actions">
+            <a class="utility-btn-secondary" asp-page="./Index"><i class="bi bi-arrow-left"></i> Back to Meters</a>
+        </div>
+    </div>
+
+    <div class="meter-edit-layout">
+        <form method="post" class="meter-form-card">
+            <input asp-for="Input.Id" type="hidden" />
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <section class="meter-form-section">
+                <h2>Meter Details</h2>
+                <p>Update the meter's identifying information and utility type.</p>
+
+                <div class="meter-field">
+                    <label asp-for="Input.MeterName">Meter name <span class="meter-required">*</span></label>
+                    <input asp-for="Input.MeterName" class="meter-input" autocomplete="off" />
+                    <span asp-validation-for="Input.MeterName"></span>
+                </div>
+
+                <fieldset class="meter-field border-0 p-0 m-0">
+                    <legend class="meter-label">Meter type <span class="meter-required">*</span></legend>
+                    <div class="meter-type-grid">
+                        <label class="meter-type-option">
+                            <input asp-for="Input.MeterType" type="radio" value="@MeterType.Water" />
+                            <span class="meter-type-icon water"><i class="bi bi-droplet-fill"></i></span>
+                            <span class="meter-type-copy"><strong>Water</strong><span>Usage recorded in litres</span></span>
+                        </label>
+                        <label class="meter-type-option">
+                            <input asp-for="Input.MeterType" type="radio" value="@MeterType.Electricity" />
+                            <span class="meter-type-icon electricity"><i class="bi bi-lightning-charge-fill"></i></span>
+                            <span class="meter-type-copy"><strong>Electricity</strong><span>Usage recorded in kWh</span></span>
+                        </label>
+                    </div>
+                    <span asp-validation-for="Input.MeterType"></span>
+                </fieldset>
+            </section>
+
+            <section class="meter-form-section">
+                <h2>Placement</h2>
+                <p>Select where this meter is installed.</p>
+                <div class="meter-field">
+                    <label asp-for="Input.AreaId">Area <span class="meter-required">*</span></label>
+                    <select asp-for="Input.AreaId" asp-items="Model.AreaOptions" class="meter-select"><option value="0">Select an area</option></select>
+                    <span asp-validation-for="Input.AreaId"></span>
+                </div>
+                <div class="meter-field">
+                    <label asp-for="Input.DepartmentId">Department <span class="meter-required">*</span></label>
+                    <select asp-for="Input.DepartmentId" asp-items="Model.DepartmentOptions" class="meter-select"><option value="0">Select a department</option></select>
+                    <span asp-validation-for="Input.DepartmentId"></span>
+                </div>
+                <div class="meter-field">
+                    <label asp-for="Input.StationId">Station <span class="meter-required">*</span></label>
+                    <select asp-for="Input.StationId" asp-items="Model.StationOptions" class="meter-select"><option value="0">Select a station</option></select>
+                    <span asp-validation-for="Input.StationId"></span>
+                </div>
+            </section>
+
+            <section class="meter-form-section">
+                <h2>Reading Behaviour</h2>
+                <p>Choose how readings for this meter should be interpreted.</p>
+                <label class="meter-toggle-row">
+                    <span><strong>Cumulative meter</strong><span>New readings represent a running total.</span></span>
+                    <input asp-for="Input.IsCumulative" />
+                </label>
+            </section>
+
+            <div class="meter-form-actions">
+                <a class="utility-btn-secondary" asp-page="./Index">Cancel</a>
+                <button type="submit" class="utility-btn-primary"><i class="bi bi-check-lg"></i> Save Changes</button>
+            </div>
+        </form>
+
+        <aside class="meter-side-panel">
+            <h2>Meter Status</h2>
+            <p>Disabled meters remain in reporting history but cannot be used for new readings.</p>
+            <span class="meter-status @(Model.Input.IsActive ? "" : "disabled")">
+                <i class="bi @(Model.Input.IsActive ? "bi-check-circle-fill" : "bi-dash-circle-fill")"></i>
+                @(Model.Input.IsActive ? "Active" : "Disabled")
+            </span>
+            @if (Model.Input.IsActive)
+            {
+                <button class="utility-btn-secondary meter-danger" type="submit" form="disable-meter-form">
+                    <i class="bi bi-slash-circle"></i> Disable Meter
+                </button>
+            }
+        </aside>
+    </div>
+
+    <form id="disable-meter-form" method="post" asp-page-handler="Disable" asp-route-id="@Model.Input.Id"
+          onsubmit="return confirm('Disable this meter? Existing history will be kept.');"></form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }

@@ -118,18 +118,21 @@ namespace UtilityManagerProjects.Pages.Reports
             ElectricityTotal = GetMeterTotal(MeterReadings, MeterType.Electricity);
             WasteTotal = WasteReadings.Sum(x => x.WasteReading);
 
+            
             PreviousWaterTotal = GetMeterTotal(previousMeterReadings, MeterType.Water);
+            
             PreviousElectricityTotal = GetMeterTotal(previousMeterReadings, MeterType.Electricity);
+
             PreviousWasteTotal = previousWasteReadings.Sum(x => x.WasteReading);
 
             RecycledWaste = WasteReadings
                 .Where(x => IsRecyclingCategory(x.WasteCategory))
                 .Sum(x => x.WasteReading);
-
+            
             PreviousRecycledWaste = previousWasteReadings
                 .Where(x => IsRecyclingCategory(x.WasteCategory))
                 .Sum(x => x.WasteReading);
-
+            
             WasteDiversionPercent = CalculatePercent(RecycledWaste, WasteTotal);
             PreviousWasteDiversionPercent = CalculatePercent(PreviousRecycledWaste, PreviousWasteTotal);
 

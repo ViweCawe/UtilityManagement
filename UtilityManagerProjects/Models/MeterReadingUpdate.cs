@@ -10,6 +10,8 @@ namespace UtilityManagerProjects.Models
         [Required]
         [Display(Name = "Current Reading")]
         public int CurrentReadingUpdate { get; set; }
+        [Display(Name = "Reading Date")]
+        public DateTime ReadingDateUpdate { get; set; } = new();
 
         [Display(Name = "Notes")]
         public string? Notes { get; set; }

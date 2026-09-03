@@ -69,6 +69,8 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                 .ToList();
 
             WaterCount = currentReadings.Count(x => x.MeterType == MeterType.Water);
+
+
             ElectricityCount = currentReadings.Count(x => x.MeterType == MeterType.Electricity);
             TotalReadings = WaterCount + ElectricityCount;
 

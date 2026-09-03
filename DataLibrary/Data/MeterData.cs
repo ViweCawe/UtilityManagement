@@ -1,11 +1,10 @@
-﻿using DataLibrary.Db;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Text;
-using DataLibrary.Models;
-using Dapper;
+﻿using System.Collections.Generic;
 using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using Dapper;
+using DataLibrary.Db;
+using DataLibrary.Models;
 
 namespace DataLibrary.Data
 {
@@ -19,40 +18,53 @@ namespace DataLibrary.Data
             this.dataAccess = dataAccess;
             this.connectionString = connectionString;
         }
-        public Task<List<Models.Meter>> GetMeters()
-        {
-            return this.dataAccess.LoadData<Models.Meter, dynamic>("dbo.spMeters_All",
-                                                       new { },
-                                                       this.connectionString.SqlConnectionName);
 
+        public Task<List<Meter>> GetMeters()
+        {
+            return dataAccess.LoadData<Meter, dynamic>(
+                "dbo.spMeters_All",
+                new { },
+                connectionString.SqlConnectionName);
         }
-       
 
-
-        public async Task<int> InsertMeter(Models.Meter meter)
+        public async Task<Meter?> GetMeterById(int id)
         {
-             
-            DynamicParameters p = new DynamicParameters();
+            var records = await dataAccess.LoadData<Meter, dynamic>(
+                "dbo.spMeters_GetById",
+                new { Id = id },
+                connectionString.SqlConnectionName);
 
-            p.Add("MeterName", meter.MeterName);
-            p.Add("MeterType", (int)meter.MeterType);
-            p.Add("Unit", meter.Unit);
-            p.Add("AreaId", meter.AreaId);
-            p.Add("DepartmentId", meter.DepartmentId);
-            p.Add("StationId", meter.StationId);
-            p.Add("IsCumulative", meter.IsCumulative);
-            p.Add("Id",dbType: DbType.Int32,
-                direction: ParameterDirection.Output);
-            await dataAccess.SaveData("dbo.spMeters_Insert",
-                p,
-                this.connectionString.SqlConnectionName);
-            return p.Get<int>("Id");
+            return records.SingleOrDefault();
         }
-     
 
-        public  Task<int> UpdateMeter(int meterId, int meterType ,string meterName,string meterNumber )
+        public async Task<int> InsertMeter(Meter meter)
         {
-            return dataAccess.SaveData("dbo.spMeters_Update",
+            var parameters = new DynamicParameters();
+            parameters.Add("MeterName", meter.MeterName);
+            parameters.Add("MeterType", (int)meter.MeterType);
+            parameters.Add("Unit", meter.Unit);
+            parameters.Add("AreaId", meter.AreaId);
+            parameters.Add("DepartmentId", meter.DepartmentId);
+            parameters.Add("StationId", meter.StationId);
+            parameters.Add("IsCumulative", meter.IsCumulative);
+            parameters.Add("Id", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+            await dataAccess.SaveData(
+                "dbo.spMeters_Insert",
+                parameters,
+                connectionString.SqlConnectionName);
+
+            return parameters.Get<int>("Id");
+        }
+
+        public Task<int> UpdateMeter(
+            int meterId,
+            int meterType,
+            string meterName,
+            string meterNumber)
+        {
+            return dataAccess.SaveData(
+                "dbo.spMeters_Update",
                 new
                 {
                     Id = meterId,
@@ -60,16 +72,34 @@ namespace DataLibrary.Data
                     MeterName = meterName,
                     MeterNumber = meterNumber
                 },
-                this.connectionString.SqlConnectionName);
+                connectionString.SqlConnectionName);
         }
 
-        public  Task<int> DeleteMeter(int id)
+        public async Task UpdateMeter(Meter meter)
         {
-            return   dataAccess.SaveData("dbo.spMeters_Delete",
-                new { Id = id },
-                this.connectionString.SqlConnectionName);
+            await dataAccess.SaveData(
+                "dbo.spMeters_UpdateDetails",
+                new
+                {
+                    meter.Id,
+                    MeterType = (int)meter.MeterType,
+                    meter.MeterName,
+                    meter.Unit,
+                    meter.AreaId,
+                    meter.DepartmentId,
+                    meter.StationId,
+                    meter.IsCumulative,
+                    meter.IsActive
+                },
+                connectionString.SqlConnectionName);
         }
-       
-        
+
+        public Task<int> DeleteMeter(int id)
+        {
+            return dataAccess.SaveData(
+                "dbo.spMeters_Delete",
+                new { Id = id },
+                connectionString.SqlConnectionName);
+        }
     }
 }

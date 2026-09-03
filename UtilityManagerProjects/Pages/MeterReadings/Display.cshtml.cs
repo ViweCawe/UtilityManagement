@@ -39,7 +39,9 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             {
                 Id = Reading.Id,
                 CurrentReadingUpdate = Reading.CurrentReading,
-                Notes = Reading.Notes
+                Notes = Reading.Notes,
+                ReadingDateUpdate = Reading.ReadingDate
+
             };
 
             return Page();
@@ -81,9 +83,11 @@ namespace UtilityManagerProjects.Pages.MeterReadings
 
             await meterReadingData.UpdateMeterReadings(
                 ReadingUpdate.Id,
+
                 ReadingUpdate.CurrentReadingUpdate,
                 ReadingUpdate.Notes ?? string.Empty,
-                employee.Id);
+                employee.Id,
+                ReadingUpdate.ReadingDateUpdate) ;
 
             return RedirectToPage(
                 "./Display",

@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\UtilityManagementApp\UtilityManagementApp.sqlproj" />
     <ProjectReference Include="..\DataLibrary\DataLibrary.csproj" />
+    <ProjectReference Include="..\UtilityManagementApp\UtilityManagementApp.sqlproj" />
   </ItemGroup>
 
   <ItemGroup>

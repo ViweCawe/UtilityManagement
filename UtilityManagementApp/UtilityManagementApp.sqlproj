@@ -115,6 +115,7 @@
     <Build Include="dbo\StoredProcedures\spMeterReadings_GetByDateRange.sql" />
     <Build Include="dbo\StoredProcedures\spDepartments_GetAll.sql" />
     <None Include="Scripts\ScriptsIgnoredOnImport.sql" />
+    <Build Include="dbo\StoredProcedures\spWasteType_Insert.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="UtilityManagementApp.publish.xml" />

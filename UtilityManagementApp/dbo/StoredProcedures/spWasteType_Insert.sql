@@ -1,6 +1,11 @@
 ﻿CREATE PROCEDURE [dbo].[spWasteType_Insert]
-	@param1 int = 0,
-	@param2 int
+
+@WasteTypeName NVARCHAR(100),
+	@WasteTypeDescription NVARCHAR(500),
+	@Id INT OUTPUT
+
 AS
-	SELECT @param1, @param2
-RETURN 0
+BEGIN
+	SET NOCOUNT ON;
+
+END

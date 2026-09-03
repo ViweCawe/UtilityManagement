@@ -1,4 +1,4 @@
-﻿CREATE PROCEDURE [dbo].[spMeter_GetById]
+﻿CREATE PROCEDURE [dbo].[spMeters_GetById]
     @Id INT
 AS
 BEGIN 

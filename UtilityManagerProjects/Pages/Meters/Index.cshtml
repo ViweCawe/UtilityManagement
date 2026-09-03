@@ -1,79 +1,77 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.Meters.IndexModel
 
 @{
     ViewData["Title"] = "Meters";
 }
 
-<div class="page-shell">
+<style>
+    .meter-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .meter-toolbar .search-box { min-width: 240px; }
+    .meter-page-size { min-height: 40px; padding: 8px 32px 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #374151; }
+    .meter-status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 999px; color: #166534; background: #dcfce7; font-size: .78rem; font-weight: 700; }
+    .meter-status.disabled { color: #6b7280; background: #f3f4f6; }
+    .meter-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; padding: 18px 20px; border-top: 1px solid #e5e7eb; }
+    .meter-pagination-summary { margin: 0; color: #6b7280; font-size: .85rem; }
+    .meter-pagination-links { display: flex; gap: 6px; align-items: center; }
+    .meter-page-link { display: inline-grid; min-width: 36px; height: 36px; padding: 0 8px; place-items: center; color: #374151; background: #fff; border: 1px solid #d1d5db; border-radius: 6px; text-decoration: none; }
+    .meter-page-link:hover { color: #6d5bd0; border-color: #6d5bd0; }
+    .meter-page-link.active { color: #fff; background: #6d5bd0; border-color: #6d5bd0; }
+    .meter-page-link.disabled { color: #9ca3af; pointer-events: none; background: #f9fafb; }
+    .icon-action.danger { color: #b91c1c; }
+    .icon-action[disabled] { color: #9ca3af; cursor: not-allowed; }
+    .inline-action-form { display: inline; }
+    .meter-updated { color: #4b5563; white-space: nowrap; }
+    @@media (max-width: 700px) { .meter-toolbar, .meter-toolbar .search-box { width: 100%; } .meter-page-size { flex: 1; } .meter-pagination { align-items: flex-start; } }
+</style>
 
+<div class="page-shell">
     <div class="page-header-row">
         <div class="page-title">
             <h1>Meters</h1>
             <p>Manage water and electricity meters across locations.</p>
         </div>
-
         <div class="page-actions">
-            <a class="utility-btn-secondary" href="#">
-                <i class="bi bi-download"></i>
-                Export
-            </a>
-
-            <a class="utility-btn-primary" asp-page="./Create">
-                <i class="bi bi-plus-lg"></i>
-                Add Meter
-            </a>
+            <a class="utility-btn-primary" asp-page="./Create"><i class="bi bi-plus-lg"></i> Add Meter</a>
         </div>
     </div>
 
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success" role="status">@successMessage</div>
+    }
+
     <section class="stats-grid stats-grid-3">
-
         <div class="stat-card">
-            <div class="stat-icon purple">
-                <i class="bi bi-speedometer2"></i>
-            </div>
-            <div class="stat-content">
-                <p>Total Meters</p>
-                <h2>@Model.TotalCount.ToString("N0")</h2>
-                <span>registered meters</span>
-            </div>
+            <div class="stat-icon purple"><i class="bi bi-speedometer2"></i></div>
+            <div class="stat-content"><p>Total Meters</p><h2>@Model.TotalCount.ToString("N0")</h2><span>registered meters</span></div>
         </div>
-
         <div class="stat-card">
-            <div class="stat-icon blue">
-                <i class="bi bi-droplet-fill"></i>
-            </div>
-            <div class="stat-content">
-                <p>Water Meters</p>
-                <h2>@Model.WaterCount.ToString("N0")</h2>
-                <span>@Model.WaterPercent% of all meters</span>
-            </div>
+            <div class="stat-icon blue"><i class="bi bi-droplet-fill"></i></div>
+            <div class="stat-content"><p>Water Meters</p><h2>@Model.WaterCount.ToString("N0")</h2><span>@Model.WaterPercent% of all meters</span></div>
         </div>
-
         <div class="stat-card">
-            <div class="stat-icon orange">
-                <i class="bi bi-lightning-charge-fill"></i>
-            </div>
-            <div class="stat-content">
-                <p>Electricity Meters</p>
-                <h2>@Model.ElectricityCount.ToString("N0")</h2>
-                <span>@Model.ElectricityPercent% of all meters</span>
-            </div>
+            <div class="stat-icon orange"><i class="bi bi-lightning-charge-fill"></i></div>
+            <div class="stat-content"><p>Electricity Meters</p><h2>@Model.ElectricityCount.ToString("N0")</h2><span>@Model.ElectricityPercent% of all meters</span></div>
         </div>
-
     </section>
 
     <section class="content-card">
-
         <div class="content-card-header">
-            <div>
-                <h3>All Meters</h3>
-                <p>Water and electricity meter register.</p>
-            </div>
-
-            <div class="toolbar">
-                <input class="search-box" type="search" placeholder="Search meters..." />
-            </div>
+            <div><h3>All Meters</h3><p>Water and electricity meter register.</p></div>
+            <form method="get" class="meter-toolbar">
+                <input class="search-box" asp-for="Search" type="search" placeholder="Search meters..." />
+                <select class="meter-page-size" asp-for="PageSize" aria-label="Rows per page" onchange="this.form.submit()">
+                    <option value="10">10 rows</option>
+                    <option value="25">25 rows</option>
+                    <option value="50">50 rows</option>
+                </select>
+                <button class="utility-btn-secondary" type="submit"><i class="bi bi-search"></i> Search</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Search))
+                {
+                    <a class="utility-btn-secondary" asp-page="./Index" asp-route-pageSize="@Model.PageSize">Clear</a>
+                }
+            </form>
         </div>
 
         <div class="table-wrap">
@@ -81,45 +79,55 @@
                 <thead>
                     <tr>
                         <th>Reference</th>
-                        <th>Meter ID</th>
                         <th>Meter Name</th>
                         <th>Type</th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        <th>Last Updated</th>
+                        <th><span class="visually-hidden">Actions</span></th>
                     </tr>
                 </thead>
-
                 <tbody>
                     @if (Model.MeterRows.Any())
                     {
                         @foreach (var meter in Model.MeterRows)
                         {
-                            var pillClass = $"reading-{meter.MeterType.ToLower()}";
-
+                            var pillClass = $"reading-{meter.MeterType.ToLowerInvariant()}";
                             <tr>
+                                <td>@meter.Reference</td>
                                 <td>@meter.MeterName</td>
-                                <td>@meter.MeterId</td>
+                                <td><span class="reading-pill @pillClass">@meter.MeterType</span></td>
                                 <td>
-                                    <span class="reading-pill @pillClass">
-                                        @meter.MeterType
+                                    <span class="meter-status @(meter.IsActive ? "" : "disabled")">
+                                        <i class="bi @(meter.IsActive ? "bi-check-circle-fill" : "bi-dash-circle-fill")"></i>
+                                        @(meter.IsActive ? "Active" : "Disabled")
                                     </span>
                                 </td>
-                                <td>
-                                    <span class="reading-pill reading-waste">
-                                        @meter.Status
-                                    </span>
+                                <td class="meter-updated">
+                                    @if (meter.LastUpdatedAt.HasValue)
+                                    {
+                                        <time datetime="@meter.LastUpdatedAt.Value.ToString("O")">@meter.LastUpdatedAt.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</time>
+                                    }
+                                    else
+                                    {
+                                        <span title="Add a LastReadingAt or UpdatedAt field to the meter query">Not recorded</span>
+                                    }
                                 </td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a class="icon-action" href="#">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a class="icon-action" href="#">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <a class="icon-action" href="#">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        <a class="icon-action" asp-page="./Edit" asp-route-id="@meter.Id" title="Edit meter" aria-label="Edit @meter.MeterName"><i class="bi bi-pencil"></i></a>
+                                        @if (meter.IsActive)
+                                        {
+                                            <form method="post" asp-page-handler="Disable" class="inline-action-form"
+                                                  asp-route-id="@meter.Id" asp-route-search="@Model.Search"
+                                                  asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize"
+                                                  onsubmit="return confirm('Disable this meter? Existing history will be kept.');">
+                                                <button class="icon-action danger" type="submit" title="Disable meter" aria-label="Disable @meter.MeterName"><i class="bi bi-slash-circle"></i></button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <button class="icon-action" type="button" disabled title="Meter disabled"><i class="bi bi-slash-circle"></i></button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -127,16 +135,28 @@
                     }
                     else
                     {
-                        <tr>
-                            <td colspan="5" class="empty-state">
-                                No meters have been added yet.
-                            </td>
-                        </tr>
+                        <tr><td colspan="6" class="empty-state">No meters match the current filter.</td></tr>
                     }
                 </tbody>
             </table>
         </div>
 
+        <nav class="meter-pagination" aria-label="Meters pagination">
+            <p class="meter-pagination-summary">Showing @Model.FirstItemNumber-@Model.LastItemNumber of @Model.FilteredCount meters</p>
+            <div class="meter-pagination-links">
+                <a class="meter-page-link @(Model.PageNumber == 1 ? "disabled" : "")" asp-page="./Index"
+                   asp-route-search="@Model.Search" asp-route-pageSize="@Model.PageSize" asp-route-pageNumber="@(Model.PageNumber - 1)"
+                   aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+                @foreach (var pageNumber in Model.VisiblePageNumbers())
+                {
+                    <a class="meter-page-link @(pageNumber == Model.PageNumber ? "active" : "")" asp-page="./Index"
+                       asp-route-search="@Model.Search" asp-route-pageSize="@Model.PageSize" asp-route-pageNumber="@pageNumber"
+                       aria-current="@(pageNumber == Model.PageNumber ? "page" : null)">@pageNumber</a>
+                }
+                <a class="meter-page-link @(Model.PageNumber == Model.PageCount ? "disabled" : "")" asp-page="./Index"
+                   asp-route-search="@Model.Search" asp-route-pageSize="@Model.PageSize" asp-route-pageNumber="@(Model.PageNumber + 1)"
+                   aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+            </div>
+        </nav>
     </section>
-
 </div>
