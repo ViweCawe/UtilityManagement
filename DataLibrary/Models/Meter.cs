@@ -19,7 +19,7 @@ namespace DataLibrary.Models
         public int AreaId { get; set; }
         public int DepartmentId { get; set; }
         public int StationId { get; set; }
-
+        public int formating {get; set; }  
 
         public string AreaName { get; set; } = string.Empty;
         public string DepartmentName {  get; set; } = string.Empty;
