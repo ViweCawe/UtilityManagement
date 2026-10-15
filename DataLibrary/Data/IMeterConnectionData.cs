@@ -7,5 +7,7 @@ namespace DataLibrary.Data
     public interface IMeterConnectionData
     {
         Task<List<MeterConnection>> GetConnections();
+        Task SaveConnection(int upstreamMeterId, int downstreamMeterId);
+        Task Disconnect(int downstreamMeterId);
     }
 }
