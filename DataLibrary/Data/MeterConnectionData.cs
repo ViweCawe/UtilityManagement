@@ -16,6 +16,20 @@ namespace DataLibrary.Data
             this.connectionString = connectionString;
         }
 
+        public async Task SaveConnection(int upstreamMeterId, int downstreamMeterId)
+        {
+            await dataAccess.SaveData("dbo.spMeterConnections_Save",
+                new { UpstreamMeterId = upstreamMeterId, DownstreamMeterId = downstreamMeterId },
+                connectionString.SqlConnectionName);
+        }
+
+        public async Task Disconnect(int downstreamMeterId)
+        {
+            await dataAccess.SaveData("dbo.spMeterConnections_Disconnect",
+                new { DownstreamMeterId = downstreamMeterId },
+                connectionString.SqlConnectionName);
+        }
+
         public Task<List<MeterConnection>> GetConnections()
         {
             return dataAccess.LoadData<MeterConnection, dynamic>(
