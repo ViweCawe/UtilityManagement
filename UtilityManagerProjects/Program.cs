@@ -18,6 +18,7 @@ builder.Services.AddSingleton(new ConnectionStringData
 builder.Services.AddSingleton<IDataAccess, SqlDb>();
 builder.Services.AddSingleton<IAreaData, AreaData>();
 builder.Services.AddSingleton<IMeterData, MeterData>();
+builder.Services.AddSingleton<IMeterConnectionData, MeterConnectionData>();
 builder.Services.AddSingleton<IStationData, StationData>();
 builder.Services.AddSingleton<IMeterReadingData, MeterReadingData>();
 builder.Services.AddSingleton<IEmployeeData , EmployeeData>();
