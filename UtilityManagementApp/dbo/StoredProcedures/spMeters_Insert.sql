@@ -1,4 +1,4 @@
-﻿CREATE PROCEDURE [dbo].[spMeters_Insert]
+CREATE PROCEDURE [dbo].[spMeters_Insert]
 	(
 	@MeterName NVARCHAR(100),
 	@MeterType INT,
@@ -7,7 +7,8 @@
 	@DepartmentId INT,
 	@StationId	INT,
 	@IsCumulative BIT,
-	@Id INT OUTPUT
+	@Id INT OUTPUT,
+    @AssetKind INT = 1, @NetworkRole INT = 4, @CapacityLitres DECIMAL(14,2) = NULL
 	)
 AS
 BEGIN
@@ -15,7 +16,8 @@ BEGIN
 
 	INSERT INTO dbo.Meters
 	(
-		MeterName,
+		AssetKind, NetworkRole, CapacityLitres,
+        MeterName,
 		MeterType,
 		Unit,
 		AreaId,
@@ -26,7 +28,8 @@ BEGIN
 	)
 	VALUES
 	(
-		@MeterName,
+		@AssetKind, @NetworkRole, @CapacityLitres,
+        @MeterName,
 		@MeterType,
 		@Unit,
 		@AreaId,

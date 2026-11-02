@@ -1,8 +1,9 @@
-﻿CREATE PROCEDURE [dbo].[spMeters_All]
+CREATE PROCEDURE [dbo].[spMeters_All]
 AS
 BEGIN 
 		SET NOCOUNT ON;
-		SELECT[m].[Id],
+		SELECT[m].[Id], [m].[AssetKind], [m].[NetworkRole], [m].[CapacityLitres],
+        [m].[AreaId], [m].[DepartmentId], [m].[StationId], [m].[IsCumulative],
 		[m].[MeterName],
 		[m].[MeterType],
 		[m].[Unit],

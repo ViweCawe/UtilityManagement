@@ -43,8 +43,11 @@
     @@media (max-width: 900px) { .meter-edit-layout { grid-template-columns: 1fr; } }
     @@media (max-width: 600px) { .meter-form-card { padding: 20px; } .meter-type-grid { grid-template-columns: 1fr; } .meter-form-actions { flex-direction: column-reverse; } }
 </style>
+@section Styles {
+<link rel="stylesheet" href="~/css/meter-assets.css" asp-append-version="true" />
+}
 
-<div class="page-shell">
+<div class="page-shell meter-asset-page">
     <div class="page-header-row">
         <div class="page-title">
             <h1>Edit Meter</h1>
@@ -60,6 +63,28 @@
             <input asp-for="Input.Id" type="hidden" />
             <div asp-validation-summary="ModelOnly"></div>
 
+
+            <section class="meter-form-section">
+                <h2>Asset kind and network role</h2>
+                <p>Register a physical meter or a storage tank. A meter installed at a tank is a separate Meter record.</p>
+                <div class="meter-field">
+                    <label asp-for="Input.AssetKind"></label>
+                    <select asp-for="Input.AssetKind" asp-items="Html.GetEnumSelectList<AssetKind>()" class="meter-select"><option value="">Select Meter or Tank</option></select>
+                    <span asp-validation-for="Input.AssetKind"></span>
+                </div>
+                <div class="meter-field">
+                    <label asp-for="Input.NetworkRole"></label>
+                    <select asp-for="Input.NetworkRole" asp-items="Html.GetEnumSelectList<WaterNetworkRole>()" class="meter-select"><option value="">Select a role</option></select>
+                    <span asp-validation-for="Input.NetworkRole"></span>
+                    <p class="meter-role-help">Source: incoming supply · Transfer: water moved between locations · Distribution: feeds other points · End use: consumed at an outlet · Storage: held in a tank.</p>
+                </div>
+                <div class="meter-field">
+                    <label asp-for="Input.CapacityLitres"></label>
+                    <input asp-for="Input.CapacityLitres" type="number" min="0.01" max="999999999999.99" step="0.01" class="meter-input" />
+                    <span asp-validation-for="Input.CapacityLitres"></span>
+                    <p class="meter-role-help">Optional, for tanks only. Leave blank if capacity is unknown. Capacity is not the current tank level.</p>
+                </div>
+            </section>
             <section class="meter-form-section">
                 <h2>Meter Details</h2>
                 <p>Update the meter's identifying information and utility type.</p>
@@ -144,5 +169,6 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/meter-assets.js" asp-append-version="true"></script>
     <partial name="_ValidationScriptsPartial" />
 }

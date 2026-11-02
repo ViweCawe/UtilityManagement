@@ -1,0 +1,495 @@
+{
+  "sourceUrl": "https://www.figma.com/board/x7u5LA84S82rYAFgz67Qn2/Water-Meter-Mapper",
+  "reviewedOn": "2026-11-02",
+  "nodes": [
+    {
+      "id": "main-tank",
+      "label": "Main Meter — Source",
+      "station": "Lower",
+      "kind": "source",
+      "figmaNodeId": "9:220",
+      "x": 470,
+      "y": 100,
+      "note": "Records the municipal water entering our main supply and feeding both stations. Municipality describes where this water comes from; there is no separate Municipality Supply meter. The physical tank arrangement remains to be confirmed."
+    },
+    {
+      "id": "fire-hydrant",
+      "label": "Fire Hydrant",
+      "station": "Lower",
+      "kind": "unresolved",
+      "figmaNodeId": "9:301",
+      "x": 5,
+      "y": 140,
+      "note": "The board excludes this water from main-meter usage. No supply connection is drawn; it is not linked to the Main Meter source here."
+    },
+    {
+      "id": "kitchen-stores",
+      "label": "Kitchen Stores",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "9:739",
+      "x": 160,
+      "y": 280,
+      "note": ""
+    },
+    {
+      "id": "garage-roof",
+      "label": "Garage Roof",
+      "station": "Lower",
+      "kind": "distribution",
+      "figmaNodeId": "9:866",
+      "x": 470,
+      "y": 280,
+      "note": "Feeds several Lower Station outlets and provides a backup staff-toilet supply. Confirm whether this label denotes a tank, meter or distribution point."
+    },
+    {
+      "id": "workshop",
+      "label": "Workshop / Staff Toilets / Fountains",
+      "station": "Lower",
+      "kind": "distribution",
+      "figmaNodeId": "11:624",
+      "x": 780,
+      "y": 280,
+      "note": "The board groups these uses into one point and shows it feeding Old Cable Car."
+    },
+    {
+      "id": "borehole-in",
+      "label": "Borehole Incoming",
+      "station": "Lower",
+      "kind": "source",
+      "figmaNodeId": "11:430",
+      "x": 1090,
+      "y": 140,
+      "note": "Separate borehole route; no connection from municipal supply is inferred."
+    },
+    {
+      "id": "borehole-out",
+      "label": "Borehole Out",
+      "station": "Lower",
+      "kind": "distribution",
+      "figmaNodeId": "11:480",
+      "x": 1090,
+      "y": 280,
+      "note": ""
+    },
+    {
+      "id": "old-cable-car",
+      "label": "Old Cable Car",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "11:715",
+      "x": 780,
+      "y": 460,
+      "note": ""
+    },
+    {
+      "id": "staff-room-lower",
+      "label": "Staff Room",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "11:1038",
+      "x": 5,
+      "y": 460,
+      "note": ""
+    },
+    {
+      "id": "misting",
+      "label": "Misting System",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "9:1108",
+      "x": 200,
+      "y": 460,
+      "note": ""
+    },
+    {
+      "id": "ice-machine",
+      "label": "Ice Machine — Garage",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "11:166",
+      "x": 395,
+      "y": 460,
+      "note": ""
+    },
+    {
+      "id": "vista-mezze",
+      "label": "Vista / Mezze",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "9:1148",
+      "x": 200,
+      "y": 610,
+      "note": ""
+    },
+    {
+      "id": "tap-bar",
+      "label": "TAP Bar",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "9:1038",
+      "x": 395,
+      "y": 610,
+      "note": ""
+    },
+    {
+      "id": "staff-toilets-lower",
+      "label": "Staff Toilets",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "11:1045",
+      "x": 1090,
+      "y": 460,
+      "note": "Borehole supply is shown; Garage Roof is the backup when the borehole supply is closed. This is separate from the grouped Workshop point."
+    },
+    {
+      "id": "vida-cafe",
+      "label": "Vida Café",
+      "station": "Lower",
+      "kind": "usage",
+      "figmaNodeId": "11:1226",
+      "x": 780,
+      "y": 610,
+      "note": "Garage Roof feed is shown by connector 12:1305, added on the board during this review."
+    },
+    {
+      "id": "cable-car-transfer",
+      "label": "Cable car transfer",
+      "station": "Top",
+      "kind": "transfer",
+      "figmaNodeId": "1:3",
+      "x": 505,
+      "y": 0,
+      "note": "Water is transported from the Lower Station Main Meter source. Transfer volume is not additional consumption."
+    },
+    {
+      "id": "docking-bay",
+      "label": "Docking Bay Tank",
+      "station": "Top",
+      "kind": "storage",
+      "figmaNodeId": "1:58",
+      "x": 505,
+      "y": 140,
+      "note": "Receiver tank for water transported by cable car."
+    },
+    {
+      "id": "reservoir",
+      "label": "Reservoir / Holding Tank",
+      "station": "Top",
+      "kind": "storage",
+      "figmaNodeId": "1:349",
+      "x": 505,
+      "y": 280,
+      "note": "Stores pumped water from the Docking Bay Tank and also receives rainwater. Capacity and level readings are not provided."
+    },
+    {
+      "id": "rainwater",
+      "label": "Rainwater input",
+      "station": "Top",
+      "kind": "source",
+      "figmaNodeId": "1:402",
+      "x": 865,
+      "y": 280,
+      "note": "Explicit additional input in the reservoir annotation; no rainwater meter is shown."
+    },
+    {
+      "id": "dosing",
+      "label": "Dosing Tank / New Header Tank",
+      "station": "Top",
+      "kind": "storage",
+      "figmaNodeId": "1:592",
+      "x": 300,
+      "y": 420,
+      "note": "The board says dosing flow is recorded here. Confirm the meter ID and distinguish its flow reading from tank level."
+    },
+    {
+      "id": "header",
+      "label": "Header Tank",
+      "station": "Top",
+      "kind": "distribution",
+      "figmaNodeId": "1:677",
+      "x": 505,
+      "y": 560,
+      "note": "Distributor for Top Station outlets; also a storage tank. Do not add its throughput to upstream supply as new consumption."
+    },
+    {
+      "id": "scullery",
+      "label": "Scullery / Dishwasher",
+      "station": "Top",
+      "kind": "usage",
+      "figmaNodeId": "3:94",
+      "x": 865,
+      "y": 560,
+      "note": ""
+    },
+    {
+      "id": "toilets-main",
+      "label": "Toilets Main Metered Tank",
+      "station": "Top",
+      "kind": "storage",
+      "figmaNodeId": "1:1102",
+      "x": 0,
+      "y": 720,
+      "note": "Feeds Male and Female Toilets. Verify whether its meter is at the inlet or outlet."
+    },
+    {
+      "id": "ten67",
+      "label": "Ten67: Compactor Room",
+      "station": "Top",
+      "kind": "usage",
+      "figmaNodeId": "1:1110",
+      "x": 210,
+      "y": 720,
+      "note": ""
+    },
+    {
+      "id": "staff-room-top",
+      "label": "TS Staff Room",
+      "station": "Top",
+      "kind": "usage",
+      "figmaNodeId": "1:1037",
+      "x": 420,
+      "y": 720,
+      "note": ""
+    },
+    {
+      "id": "disabled-toilets",
+      "label": "Disabled Toilets",
+      "station": "Top",
+      "kind": "usage",
+      "figmaNodeId": "1:1114",
+      "x": 630,
+      "y": 720,
+      "note": ""
+    },
+    {
+      "id": "wifi-lounge",
+      "label": "Wi-Fi Lounge",
+      "station": "Top",
+      "kind": "usage",
+      "figmaNodeId": "1:1106",
+      "x": 840,
+      "y": 720,
+      "note": ""
+    },
+    {
+      "id": "wifi-kitchen",
+      "label": "New Wi-Fi Kitchen",
+      "station": "Top",
+      "kind": "usage",
+      "figmaNodeId": "1:1098",
+      "x": 1050,
+      "y": 720,
+      "note": ""
+    },
+    {
+      "id": "male-female-toilets",
+      "label": "Male and Female Toilets",
+      "station": "Top",
+      "kind": "usage",
+      "figmaNodeId": "1:1514",
+      "x": 0,
+      "y": 860,
+      "note": ""
+    }
+  ],
+  "connections": [
+    {
+      "to": "kitchen-stores",
+      "figmaConnectorId": "9:740",
+      "kind": "supply",
+      "condition": "",
+      "from": "main-tank"
+    },
+    {
+      "to": "garage-roof",
+      "figmaConnectorId": "9:867",
+      "kind": "supply",
+      "condition": "",
+      "from": "main-tank"
+    },
+    {
+      "to": "workshop",
+      "figmaConnectorId": "11:1018",
+      "kind": "supply",
+      "condition": "",
+      "from": "main-tank"
+    },
+    {
+      "to": "old-cable-car",
+      "figmaConnectorId": "11:716",
+      "kind": "supply",
+      "condition": "",
+      "from": "workshop"
+    },
+    {
+      "to": "staff-room-lower",
+      "figmaConnectorId": "11:1094",
+      "kind": "supply",
+      "condition": "",
+      "from": "garage-roof"
+    },
+    {
+      "to": "misting",
+      "figmaConnectorId": "11:265",
+      "kind": "supply",
+      "condition": "",
+      "from": "garage-roof"
+    },
+    {
+      "to": "ice-machine",
+      "figmaConnectorId": "11:296",
+      "kind": "supply",
+      "condition": "",
+      "from": "garage-roof"
+    },
+    {
+      "to": "vista-mezze",
+      "figmaConnectorId": "11:319",
+      "kind": "supply",
+      "condition": "",
+      "from": "garage-roof"
+    },
+    {
+      "to": "tap-bar",
+      "figmaConnectorId": "11:334",
+      "kind": "supply",
+      "condition": "",
+      "from": "garage-roof"
+    },
+    {
+      "to": "staff-toilets-lower",
+      "figmaConnectorId": "11:1204",
+      "kind": "backup",
+      "condition": "Borehole supply is closed",
+      "from": "garage-roof"
+    },
+    {
+      "to": "borehole-out",
+      "figmaConnectorId": "11:913",
+      "kind": "supply",
+      "condition": "",
+      "from": "borehole-in"
+    },
+    {
+      "to": "staff-toilets-lower",
+      "figmaConnectorId": "11:1137",
+      "kind": "supply",
+      "condition": "",
+      "from": "borehole-out"
+    },
+    {
+      "to": "cable-car-transfer",
+      "figmaConnectorId": "11:931",
+      "kind": "transfer",
+      "condition": "",
+      "from": "main-tank"
+    },
+    {
+      "to": "docking-bay",
+      "figmaConnectorId": "1:59",
+      "kind": "transfer",
+      "condition": "",
+      "from": "cable-car-transfer"
+    },
+    {
+      "to": "reservoir",
+      "figmaConnectorId": "1:236 + 1:350",
+      "kind": "supply",
+      "condition": "",
+      "from": "docking-bay"
+    },
+    {
+      "to": "reservoir",
+      "figmaConnectorId": "1:419",
+      "kind": "rain",
+      "condition": "",
+      "from": "rainwater"
+    },
+    {
+      "to": "dosing",
+      "figmaConnectorId": "1:548 + 1:825",
+      "kind": "supply",
+      "condition": "",
+      "from": "reservoir"
+    },
+    {
+      "to": "header",
+      "figmaConnectorId": "1:844",
+      "kind": "supply",
+      "condition": "",
+      "from": "dosing"
+    },
+    {
+      "to": "scullery",
+      "figmaConnectorId": "3:95",
+      "kind": "supply",
+      "condition": "",
+      "from": "header"
+    },
+    {
+      "to": "toilets-main",
+      "figmaConnectorId": "1:1266",
+      "kind": "supply",
+      "condition": "",
+      "from": "header"
+    },
+    {
+      "to": "ten67",
+      "figmaConnectorId": "1:1323",
+      "kind": "supply",
+      "condition": "",
+      "from": "header"
+    },
+    {
+      "to": "staff-room-top",
+      "figmaConnectorId": "1:1334",
+      "kind": "supply",
+      "condition": "",
+      "from": "header"
+    },
+    {
+      "to": "disabled-toilets",
+      "figmaConnectorId": "1:1357",
+      "kind": "supply",
+      "condition": "",
+      "from": "header"
+    },
+    {
+      "to": "wifi-lounge",
+      "figmaConnectorId": "1:1368",
+      "kind": "supply",
+      "condition": "",
+      "from": "header"
+    },
+    {
+      "to": "wifi-kitchen",
+      "figmaConnectorId": "1:1395",
+      "kind": "supply",
+      "condition": "",
+      "from": "header"
+    },
+    {
+      "to": "male-female-toilets",
+      "figmaConnectorId": "1:1515",
+      "kind": "supply",
+      "condition": "",
+      "from": "toilets-main"
+    },
+    {
+      "from": "garage-roof",
+      "to": "vida-cafe",
+      "figmaConnectorId": "12:1305",
+      "kind": "supply",
+      "condition": ""
+    }
+  ],
+  "openQuestions": [
+    "Confirm the physical tank arrangement at the Main Meter source. Its role is Source; the municipal inflow reading is recorded by the Main Meter.",
+    "What supplies the Fire Hydrant, and where is its separate metering boundary?",
+    "What do Garage Roof and Borehole Incoming / Out represent physically: tanks, meters or distribution points?",
+    "Confirm that Garage Roof feeds Staff Toilets only when the borehole supply is closed, and how the switch is operated.",
+    "Confirm the grouped Workshop / Staff Toilets / Fountains branch and its relationship to the separate Staff Toilets point.",
+    "What are the reading units, tank capacities, level measurements and rainwater / transfer measurements? These are needed before deriving storage balances or site consumption."
+  ]
+}
