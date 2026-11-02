@@ -8,8 +8,8 @@ const network = JSON.parse(readFileSync(new URL('../UtilityManagerProjects/App_D
 test('map has valid, unique points, unique edges and documented source IDs', () => {
     const ids = new Set(network.nodes.map(n => n.id));
     assert.equal(ids.size, network.nodes.length);
-    assert.equal(network.nodes.length, 29);
-    assert.equal(network.connections.length, 27);
+    assert.equal(network.nodes.length, 33);
+    assert.equal(network.connections.length, 32);
     const pairs = new Set();
     for (const node of network.nodes) assert.match(node.figmaNodeId, /^\d+:\d+$/);
     for (const edge of network.connections) {
@@ -65,4 +65,14 @@ test('traversal terminates even if later data introduces a cycle', () => {
     const trace = traceNetwork(cyclic, 'a');
     assert.deepEqual([...trace.upstream], ['b']);
     assert.deepEqual([...trace.downstream], ['b']);
+});
+
+test('updated workshop records separate unmetered outlets and flushing-only borehole supply', () => {
+    for (const id of ['workshop-basins', 'workshop-fountains', 'level4-toilets']) {
+        assert.equal(network.nodes.find(n => n.id === id).canLinkMeter, false);
+        assert.ok(network.connections.some(e => e.from === 'workshop' && e.to === id));
+    }
+    assert.equal(network.connections.find(e => e.from === 'borehole-out' && e.to === 'workshop').condition, 'Toilet flushing only');
+    assert.equal(network.nodes.find(n => n.id === 'fire-hydrant').kind, 'source');
+    assert.ok(!network.connections.some(e => e.from === 'main-tank' && e.to === 'fire-hydrant'));
 });

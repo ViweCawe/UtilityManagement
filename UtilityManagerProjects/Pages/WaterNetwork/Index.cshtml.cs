@@ -1,6 +1,8 @@
 using DataLibrary.Data;
 using DataLibrary.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using DataLibrary.Db;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using UtilityManagerProjects.Models;
 
@@ -8,11 +10,27 @@ namespace UtilityManagerProjects.Pages.WaterNetwork;
 
 [Authorize]
 public class IndexModel(IWebHostEnvironment environment, IConfiguration configuration,
-    IMeterData meterData) : PageModel
+    IMeterData meterData, IMeterReadingData readingData, IDataAccess dataAccess, ConnectionStringData connection) : PageModel
 {
     public Models.WaterNetwork Network { get; private set; } = new();
     public Dictionary<string, Meter> LinkedMeters { get; } = new(StringComparer.Ordinal);
     public List<string> MappingWarnings { get; } = [];
+
+    public List<Meter> AvailableMeters { get; private set; } = [];
+    public Dictionary<string, object> Latest { get; } = new();
+    public class MeterLink { public string NodeId { get; set; } = ""; public int? MeterId { get; set; } }
+    public async Task<IActionResult> OnPostLinkAsync(string nodeId, int? meterId)
+    {
+        if (!User.IsInRole("Admin")) return Forbid();
+        await OnGetAsync();
+        if (!Network.Nodes.Any(n => n.Id == nodeId && n.CanLinkMeter) ||
+            (meterId.HasValue && !AvailableMeters.Any(m => m.Id == meterId))) return BadRequest();
+        if (meterId.HasValue && LinkedMeters.Any(p => p.Key != nodeId && p.Value.Id == meterId))
+        { TempData["LinkError"] = "This meter is already assigned to another point. Remove that assignment first."; return RedirectToPage(); }
+        try { await dataAccess.SaveData("dbo.spWaterNetworkLinks_Save", new { NodeId = nodeId, MeterId = meterId }, connection.SqlConnectionName); }
+        catch (System.Data.Common.DbException) { TempData["LinkError"] = "Could not save this link. Refresh and check that this meter is active and not assigned elsewhere."; }
+        return RedirectToPage();
+    }
 
     public string RoleLabel(string kind) => kind switch
     {
@@ -29,14 +47,18 @@ public class IndexModel(IWebHostEnvironment environment, IConfiguration configur
         // Meter IDs must be explicitly configured after on-site verification.
         // Names, tanks and diagram coordinates are never treated as meter identities.
         var mappings = configuration.GetSection("WaterNetwork:MeterIds").GetChildren().ToList();
-        if (mappings.Count == 0) return;
+        AvailableMeters = (await meterData.GetMeters()).Where(m => m.MeterType == MeterType.Water && m.IsActive).ToList();
+        var saved = await dataAccess.LoadData<MeterLink, dynamic>("dbo.spWaterNetworkLinks_All", new { }, connection.SqlConnectionName);
+        var configured = mappings.ToDictionary(m => m.Key, m => m.Value);
+        foreach (var link in saved) configured[link.NodeId] = link.MeterId?.ToString();
 
-        var meters = (await meterData.GetMeters()).ToDictionary(m => m.Id);
+        var meters = AvailableMeters.ToDictionary(m => m.Id);
         var mappedIds = new HashSet<int>();
-        foreach (var mapping in mappings)
+        foreach (var mapping in configured)
         {
+            if (mapping.Value is null) continue;
             var node = Network.Nodes.SingleOrDefault(n => n.Id == mapping.Key);
-            if (node is null || !int.TryParse(mapping.Value, out var meterId) || meterId <= 0 ||
+            if (node is null || !node.CanLinkMeter || !int.TryParse(mapping.Value, out var meterId) || meterId <= 0 ||
                 !meters.TryGetValue(meterId, out var meter) || meter.MeterType != MeterType.Water)
             {
                 MappingWarnings.Add($"Mapping '{mapping.Key}' must reference a map node and an existing water meter.");
@@ -48,6 +70,15 @@ public class IndexModel(IWebHostEnvironment environment, IConfiguration configur
                 continue;
             }
             LinkedMeters.Add(mapping.Key, meter);
+        }
+        var readings = (await readingData.GetLatestMeterReadings()).Where(r => !r.IsDeleted)
+            .GroupBy(r => r.MeterId).ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.ReadingDate).ThenByDescending(r => r.Id).First());
+        foreach (var pair in LinkedMeters)
+        {
+            readings.TryGetValue(pair.Value.Id, out var reading);
+            Latest[pair.Key] = new { meterId = pair.Value.Id, name = pair.Value.MeterName,
+                currentReading = reading?.CurrentReading, capturedAt = reading?.ReadingDate.ToString("dd MMM yyyy HH:mm"),
+                unit = pair.Value.Unit, historyUrl = Url.Page("/MeterReadings/History", new { meterId = pair.Value.Id }) };
         }
     }
 }
