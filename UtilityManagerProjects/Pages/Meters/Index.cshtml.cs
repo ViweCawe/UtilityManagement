@@ -47,8 +47,8 @@ namespace UtilityManagerProjects.Pages.Meters
             var meters = (await meterData.GetMeters()).ToList();
 
             TotalCount = meters.Count;
-            WaterCount = meters.Count(x => x.MeterType == MeterType.Water);
-            ElectricityCount = meters.Count(x => x.MeterType == MeterType.Electricity);
+            WaterCount = meters.Count(x => x.MeterType == MeterType.Water && x.AssetKind == AssetKind.Meter);
+            ElectricityCount = meters.Count(x => x.MeterType == MeterType.Electricity && x.AssetKind == AssetKind.Meter);
             WaterPercent = CalculatePercent(WaterCount, TotalCount);
             ElectricityPercent = CalculatePercent(ElectricityCount, TotalCount);
 
@@ -78,6 +78,8 @@ namespace UtilityManagerProjects.Pages.Meters
                     Id = x.Id,
                     Reference = $"MTR-{x.Id:0000}",
                     MeterName = x.MeterName,
+                    AssetKind = x.AssetKind,
+                    NetworkRole = x.NetworkRole,
                     MeterType = x.MeterType.ToString(),
                     IsActive = x.IsActive,
                     LastUpdatedAt = GetLastUpdatedAt(x)
@@ -148,6 +150,8 @@ namespace UtilityManagerProjects.Pages.Meters
         public class MeterRow
         {
             public int Id { get; set; }
+            public AssetKind AssetKind { get; set; }
+            public WaterNetworkRole NetworkRole { get; set; }
             public string Reference { get; set; } = string.Empty;
             public string MeterName { get; set; } = string.Empty;
             public string MeterType { get; set; } = string.Empty;

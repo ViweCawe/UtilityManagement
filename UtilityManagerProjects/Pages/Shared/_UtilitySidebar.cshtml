@@ -1,4 +1,4 @@
-﻿@{
+@{
     var currentPage = (ViewContext.RouteData.Values["page"] ?? "").ToString() ?? "";
 
     var environmentalActive = currentPage.StartsWith("/Environmental", StringComparison.OrdinalIgnoreCase) ? "active" : "";
@@ -7,6 +7,7 @@
 
     var dashboardActive = currentPage.StartsWith("/Dashboard", StringComparison.OrdinalIgnoreCase) || currentPage == "/Index" ? "active" : "";
     var metersActive = currentPage.StartsWith("/Meters", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var waterNetworkActive = currentPage.StartsWith("/WaterNetwork", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     var meterReadingsActive = currentPage.StartsWith("/MeterReadings", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     var wasteReadingsActive = currentPage.StartsWith("/WasteReadings", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     var usageActive = currentPage.StartsWith("/Usage", StringComparison.OrdinalIgnoreCase) ? "active" : "";
@@ -49,6 +50,11 @@
         <a class="utility-nav-link @meterReadingsActive" asp-page="/MeterReadings/List">
             <i class="bi bi-journal-text"></i>
             <span>Meter Readings</span>
+        </a>
+
+        <a class="utility-nav-link @waterNetworkActive" asp-page="/WaterNetwork/Index">
+            <i class="bi bi-diagram-3"></i>
+            <span>Water Network</span>
         </a>
 
         <a class="utility-nav-link @wasteReadingsActive" asp-page="/WasteReadings/List">

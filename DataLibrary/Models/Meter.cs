@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,9 +12,14 @@ namespace DataLibrary.Models
         public string Unit => MeterType switch
         {
             MeterType.Electricity => "kWh",
-            MeterType.Water => "L³",
+            MeterType.Water => "L",
+            _ => string.Empty,
       
         };
+
+        public AssetKind AssetKind { get; set; } = AssetKind.Meter;
+        public WaterNetworkRole NetworkRole { get; set; } = WaterNetworkRole.EndUse;
+        public decimal? CapacityLitres { get; set; }
 
         public int AreaId { get; set; }
         public int DepartmentId { get; set; }

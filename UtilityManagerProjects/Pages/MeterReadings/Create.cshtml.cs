@@ -71,7 +71,7 @@ public class CreateModel : PageModel
         // Required whenever Page() may be returned.
         var meters = await meterData.GetMeters();
 
-        MeterItems = meters?
+        MeterItems = meters?.Where(m => m.IsActive)
             .Select(m => new SelectListItem
             {
                 Text = m.MeterName,
@@ -86,11 +86,11 @@ public class CreateModel : PageModel
 
         var meter = meters?.FirstOrDefault(m => m.Id == Input.MeterId!.Value);
 
-        if (meter == null)
+        if (meter == null || !meter.IsActive)
         {
             ModelState.AddModelError(
                 "Input.MeterId",
-                "The selected meter does not exist.");
+                "Select an active meter or metered tank.");
 
             return Page();
         }
@@ -179,7 +179,7 @@ public class CreateModel : PageModel
     {
         var meters = await meterData.GetMeters();
 
-        MeterItems = meters?
+        MeterItems = meters?.Where(m => m.IsActive)
             .Select(m => new SelectListItem
             {
                 Text = m.MeterName,

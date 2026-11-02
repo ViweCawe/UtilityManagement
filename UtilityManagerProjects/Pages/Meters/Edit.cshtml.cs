@@ -47,6 +47,9 @@ namespace UtilityManagerProjects.Pages.Meters
             Input = new MeterUpdate
             {
                 Id = meter.Id,
+                AssetKind = meter.AssetKind,
+                NetworkRole = meter.NetworkRole,
+                CapacityLitres = meter.CapacityLitres,
                 MeterName = meter.MeterName,
                 MeterType = meter.MeterType,
                 AreaId = meter.AreaId,
@@ -86,11 +89,20 @@ namespace UtilityManagerProjects.Pages.Meters
                     "Select either an electricity or water meter.");
             }
 
-            if (!ModelState.IsValid || Input.MeterType is null)
+            if (Input.AssetKind.HasValue && Input.NetworkRole.HasValue && Input.MeterType.HasValue)
+            {
+                var error = MeterAssetRules.Validate(Input.AssetKind.Value, Input.NetworkRole.Value, Input.MeterType.Value, Input.CapacityLitres);
+                if (error is not null) ModelState.AddModelError(string.Empty, error);
+            }
+
+            if (!ModelState.IsValid || Input.MeterType is null || Input.AssetKind is null || Input.NetworkRole is null)
             {
                 return Page();
             }
 
+            meter.AssetKind = Input.AssetKind.Value;
+            meter.NetworkRole = Input.NetworkRole.Value;
+            meter.CapacityLitres = Input.CapacityLitres;
             meter.MeterName = Input.MeterName.Trim();
             meter.MeterType = Input.MeterType.Value;
             meter.AreaId = Input.AreaId;

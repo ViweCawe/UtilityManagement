@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,6 +40,11 @@ namespace DataLibrary.Data
         public async Task<int> InsertMeter(Meter meter)
         {
             var parameters = new DynamicParameters();
+            var error = MeterAssetRules.Validate(meter.AssetKind, meter.NetworkRole, meter.MeterType, meter.CapacityLitres);
+            if (error is not null) throw new ArgumentException(error);
+            parameters.Add("AssetKind", (int)meter.AssetKind);
+            parameters.Add("NetworkRole", (int)meter.NetworkRole);
+            parameters.Add("CapacityLitres", meter.CapacityLitres);
             parameters.Add("MeterName", meter.MeterName);
             parameters.Add("MeterType", (int)meter.MeterType);
             parameters.Add("Unit", meter.Unit);
@@ -77,11 +82,16 @@ namespace DataLibrary.Data
 
         public async Task UpdateMeter(Meter meter)
         {
+            var error = MeterAssetRules.Validate(meter.AssetKind, meter.NetworkRole, meter.MeterType, meter.CapacityLitres);
+            if (error is not null) throw new ArgumentException(error);
             await dataAccess.SaveData(
                 "dbo.spMeters_UpdateDetails",
                 new
                 {
                     meter.Id,
+                    AssetKind = (int)meter.AssetKind,
+                    NetworkRole = (int)meter.NetworkRole,
+                    meter.CapacityLitres,
                     MeterType = (int)meter.MeterType,
                     meter.MeterName,
                     meter.Unit,
