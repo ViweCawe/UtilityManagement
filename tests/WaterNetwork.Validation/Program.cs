@@ -41,3 +41,10 @@ Reject("backup without condition", d =>
 });
 Reject("invalid station", d => d["nodes"]![0]!["station"] = "Unknown");
 Console.WriteLine("PASS: source map loads and all six invalid-data guards reject bad input.");
+
+if (DataLibrary.Models.MeterAssetRules.Validate(DataLibrary.Models.AssetKind.Tank, DataLibrary.Models.WaterNetworkRole.Storage, DataLibrary.Models.MeterType.Water, 1000m) is not null) throw new Exception("Valid storage tank rejected");
+if (DataLibrary.Models.MeterAssetRules.Validate(DataLibrary.Models.AssetKind.Tank, DataLibrary.Models.WaterNetworkRole.EndUse, DataLibrary.Models.MeterType.Water, null) is null) throw new Exception("Tank end-use accepted");
+if (DataLibrary.Models.MeterAssetRules.Validate(DataLibrary.Models.AssetKind.Tank, DataLibrary.Models.WaterNetworkRole.Storage, DataLibrary.Models.MeterType.Electricity, null) is null) throw new Exception("Electricity tank accepted");
+if (DataLibrary.Models.MeterAssetRules.Validate(DataLibrary.Models.AssetKind.Meter, DataLibrary.Models.WaterNetworkRole.Storage, DataLibrary.Models.MeterType.Water, null) is null) throw new Exception("Storage meter accepted");
+if (DataLibrary.Models.MeterAssetRules.Validate(DataLibrary.Models.AssetKind.Meter, DataLibrary.Models.WaterNetworkRole.Source, DataLibrary.Models.MeterType.Water, 5m) is null) throw new Exception("Meter capacity accepted");
+Console.WriteLine("PASS: asset classification guards");

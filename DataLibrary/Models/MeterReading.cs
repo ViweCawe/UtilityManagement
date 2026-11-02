@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Primitives;
+using Microsoft.Extensions.Primitives;
 using System.ComponentModel.DataAnnotations;
 
 namespace DataLibrary.Models
@@ -18,7 +18,7 @@ namespace DataLibrary.Models
         public string Unit => MeterType switch
         {
             MeterType.Electricity => "kWh",
-            MeterType.Water => "L³",
+            MeterType.Water => "L",
             _ => string.Empty
         };
         public DateTime ReadingDate { get; set; } = DateTime.Now;

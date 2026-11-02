@@ -8,5 +8,5 @@
   <ItemGroup>
     <Compile Include="../../UtilityManagerProjects/Models/WaterNetwork.cs" Link="WaterNetwork.cs" />
     <None Include="../../UtilityManagerProjects/App_Data/water-network.json" Link="water-network.json" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
+  <Compile Include="../../DataLibrary/Models/MeterAssetClassification.cs" Link="MeterAssetClassification.cs" /><Compile Include="../../DataLibrary/Models/MeterType.cs" Link="MeterType.cs" /></ItemGroup>
 </Project>

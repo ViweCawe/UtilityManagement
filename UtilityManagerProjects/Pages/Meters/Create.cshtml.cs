@@ -61,19 +61,28 @@ namespace UtilityManagerProjects.Pages.Meters
                     "Select either an electricity or water meter.");
             }
 
-            if (!ModelState.IsValid || Input.MeterType is null)
+            if (Input.AssetKind.HasValue && Input.NetworkRole.HasValue && Input.MeterType.HasValue)
+            {
+                var error = MeterAssetRules.Validate(Input.AssetKind.Value, Input.NetworkRole.Value, Input.MeterType.Value, Input.CapacityLitres);
+                if (error is not null) ModelState.AddModelError(string.Empty, error);
+            }
+
+            if (!ModelState.IsValid || Input.MeterType is null || Input.AssetKind is null || Input.NetworkRole is null)
             {
                 return Page();
             }
 
             var meter = new Meter
             {
+                AssetKind = Input.AssetKind.Value,
+                NetworkRole = Input.NetworkRole.Value,
+                CapacityLitres = Input.CapacityLitres,
                 MeterName = Input.MeterName.Trim(),
                 MeterType = Input.MeterType.Value,
                 AreaId = Input.AreaId,
                 DepartmentId = Input.DepartmentId,
                 StationId = Input.StationId,
-                IsCumulative = Input.IsCumulative
+                IsCumulative = Input.AssetKind == AssetKind.Meter && Input.IsCumulative
             };
 
             var meterId = await meterData.InsertMeter(meter);
@@ -129,6 +138,17 @@ namespace UtilityManagerProjects.Pages.Meters
             [StringLength(100)]
             [Display(Name = "Meter name")]
             public string MeterName { get; set; } = string.Empty;
+
+            [Required, EnumDataType(typeof(AssetKind))]
+            [Display(Name = "Asset kind")]
+            public AssetKind? AssetKind { get; set; }
+            [Required, EnumDataType(typeof(WaterNetworkRole))]
+            [Display(Name = "Network role")]
+            public WaterNetworkRole? NetworkRole { get; set; }
+            [Range(typeof(decimal), "0.01", "999999999999.99")]
+            [Display(Name = "Tank capacity (litres)")]
+            public decimal? CapacityLitres { get; set; }
+
 
             [Required(ErrorMessage = "Select a meter type.")]
             [Display(Name = "Meter type")]

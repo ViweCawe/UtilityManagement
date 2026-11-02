@@ -45,15 +45,15 @@
     <section class="stats-grid stats-grid-3">
         <div class="stat-card">
             <div class="stat-icon purple"><i class="bi bi-speedometer2"></i></div>
-            <div class="stat-content"><p>Total Meters</p><h2>@Model.TotalCount.ToString("N0")</h2><span>registered meters</span></div>
+            <div class="stat-content"><p>Total Assets</p><h2>@Model.TotalCount.ToString("N0")</h2><span>meters and tanks</span></div>
         </div>
         <div class="stat-card">
             <div class="stat-icon blue"><i class="bi bi-droplet-fill"></i></div>
-            <div class="stat-content"><p>Water Meters</p><h2>@Model.WaterCount.ToString("N0")</h2><span>@Model.WaterPercent% of all meters</span></div>
+            <div class="stat-content"><p>Water Meters</p><h2>@Model.WaterCount.ToString("N0")</h2><span>@Model.WaterPercent% of all assets</span></div>
         </div>
         <div class="stat-card">
             <div class="stat-icon orange"><i class="bi bi-lightning-charge-fill"></i></div>
-            <div class="stat-content"><p>Electricity Meters</p><h2>@Model.ElectricityCount.ToString("N0")</h2><span>@Model.ElectricityPercent% of all meters</span></div>
+            <div class="stat-content"><p>Electricity Meters</p><h2>@Model.ElectricityCount.ToString("N0")</h2><span>@Model.ElectricityPercent% of all assets</span></div>
         </div>
     </section>
 
@@ -95,7 +95,7 @@
                             var pillClass = $"reading-{meter.MeterType.ToLowerInvariant()}";
                             <tr>
                                 <td>@meter.Reference</td>
-                                <td>@meter.MeterName</td>
+                                <td>@meter.MeterName<br /><small>@meter.AssetKind · @meter.NetworkRole</small></td>
                                 <td><span class="reading-pill @pillClass">@meter.MeterType</span></td>
                                 <td>
                                     <span class="meter-status @(meter.IsActive ? "" : "disabled")">

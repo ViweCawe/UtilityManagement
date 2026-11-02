@@ -1,4 +1,4 @@
-﻿using DataLibrary.Models;
+using DataLibrary.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace UtilityManagerProjects.Models
@@ -11,6 +11,17 @@ namespace UtilityManagerProjects.Models
         [StringLength(100)]
         [Display(Name = "Meter name")]
         public string MeterName { get; set; } = string.Empty;
+
+            [Required, EnumDataType(typeof(AssetKind))]
+            [Display(Name = "Asset kind")]
+            public AssetKind? AssetKind { get; set; }
+            [Required, EnumDataType(typeof(WaterNetworkRole))]
+            [Display(Name = "Network role")]
+            public WaterNetworkRole? NetworkRole { get; set; }
+            [Range(typeof(decimal), "0.01", "999999999999.99")]
+            [Display(Name = "Tank capacity (litres)")]
+            public decimal? CapacityLitres { get; set; }
+
 
         [Required(ErrorMessage = "Select a meter type.")]
         [Display(Name = "Meter type")]

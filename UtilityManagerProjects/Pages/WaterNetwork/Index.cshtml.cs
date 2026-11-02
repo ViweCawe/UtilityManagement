@@ -31,7 +31,7 @@ public class IndexModel(IWebHostEnvironment environment, IConfiguration configur
         {
             var node = Network.Nodes.SingleOrDefault(n => n.Id == mapping.Key);
             if (node is null || !int.TryParse(mapping.Value, out var meterId) || meterId <= 0 ||
-                !meters.TryGetValue(meterId, out var meter) || meter.MeterType != MeterType.Water)
+                !meters.TryGetValue(meterId, out var meter) || meter.MeterType != MeterType.Water || meter.AssetKind != AssetKind.Meter)
             {
                 MappingWarnings.Add($"Mapping '{mapping.Key}' must reference a map node and an existing water meter.");
                 continue;
