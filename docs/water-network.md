@@ -1,6 +1,6 @@
 # Water network and saved meter readings
 
-The network uses the updated Water Meter Mapper and the user's operational clarifications. It contains 33 points and 32 physical/annotated connections. Municipality is the origin, not another database meter. Main Meter is the metered source for the main supply. The stable mapping key `main-tank` is retained for compatibility.
+The initial network uses the updated Water Meter Mapper and the user's operational clarifications. It contains 33 points and 32 physical/annotated connections. Municipality is the origin, not another database meter. Main Meter is the metered source for the main supply. The stable mapping key `main-tank` is retained for compatibility.
 
 ## Link actual meters
 
@@ -25,3 +25,10 @@ The diagram and details show the latest saved counter value, unit, capture date 
 
 Network integrity and route traversal tests pass. JavaScript syntax checks pass. Earlier isolated Razor compilation covered the previous revision; the local .NET SDK/temporary validation host is no longer available, so this revision has not been compiled here. SQL migration execution, actual Dapper round trips, linked meter readings against the live database, and browser visual layout remain unverified. The migration must be applied before opening the updated network page.
 The resolved Connections to confirm section and the Map reviewed / municipal period usage footer were removed from the app page at the user’s request. Main Meter is the parent of Garage Roof, and Garage Roof is a parent distribution meter for its downstream areas.
+
+
+## Edit the map in the app
+
+Admins can choose **Edit network** on the viewing page. See [Network editor guide](network-editor.md). The JSON file now supplies the initial map only. After a user saves the editor, the SQL document is the authoritative map and subsequent deployments do not replace it. Meter assignments remain in WaterNetworkLinks, and saving the editor commits topology and assignments together.
+
+Apply `UpgradeWaterNetworkEditor.sql` after the existing meter/link migrations and before deploying this version. This changes the network loading path to SQL persistence and updates the link-save procedure for concurrency. If you rerun an older link migration afterwards, rerun the editor migration last to restore its concurrency checks.
