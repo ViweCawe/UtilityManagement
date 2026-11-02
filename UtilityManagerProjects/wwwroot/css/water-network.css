@@ -61,3 +61,9 @@
 .wn-trace-summary { margin-top: 22px; padding-top: 14px; border-top: 1px solid #dbe5ee; color: #475569; }
 .wn-register > summary { padding: 20px 24px; font-weight: 700; color: #172b4d; cursor: pointer; }
 .water-network :is(button,select,a,summary):focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+.wn-assignment { padding: 24px; margin: 24px 0; background: #fff; color: #172b4d; }
+.wn-assignment h2 { color: #172b4d; }
+.wn-assignment p { color: #475569; }
+.wn-reading-panel { border-left: 3px solid #2563eb; padding: 12px; background: #eff6ff; color: #172b4d; }
+.wn-node .wn-reading-value { fill: #1d4ed8; font-size: 13px; font-weight: 800; }
+.wn-node .wn-reading-date { fill: #475569; font-size: 9px; font-weight: 400; }

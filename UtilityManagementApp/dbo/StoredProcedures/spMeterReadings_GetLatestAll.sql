@@ -1,4 +1,4 @@
-﻿CREATE PROCEDURE dbo.spMeterReading_GetLatestAll
+CREATE PROCEDURE dbo.spMeterReading_GetLatestAll
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -12,6 +12,7 @@ BEGIN
                    ORDER BY ReadingDate DESC, Id DESC
                ) AS [RN]
         FROM dbo.MeterReadings
+        WHERE IsDeleted = 0
     )
     SELECT *
     FROM Latest

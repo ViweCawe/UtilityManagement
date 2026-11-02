@@ -124,4 +124,5 @@
     <RefactorLog Include="UtilityManagementApp.refactorlog" />
   </ItemGroup>
   <ItemGroup><Build Include="dbo\StoredProcedures\spMeters_UpdateDetails.sql" /></ItemGroup>
+<ItemGroup><Build Include="dbo\Tables\WaterNetworkLinks.sql" /><Build Include="dbo\StoredProcedures\spWaterNetworkLinks_All.sql" /><Build Include="dbo\StoredProcedures\spWaterNetworkLinks_Save.sql" /></ItemGroup>
 </Project>
