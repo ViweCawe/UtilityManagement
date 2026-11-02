@@ -11,33 +11,32 @@
 <div class="page-shell water-network">
     <header class="page-header-row">
         <div class="page-title"><h1>Water Network</h1><p>Follow water from supply, through storage, to use.</p></div>
-        <a class="utility-btn-secondary" href="@Model.Network.SourceUrl" target="_blank" rel="noopener noreferrer">Open Figma map <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
     </header>
 
     <div class="wn-summary">
-        <section><span>01 / SUPPLY</span><h2>Municipal &amp; borehole</h2><p>Separate sources. The fire hydrant is outside the main-meter usage boundary; its feed is unconfirmed.</p></section>
+        <section><span>01 / SUPPLY</span><h2>Main Meter · Source</h2><p>The Main Meter records municipal water feeding both stations. Borehole water is shown as a separate supply route.</p></section>
         <section><span>02 / STORAGE</span><h2>Docking bay → reservoir</h2><p>Water travels by cable car to Top Station. Rainwater also enters the reservoir.</p></section>
         <section><span>03 / DISTRIBUTION</span><h2>Dosing → header tank</h2><p>The header tank supplies Top Station outlets. Storage volume is different from flow-meter usage.</p></section>
     </div>
 
-    <div class="wn-notice" role="note"><strong>Reading this network:</strong> arrows describe the routes on your map, not live valve status or measured flow. Adding parent, transfer and downstream meter readings can count the same water repeatedly. This view does not calculate site consumption or tank levels.</div>
+    <div class="wn-notice" role="note"><strong>Start at the Main Meter:</strong> follow the arrows to see where the water goes. Select a point to see what supplies it and what it supplies next. Flow readings taken along the same route should not be added together as extra consumption.</div>
 
     <section class="content-card wn-explorer" aria-labelledby="network-heading">
         <div class="content-card-header">
-            <div><h2 id="network-heading">Explore the flow</h2><p>Select a point to trace its supplies and destinations.</p></div>
+            <div><h2 id="network-heading">Explore the flow</h2><p>Choose a station, then select a point on the map.</p></div>
             <div class="wn-controls" hidden id="network-controls">
                 <label for="network-station">Station <select id="network-station"><option value="Lower">Lower Station</option><option value="Top">Top Station</option></select></label>
-                <label for="network-point">Point <select id="network-point"></select></label>
-                <label class="wn-checkbox"><input id="network-backup" type="checkbox" /> Include backup route in trace</label>
+                <label for="network-point">Show point <select id="network-point"></select></label>
+                <label class="wn-checkbox"><input id="network-backup" type="checkbox" /> Highlight toilet backup supply</label>
             </div>
         </div>
         <div class="wn-explore-layout" id="network-explorer" hidden>
             <div>
-                <div class="wn-legend"><span>→ Supply / transfer</span><span>┄ Backup when borehole is closed</span><span>Amber = feed unresolved</span></div>
+                <div class="wn-legend"><span><i class="wn-key supply"></i> Water supply</span><span><i class="wn-key backup"></i> Backup: borehole closed</span><span><i class="wn-key unknown"></i> Supply needs confirmation</span><button type="button" id="network-reset">Back to Main Meter</button></div>
                 <div class="wn-canvas" tabindex="0" aria-label="Water network diagram, scroll horizontally to explore">
                     <svg id="network-diagram" role="group" aria-label="Interactive water network"></svg>
                 </div>
-                <p class="wn-caption">Use the point selector or select a diagram node. Cross-station connections appear in the details.</p>
+                <p class="wn-caption">Arrows show the direction of supply. The highlighted route shows connected points; it does not indicate live valve status.</p>
             </div>
             <aside class="wn-details" aria-labelledby="selected-point-title">
                 <span id="selected-point-kind" class="wn-eyebrow"></span>
@@ -48,8 +47,8 @@
         <noscript><p class="p-3">The complete connection list below is available without JavaScript.</p></noscript>
     </section>
 
-    <section class="content-card wn-register" aria-labelledby="register-heading">
-        <div class="content-card-header"><div><h2 id="register-heading">Network points &amp; meter links</h2><p>Database links require verified meter IDs. Unlinked points are not assumed to be meters.</p></div></div>
+    <details class="content-card wn-register"><summary>View all supply connections and saved meter readings</summary>
+        <div class="content-card-header"><div><h2>All supply connections</h2><p>“View readings” opens saved readings for the verified meter at that point. “Meter not assigned” means that connection has not been set up yet.</p></div></div>
         @foreach (var warning in Model.MappingWarnings)
         {
             <p class="alert alert-warning" role="status">@warning</p>
@@ -62,24 +61,24 @@
                 var incoming = Model.Network.Connections.Where(e => e.To == node.Id).ToList();
                 var outgoing = Model.Network.Connections.Where(e => e.From == node.Id).ToList();
                 <tr id="point-@node.Id">
-                    <th scope="row">@node.Label <a href="@(Model.Network.SourceUrl + "?node-id=" + node.FigmaNodeId.Replace(':', '-'))" target="_blank" rel="noopener noreferrer" aria-label="@node.Label in Figma"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a><small>@node.Note</small></th>
-                    <td>@node.Station / @node.Kind</td>
+                    <th scope="row">@node.Label<small>@node.Note</small></th>
+                    <td>@node.Station / @Model.RoleLabel(node.Kind)</td>
                     <td>@if (incoming.Count == 0) { <span>@(node.Kind == "source" ? "Source" : "Feed to confirm")</span> }
-                        @foreach (var edge in incoming) { <div><a href="#point-@edge.From">@names[edge.From]</a>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
+                        @foreach (var edge in incoming) { <div><span>@names[edge.From]</span>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
                     <td>@if (outgoing.Count == 0) { <span>@(node.Kind == "unresolved" ? "To confirm" : "No downstream point shown")</span> }
-                        @foreach (var edge in outgoing) { <div><a href="#point-@edge.To">@names[edge.To]</a>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
+                        @foreach (var edge in outgoing) { <div><span>@names[edge.To]</span>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
                     <td>@if (Model.LinkedMeters.TryGetValue(node.Id, out var meter))
-                        { <a asp-page="/MeterReadings/History" asp-route-meterId="@meter.Id">@meter.MeterName · #@meter.Id</a><small>@(meter.IsActive ? "Active" : "Disabled")</small> }
-                        else { <span>Not linked</span> }</td>
+                        { <a asp-page="/MeterReadings/History" asp-route-meterId="@meter.Id">View readings: @meter.MeterName</a><small>@(meter.IsActive ? "Active" : "Disabled")</small> }
+                        else { <span>Meter not assigned</span> }</td>
                 </tr>
             }
             </tbody>
         </table></div>
-    </section>
+    </details>
     <section class="wn-open-questions" aria-labelledby="questions-heading">
         <h2 id="questions-heading">Connections to confirm</h2>
         <ul>@foreach (var question in Model.Network.OpenQuestions) { <li>@question</li> }</ul>
-        <p>Map reviewed @Model.Network.ReviewedOn. Source connections are retained; proposed corrections are documented in the repository.</p>
+        <p>Map reviewed @Model.Network.ReviewedOn. The Main Meter is the metered source of municipal water for this network.</p>
     </section>
 </div>
 @section Scripts {

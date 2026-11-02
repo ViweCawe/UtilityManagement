@@ -6,7 +6,7 @@ var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "water-networ
 using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
 {
     var map = WaterNetwork.Load(stream);
-    if (map.Nodes.Count != 30 || map.Connections.Count != 28)
+    if (map.Nodes.Count != 29 || map.Connections.Count != 27)
         throw new Exception("Unexpected source map inventory.");
 }
 
@@ -32,7 +32,7 @@ Reject("dangling connection", d => d["connections"]![0]!["to"] = "missing-point"
 Reject("duplicate connection", d => d["connections"]!.AsArray().Add(d["connections"]![0]!.DeepClone()));
 Reject("cycle", d => d["connections"]!.AsArray().Add(new JsonObject
 {
-    ["from"] = "main-tank", ["to"] = "municipal", ["kind"] = "supply", ["figmaConnectorId"] = "test"
+    ["from"] = "header", ["to"] = "main-tank", ["kind"] = "supply", ["figmaConnectorId"] = "test"
 }));
 Reject("backup without condition", d =>
 {

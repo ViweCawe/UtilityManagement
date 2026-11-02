@@ -14,6 +14,12 @@ public class IndexModel(IWebHostEnvironment environment, IConfiguration configur
     public Dictionary<string, Meter> LinkedMeters { get; } = new(StringComparer.Ordinal);
     public List<string> MappingWarnings { get; } = [];
 
+    public string RoleLabel(string kind) => kind switch
+    {
+        "source" => "Source", "storage" => "Storage tank", "distribution" => "Distribution",
+        "usage" => "Water use", "transfer" => "Transfer", _ => "To confirm"
+    };
+
     public async Task OnGetAsync()
     {
         using var stream = environment.ContentRootFileProvider

@@ -27,3 +27,5 @@ Create and Edit expose the classification and optional capacity, validate combin
 The forms retain the app's navy `#152436` / `#0d1d31` and blue `#0d6efd` palette. Navy panels use white/light text; input fields use white backgrounds with dark text. Selection and keyboard focus have visible borders, and errors use light red on navy (dark red on pale error panels).
 
 Validation: classification rules are checked in the standalone C# validation project. The full application still has the existing external SQL-project reference build limitation documented in `water-network.md`. Database migration execution and full browser visual verification remain required in your environment.
+
+The Main Meter is the municipal inflow source. There is no separate Municipality Supply meter record. The network page omits Figma links and uses “Water comes from”, “Water goes to”, and optional “View readings” actions. The stable internal key `main-tank` is retained for existing mapping configuration; it now means Main Meter — Source and does not assert that the point is a tank.

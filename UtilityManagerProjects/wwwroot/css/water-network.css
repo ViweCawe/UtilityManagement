@@ -41,3 +41,23 @@
 .wn-open-questions p { font-size: .8rem; margin-bottom: 0; }
 @media (max-width: 1150px) { .wn-explore-layout { grid-template-columns: minmax(0, 1fr); } .wn-details { border-left: 0; border-top: 1px solid #e2e8f0; max-height: none; } }
 @media (max-width: 760px) { .wn-summary { grid-template-columns: 1fr; } .wn-controls { width: 100%; } .wn-controls select { max-width: 100%; } .wn-explorer .content-card-header { flex-direction: column; align-items: start; gap: 16px; } }
+/* Navy shell with clear white reading surfaces. */
+.water-network > .page-header-row { padding: 24px; background: #152436; border: 1px solid #52708f; border-radius: 16px; }
+.water-network > .page-header-row .page-title h1 { color: #fff; }
+.water-network > .page-header-row .page-title p { color: #d6dadd; }
+.water-network > .page-header-row .utility-btn-secondary { background: #0d1d31; color: #fff; border: 1px solid #8ba8c7; }
+.water-network .content-card-header { background: #fff; color: #172b4d; border-bottom: 1px solid #dbe5ee; flex-wrap: wrap; gap: 18px; }
+.water-network .content-card-header :is(h2,h3) { color: #172b4d; }
+.water-network .content-card-header p { color: #475569; }
+.water-network .wn-details { background: #fff; color: #172b4d; }
+.water-network .wn-details :is(h3,h4) { color: #172b4d; }
+.wn-key { display: inline-block; width: 25px; border-top: 3px solid #2563eb; margin-right: 6px; vertical-align: middle; }
+.wn-key.backup { border-top-style: dashed; border-top-color: #64748b; }
+.wn-key.unknown { width: 12px; height: 12px; border: 2px solid #b45309; background: #fef3c7; border-radius: 3px; }
+#network-reset { margin-left: auto; border: 1px solid #93b4df; padding: 6px 12px; background: #eff6ff; color: #1e40af; border-radius: 7px; font-weight: 600; }
+.wn-details button { display: block; width: 100%; border: 1px solid #dbe5ee; border-radius: 7px; padding: 9px 10px; margin: 5px 0; background: #f8fafc; text-decoration: none; }
+.wn-details button:hover { background: #eff6ff; border-color: #2563eb; }
+.wn-details ul { list-style: none; padding: 0; }
+.wn-trace-summary { margin-top: 22px; padding-top: 14px; border-top: 1px solid #dbe5ee; color: #475569; }
+.wn-register > summary { padding: 20px 24px; font-weight: 700; color: #172b4d; cursor: pointer; }
+.water-network :is(button,select,a,summary):focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }

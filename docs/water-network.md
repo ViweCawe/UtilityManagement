@@ -6,9 +6,9 @@ Source: [Water Meter Mapper](https://www.figma.com/board/x7u5LA84S82rYAFgz67Qn2/
 
 Open **Water Network** in the sidebar or from **Meters** (`/WaterNetwork`, sign-in required). Select Lower or Top Station, then a point to see direct feeds, destinations and upstream/downstream routes. Follow a detail link to move between stations. The full connection register remains available without JavaScript.
 
-The network contains 30 physical points and 28 connections. `App_Data/water-network.json` is the source for the diagram and register, with Figma node/connector IDs for traceability. Annotation-only shapes are not represented as pipework. The intermediate pumping and dosing descriptions are collapsed into physical tank-to-tank routes, retaining both connector IDs.
+The network contains 29 physical points and 27 connections. `App_Data/water-network.json` is the source for the diagram and register, with Figma node/connector IDs for traceability. Annotation-only shapes are not represented as pipework. The intermediate pumping and dosing descriptions are collapsed into physical tank-to-tank routes, retaining both connector IDs.
 
-- Municipal supply → Main Tank → Kitchen Stores, Garage Roof, Workshop / Staff Toilets / Fountains, and cable car transfer to Top Station.
+- Main Meter (Source; records municipal inflow) → Kitchen Stores, Garage Roof, Workshop / Staff Toilets / Fountains, and cable car transfer to Top Station.
 - Garage Roof → Staff Room, Misting System, Ice Machine, Vista / Mezze, TAP Bar and Vida Café.
 - Borehole Incoming → Borehole Out → Staff Toilets.
 - Garage Roof → Staff Toilets is a **backup when the borehole supply is closed**. It remains visible as a dashed route but is excluded from the trace until selected. Selecting it explores a possible route; it does not assert valve status or simultaneous operation.
@@ -43,7 +43,7 @@ This feature does not change existing dashboard/report arithmetic. Those pages c
 Before changing totals, confirm:
 
 1. Database meter IDs, physical inlet/outlet locations, and actual reading units. Existing models use `L³` while reports use `L`; the map does not establish the correct conversion.
-2. Whether Main Tank and Garage Roof labels denote tanks, meters, or both; the exact municipal parent meter location.
+2. Whether Main Tank and Garage Roof labels denote tanks, meters, or both; the physical storage arrangement at the Main Meter source.
 3. The hydrant supply and metering exclusion, grouped Workshop / Staff Toilets / Fountains branch, and fallback operating rules.
 4. Tank capacities and level measurements, transfer volumes, rainwater measurements, and compatible reading intervals.
 
@@ -58,3 +58,5 @@ The new Razor page and page model were also compiled and exercised in an isolate
 An HTTP smoke check confirmed the rendered register, embedded network data, and JavaScript/CSS assets (including the module MIME type). A DOM interaction check against that rendered page passed both station selectors, the backup toggle, Vida Café tracing, reservoir inputs, cross-station navigation and keyboard selection. Browser visual testing could not run because the environment blocks Chromium's required local socket; DOM checks do not verify layout. Figma corrections were visually checked using board screenshots.
 
 The full application's existing build is blocked before compilation by `UtilityManagerProjects.csproj` referencing `..\..\UtilityManagementApp\UtilityManagementApp.sqlproj`, which resolves outside the repository. It also references the in-repository legacy SSDT project and a compiled DLL under `obj`. These references were not changed as part of the network feature. A successful isolated feature check is not a successful full application build or database integration test.
+
+The Main Meter is the municipal inflow source. There is no separate Municipality Supply meter record. The network page omits Figma links and uses “Water comes from”, “Water goes to”, and optional “View readings” actions. The stable internal key `main-tank` is retained for existing mapping configuration; it now means Main Meter — Source and does not assert that the point is a tank.

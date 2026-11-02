@@ -8,8 +8,8 @@ const network = JSON.parse(readFileSync(new URL('../UtilityManagerProjects/App_D
 test('map has valid, unique points, unique edges and documented source IDs', () => {
     const ids = new Set(network.nodes.map(n => n.id));
     assert.equal(ids.size, network.nodes.length);
-    assert.equal(network.nodes.length, 30);
-    assert.equal(network.connections.length, 28);
+    assert.equal(network.nodes.length, 29);
+    assert.equal(network.connections.length, 27);
     const pairs = new Set();
     for (const node of network.nodes) assert.match(node.figmaNodeId, /^\d+:\d+$/);
     for (const edge of network.connections) {
@@ -23,7 +23,7 @@ test('map has valid, unique points, unique edges and documented source IDs', () 
 
 test('municipal route reaches both stations without absorbing borehole or rainwater', () => {
     const trace = traceNetwork(network, 'main-tank');
-    assert.deepEqual([...trace.upstream], ['municipal']);
+    assert.deepEqual([...trace.upstream], []);
     for (const id of ['garage-roof', 'cable-car-transfer', 'docking-bay', 'reservoir', 'dosing', 'header', 'male-female-toilets', 'vida-cafe'])
         assert.ok(trace.downstream.has(id), id);
     for (const id of ['rainwater', 'borehole-in', 'fire-hydrant', 'staff-toilets-lower'])
@@ -32,14 +32,14 @@ test('municipal route reaches both stations without absorbing borehole or rainwa
 
 test('reservoir recognises municipal transfer and additional rainwater input', () => {
     const { upstream } = traceNetwork(network, 'reservoir');
-    for (const id of ['rainwater', 'docking-bay', 'cable-car-transfer', 'main-tank', 'municipal']) assert.ok(upstream.has(id));
+    for (const id of ['rainwater', 'docking-bay', 'cable-car-transfer', 'main-tank']) assert.ok(upstream.has(id));
 });
 
 test('staff-toilet fallback is included only when explicitly requested', () => {
     const regular = traceNetwork(network, 'staff-toilets-lower');
     assert.deepEqual(new Set(regular.upstream), new Set(['borehole-in', 'borehole-out']));
     const alternative = traceNetwork(network, 'staff-toilets-lower', true);
-    for (const id of ['garage-roof', 'main-tank', 'municipal', 'borehole-in', 'borehole-out']) assert.ok(alternative.upstream.has(id));
+    for (const id of ['garage-roof', 'main-tank', 'borehole-in', 'borehole-out']) assert.ok(alternative.upstream.has(id));
     const backup = network.connections.find(e => e.kind === 'backup');
     assert.equal(backup.condition, 'Borehole supply is closed');
     assert.equal(traceEdge(backup, 'staff-toilets-lower', regular), false);

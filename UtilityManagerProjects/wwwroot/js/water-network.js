@@ -10,6 +10,7 @@ if (payload) {
     const diagram = document.getElementById('network-diagram');
     const details = document.getElementById('selected-point-routes');
     const namespace = 'http://www.w3.org/2000/svg';
+    const roleLabels = { source: 'Source', storage: 'Storage tank', distribution: 'Distribution', usage: 'Water use', transfer: 'Transfer', unresolved: 'To confirm' };
     let selectedId = 'main-tank';
 
     function svg(type, attributes = {}, text) {
@@ -55,7 +56,7 @@ if (payload) {
             const item = document.createElement('li');
             const button = document.createElement('button');
             button.type = 'button';
-            button.textContent = `${node.label} · ${node.station}`;
+            button.textContent = `Show ${node.label} (${node.station} Station)`;
             button.addEventListener('click', () => select(id));
             item.append(button);
             list.append(item);
@@ -114,32 +115,31 @@ if (payload) {
             }
             const text = svg('text', { x: 90, y: 34 - (lines.length - 1) * 7, 'text-anchor': 'middle' });
             lines.forEach((line, index) => text.append(svg('tspan', { x: 90, dy: index ? 16 : 0 }, line)));
-            group.append(text, svg('text', { x: 90, y: 68, 'text-anchor': 'middle', class: 'wn-node-kind' }, node.kind.toUpperCase()));
+            group.append(text, svg('text', { x: 90, y: 68, 'text-anchor': 'middle', class: 'wn-node-kind' }, roleLabels[node.kind].toUpperCase()));
             group.addEventListener('click', () => select(node.id));
             group.addEventListener('keydown', event => {
                 if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(node.id); }
             });
             diagram.append(group);
         }
-        document.getElementById('selected-point-kind').textContent = `${selected.station} Station / ${selected.kind}`;
+        document.getElementById('selected-point-kind').textContent = `${selected.station} Station / ${roleLabels[selected.kind]}`;
         document.getElementById('selected-point-title').textContent = selected.label;
         document.getElementById('selected-point-note').textContent = selected.note || 'Route shown on the source map. Meter identity is not yet verified.';
         details.replaceChildren();
         const supplies = network.connections.filter(e => e.to === selectedId && e.kind !== 'backup');
         const destinations = network.connections.filter(e => e.from === selectedId && e.kind !== 'backup');
-        routeList('Direct supply', supplies.map(e => e.from), selected.kind === 'source' ? 'Source point.' : undefined);
-        routeList('Direct destinations', destinations.map(e => e.to));
+        routeList('Water comes from', supplies.map(e => e.from), selected.kind === 'source' ? 'Source point.' : undefined);
+        routeList('Water goes to', destinations.map(e => e.to));
         for (const edge of network.connections.filter(e => e.kind === 'backup' && (e.to === selectedId || e.from === selectedId))) {
             routeList(`Backup only: ${edge.condition}`, [edge.to === selectedId ? edge.from : edge.to]);
         }
-        routeList('All upstream points', [...trace.upstream]);
-        routeList('All downstream points', [...trace.downstream]);
-        const registerLink = document.createElement('a');
-        registerLink.href = `#point-${selectedId}`;
-        registerLink.textContent = 'View point and meter link in register';
-        details.append(registerLink);
+        const explanation = document.createElement('p');
+        explanation.className = 'wn-trace-summary';
+        explanation.textContent = `Highlighted route: ${trace.upstream.size} connected points before this point and ${trace.downstream.size} after it. Use “Show” to follow a connection on the map.`;
+        details.append(explanation);
     }
 
+    document.getElementById('network-reset').addEventListener('click', () => select('main-tank'));
     station.addEventListener('change', () => {
         fillPoints();
         select(station.value === 'Lower' ? 'main-tank' : 'header');
