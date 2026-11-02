@@ -64,6 +64,7 @@ public sealed class WaterNetworkNode
     public string Label { get; init; } = "";
     public string Station { get; init; } = "";
     public string Kind { get; init; } = "";
+    public bool CanLinkMeter { get; init; } = true;
     public string Note { get; init; } = "";
     public string FigmaNodeId { get; init; } = "";
     public double X { get; init; }

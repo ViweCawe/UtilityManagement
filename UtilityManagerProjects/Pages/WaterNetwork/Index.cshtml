@@ -13,8 +13,21 @@
         <div class="page-title"><h1>Water Network</h1><p>Follow water from supply, through storage, to use.</p></div>
     </header>
 
+    @if (TempData["LinkError"] is string linkError) { <p class="alert alert-warning" role="alert">@linkError</p> }
+    @if (User.IsInRole("Admin"))
+    {
+        <section class="content-card wn-assignment">
+            <h2>Link a point to its actual meter</h2>
+            <p>Choose the point on the diagram and the meter you created. Each meter can be assigned to one point.</p>
+            <form method="post" asp-page-handler="Link" class="wn-controls">
+                <label>Diagram point<select name="nodeId" required>@foreach (var point in Model.Network.Nodes.Where(n => n.CanLinkMeter)) { <option value="@point.Id">@point.Label (@point.Station)</option> }</select></label>
+                <label>Actual water meter<select name="meterId"><option value="">Remove assignment</option>@foreach (var meter in Model.AvailableMeters) { <option value="@meter.Id">@meter.MeterName (#@meter.Id)</option> }</select></label>
+                <button class="utility-btn-primary" type="submit">Save meter link</button>
+            </form>
+        </section>
+    }
     <div class="wn-summary">
-        <section><span>01 / SUPPLY</span><h2>Main Meter · Source</h2><p>The Main Meter records municipal water feeding both stations. Borehole water is shown as a separate supply route.</p></section>
+        <section><span>01 / SUPPLY</span><h2>Main Meter · Source</h2><p>Main Meter feeds both stations. Fire Hydrant has a separate municipal meter outside the Main Meter total.</p></section>
         <section><span>02 / STORAGE</span><h2>Docking bay → reservoir</h2><p>Water travels by cable car to Top Station. Rainwater also enters the reservoir.</p></section>
         <section><span>03 / DISTRIBUTION</span><h2>Dosing → header tank</h2><p>The header tank supplies Top Station outlets. Storage volume is different from flow-meter usage.</p></section>
     </div>
@@ -69,7 +82,7 @@
                         @foreach (var edge in outgoing) { <div><span>@names[edge.To]</span>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
                     <td>@if (Model.LinkedMeters.TryGetValue(node.Id, out var meter))
                         { <a asp-page="/MeterReadings/History" asp-route-meterId="@meter.Id">View readings: @meter.MeterName</a><small>@(meter.IsActive ? "Active" : "Disabled")</small> }
-                        else { <span>Meter not assigned</span> }</td>
+                        else { <span>@(node.CanLinkMeter ? "Meter not assigned" : "No separate meter")</span> }</td>
                 </tr>
             }
             </tbody>
@@ -78,10 +91,11 @@
     <section class="wn-open-questions" aria-labelledby="questions-heading">
         <h2 id="questions-heading">Connections to confirm</h2>
         <ul>@foreach (var question in Model.Network.OpenQuestions) { <li>@question</li> }</ul>
-        <p>Map reviewed @Model.Network.ReviewedOn. The Main Meter is the metered source of municipal water for this network.</p>
+        <p>Map reviewed @Model.Network.ReviewedOn. Municipal period usage = Main Meter usage + Fire Hydrant usage over matching dates. Counter values are not period usage.</p>
     </section>
 </div>
 @section Scripts {
+    <script id="water-network-readings" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Latest))</script>
     <script id="water-network-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Network, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))</script>
     <script type="module" src="~/js/water-network.js" asp-append-version="true"></script>
 }

@@ -3,6 +3,8 @@ import { traceNetwork, traceEdge } from './water-network-graph.mjs';
 const payload = document.getElementById('water-network-data');
 if (payload) {
     const network = JSON.parse(payload.textContent);
+    const readings = JSON.parse(document.getElementById('water-network-readings')?.textContent || '{}');
+    const formatReading = value => new Intl.NumberFormat().format(value);
     const nodes = new Map(network.nodes.map(n => [n.id, n]));
     const station = document.getElementById('network-station');
     const point = document.getElementById('network-point');
@@ -69,7 +71,7 @@ if (payload) {
         const trace = traceNetwork(network, selectedId, backup.checked);
         const visible = network.nodes.filter(n => n.station === station.value);
         const active = new Set([selectedId, ...trace.upstream, ...trace.downstream]);
-        const height = Math.max(...visible.map(n => n.y)) + 125;
+        const height = Math.max(...visible.map(n => n.y)) + 165;
         diagram.setAttribute('viewBox', `-20 -25 1310 ${height + 25}`);
         diagram.style.aspectRatio = `1310 / ${height + 25}`;
         diagram.replaceChildren();
@@ -85,7 +87,7 @@ if (payload) {
             const from = nodes.get(edge.from), to = nodes.get(edge.to);
             if (from.station !== station.value || to.station !== station.value) continue;
             const highlighted = traceEdge(edge, selectedId, trace, backup.checked);
-            let x1 = from.x + 90, y1 = from.y + 80, x2 = to.x + 90, y2 = to.y;
+            let x1 = from.x + 90, y1 = from.y + 120, x2 = to.x + 90, y2 = to.y;
             let d;
             if (from.y === to.y) {
                 const direction = to.x > from.x ? 1 : -1;
@@ -107,7 +109,7 @@ if (payload) {
                 role: 'button', 'aria-label': `${node.label}, ${node.kind}${node.id === selectedId ? ', selected' : ''}`,
                 'aria-pressed': node.id === selectedId ? 'true' : 'false',
                 class: `wn-node ${node.id === selectedId ? 'selected' : ''} ${active.has(node.id) ? 'traced' : ''} ${node.kind}` });
-            group.append(svg('rect', { width: 180, height: 80, rx: 12 }));
+            group.append(svg('rect', { width: 180, height: 120, rx: 12 }));
             const words = node.label.split(' '), lines = [''];
             for (const word of words) {
                 if ((lines[lines.length - 1] + word).length > 23) lines.push('');
@@ -116,6 +118,10 @@ if (payload) {
             const text = svg('text', { x: 90, y: 34 - (lines.length - 1) * 7, 'text-anchor': 'middle' });
             lines.forEach((line, index) => text.append(svg('tspan', { x: 90, dy: index ? 16 : 0 }, line)));
             group.append(text, svg('text', { x: 90, y: 68, 'text-anchor': 'middle', class: 'wn-node-kind' }, roleLabels[node.kind].toUpperCase()));
+            const measurement = readings[node.id];
+            const valueLabel = measurement ? (measurement.currentReading == null ? 'No readings yet' : `${formatReading(measurement.currentReading)} ${measurement.unit}`) : (node.canLinkMeter === false ? 'No separate meter' : 'Assign a meter');
+            group.append(svg('text', { x: 90, y: 90, 'text-anchor': 'middle', class: 'wn-reading-value' }, valueLabel));
+            group.append(svg('text', { x: 90, y: 108, 'text-anchor': 'middle', class: 'wn-reading-date' }, measurement?.capturedAt || ''));
             group.addEventListener('click', () => select(node.id));
             group.addEventListener('keydown', event => {
                 if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(node.id); }
@@ -126,6 +132,15 @@ if (payload) {
         document.getElementById('selected-point-title').textContent = selected.label;
         document.getElementById('selected-point-note').textContent = selected.note || 'Route shown on the source map. Meter identity is not yet verified.';
         details.replaceChildren();
+        const measurement = readings[selectedId];
+        const readout = document.createElement('p');
+        readout.className = 'wn-reading-panel';
+        readout.textContent = measurement ? `${measurement.name} (#${measurement.meterId}) · Latest counter: ${measurement.currentReading == null ? 'No readings yet' : formatReading(measurement.currentReading) + ' ' + measurement.unit} · Captured: ${measurement.capturedAt || '—'}` : (selected.canLinkMeter === false ? 'No separate meter at this point.' : 'Assign the actual meter to show its saved readings.');
+        details.append(readout);
+        if (measurement?.historyUrl) {
+            const history = document.createElement('a'); history.href = measurement.historyUrl;
+            history.textContent = 'View this meter’s readings'; details.append(history);
+        }
         const supplies = network.connections.filter(e => e.to === selectedId && e.kind !== 'backup');
         const destinations = network.connections.filter(e => e.from === selectedId && e.kind !== 'backup');
         routeList('Water comes from', supplies.map(e => e.from), selected.kind === 'source' ? 'Source point.' : undefined);
