@@ -10,7 +10,7 @@ CREATE TABLE [dbo].[Meters]
     [CapacityLitres] DECIMAL(14,2) NULL,
     CONSTRAINT CK_Meters_Asset CHECK (
         (AssetKind = 1 AND NetworkRole IN (1,2,3,4) AND CapacityLitres IS NULL)
-        OR (AssetKind = 2 AND MeterType = 1 AND NetworkRole IN (3,5) AND IsCumulative = 0 AND (CapacityLitres IS NULL OR CapacityLitres > 0))),
+        OR (AssetKind = 2 AND MeterType = 1 AND NetworkRole IN (1,3,5) AND (CapacityLitres IS NULL OR CapacityLitres > 0))),
     [AreaId] INT NOT NULL,
 	[DepartmentId] INT NOT NULL,
 	[StationId] INT NOT NULL,

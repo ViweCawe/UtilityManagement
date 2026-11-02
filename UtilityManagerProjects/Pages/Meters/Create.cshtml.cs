@@ -82,7 +82,7 @@ namespace UtilityManagerProjects.Pages.Meters
                 AreaId = Input.AreaId,
                 DepartmentId = Input.DepartmentId,
                 StationId = Input.StationId,
-                IsCumulative = Input.AssetKind == AssetKind.Meter && Input.IsCumulative
+                IsCumulative = Input.IsCumulative
             };
 
             var meterId = await meterData.InsertMeter(meter);

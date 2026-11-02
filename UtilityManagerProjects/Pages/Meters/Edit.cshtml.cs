@@ -108,7 +108,7 @@ namespace UtilityManagerProjects.Pages.Meters
             meter.AreaId = Input.AreaId;
             meter.DepartmentId = Input.DepartmentId;
             meter.StationId = Input.StationId;
-            meter.IsCumulative = Input.AssetKind == AssetKind.Meter && Input.IsCumulative;
+            meter.IsCumulative = Input.IsCumulative;
 
             await meterData.UpdateMeter(meter);
 

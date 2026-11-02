@@ -10,10 +10,12 @@ IF COL_LENGTH('dbo.Meters','CapacityLitres') IS NULL
     ALTER TABLE dbo.Meters ADD CapacityLitres DECIMAL(14,2) NULL;
 COMMIT TRANSACTION;
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name='CK_Meters_Asset' AND parent_object_id=OBJECT_ID('dbo.Meters'))
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name='CK_Meters_Asset' AND parent_object_id=OBJECT_ID('dbo.Meters'))
+    ALTER TABLE dbo.Meters DROP CONSTRAINT CK_Meters_Asset;
+GO
     ALTER TABLE dbo.Meters WITH CHECK ADD CONSTRAINT CK_Meters_Asset CHECK (
         (AssetKind=1 AND NetworkRole IN (1,2,3,4) AND CapacityLitres IS NULL)
-        OR (AssetKind=2 AND MeterType=1 AND NetworkRole IN (3,5) AND IsCumulative=0 AND (CapacityLitres IS NULL OR CapacityLitres>0)));
+        OR (AssetKind=2 AND MeterType=1 AND NetworkRole IN (1,3,5) AND (CapacityLitres IS NULL OR CapacityLitres>0)));
 GO
 CREATE OR ALTER PROCEDURE [dbo].[spMeters_Insert]
 	(

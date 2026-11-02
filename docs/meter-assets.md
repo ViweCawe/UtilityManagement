@@ -7,9 +7,9 @@ The database project also contains the schema/procedure definitions for fresh de
 | Asset kind | Allowed roles | Meaning |
 |---|---|---|
 | Meter | Source, Transfer, Distribution, End use | A device measuring flow/usage, including a flow meter attached to a tank |
-| Tank | Storage, Distribution | Physical water storage, optionally also distributing to other points |
+| Tank | Source, Storage, Distribution | Metered physical water storage, optionally also distributing to other points |
 
-Tank capacity is optional and expressed in litres. It is not current stored volume. Tanks must be Water, cannot be cumulative meters, and are rejected by the usage-reading creation handler, including forged requests. Track a flow meter on a tank as a separate Meter record. A future tank-level capture workflow must use separate measurements; this change does not pretend that cumulative meter readings measure tank levels.
+Tank capacity is optional and expressed in litres. It is not current stored volume. Tanks must be Water. Their attached meter readings can be cumulative and are accepted by the usage-reading form. The tank record can represent the tank and its attached meter for reading capture. A future tank-level capture workflow must use separate measurements; this change does not pretend that cumulative meter readings measure tank levels.
 
 Suggested starting classifications from the board:
 
@@ -29,3 +29,5 @@ The forms retain the app's navy `#152436` / `#0d1d31` and blue `#0d6efd` palette
 Validation: classification rules are checked in the standalone C# validation project. The full application still has the existing external SQL-project reference build limitation documented in `water-network.md`. Database migration execution and full browser visual verification remain required in your environment.
 
 The Main Meter is the municipal inflow source. There is no separate Municipality Supply meter record. The network page omits Figma links and uses “Water comes from”, “Water goes to”, and optional “View readings” actions. The stable internal key `main-tank` is retained for existing mapping configuration; it now means Main Meter — Source and does not assert that the point is a tank.
+
+Metered tank clarification: tanks have attached meters and their readings are captured through the meter-reading form. Tank roles include Source, Storage and Distribution; cumulative readings are allowed. Capacity remains a separate optional specification. Re-run UpgradeMeterAssets.sql to replace the earlier restrictive check constraint. This supersedes earlier statements excluding tank readings.
