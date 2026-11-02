@@ -146,7 +146,7 @@ if (payload) {
         routeList('Water comes from', supplies.map(e => e.from), selected.kind === 'source' ? 'Source point.' : undefined);
         routeList('Water goes to', destinations.map(e => e.to));
         for (const edge of network.connections.filter(e => e.kind === 'backup' && (e.to === selectedId || e.from === selectedId))) {
-            routeList(`Backup only: ${edge.condition}`, [edge.to === selectedId ? edge.from : edge.to]);
+            routeList(`Conditional supply: ${edge.condition}`, [edge.to === selectedId ? edge.from : edge.to]);
         }
         const explanation = document.createElement('p');
         explanation.className = 'wn-trace-summary';

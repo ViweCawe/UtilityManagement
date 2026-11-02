@@ -15,13 +15,13 @@ The diagram and details show the latest saved counter value, unit, capture date 
 - Fire Hydrant is a separately metered municipal branch, excluded from the Main Meter and main billed usage. Total municipal **period usage** is Main Meter usage plus Fire Hydrant usage over matching dates. Do not add their lifetime counter readings to calculate period usage. There is no inferred pipe from Main Meter to Fire Hydrant.
 - Borehole Incoming represents the metered storage tank receiving drilled water. Borehole Out measures water leaving that storage. Its supply to toilets is for flushing; basins receive main water.
 - Garage Roof is a parent distribution meter. Water passing it has already passed Main Meter; downstream meters show where that water goes.
-- Garage Roof supplies Level 1 Visitor Toilets as backup when borehole supply is closed.
+- Level 1 Visitor Toilets normally use borehole water for flushing. Main Meter supplies flushing only when borehole water has run out. Level 1 is the destination, not a backup asset.
 - Workshop Meter serves unmetered Basins, Fountains and Level 4 Toilets, and metered Old Cable Car. The new borehole-to-workshop route is labelled toilet flushing only. These annotations do not prove a separate meter on each internal circuit.
 - Ticket Office Toilets is connected to Garage Roof in the updated board.
 - Docking Bay, Reservoir and the other metered tanks capture flow through successive stages. Increasing counters do not indicate current tank levels. These internal transfer readings must not be summed as additional external supply.
 
-The updated board's fallback note mentions switching to main for sinks when borehole runs out while also saying basins normally use main. Confirm that wording before modelling a Workshop fallback valve. No Workshop automatic fallback has been invented.
 
 ## Validation and limits
 
 Network integrity and route traversal tests pass. JavaScript syntax checks pass. Earlier isolated Razor compilation covered the previous revision; the local .NET SDK/temporary validation host is no longer available, so this revision has not been compiled here. SQL migration execution, actual Dapper round trips, linked meter readings against the live database, and browser visual layout remain unverified. The migration must be applied before opening the updated network page.
+The resolved Connections to confirm section and the Map reviewed / municipal period usage footer were removed from the app page at the user’s request. Main Meter is the parent of Garage Roof, and Garage Roof is a parent distribution meter for its downstream areas.

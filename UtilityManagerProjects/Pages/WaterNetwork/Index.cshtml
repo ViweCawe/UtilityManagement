@@ -40,12 +40,12 @@
             <div class="wn-controls" hidden id="network-controls">
                 <label for="network-station">Station <select id="network-station"><option value="Lower">Lower Station</option><option value="Top">Top Station</option></select></label>
                 <label for="network-point">Show point <select id="network-point"></select></label>
-                <label class="wn-checkbox"><input id="network-backup" type="checkbox" /> Highlight toilet backup supply</label>
+                <label class="wn-checkbox"><input id="network-backup" type="checkbox" /> Show main-water flushing route</label>
             </div>
         </div>
         <div class="wn-explore-layout" id="network-explorer" hidden>
             <div>
-                <div class="wn-legend"><span><i class="wn-key supply"></i> Water supply</span><span><i class="wn-key backup"></i> Backup: borehole closed</span><span><i class="wn-key unknown"></i> Supply needs confirmation</span><button type="button" id="network-reset">Back to Main Meter</button></div>
+                <div class="wn-legend"><span><i class="wn-key supply"></i> Water supply</span><span><i class="wn-key backup"></i> Main flushing supply when borehole runs out</span><span><i class="wn-key unknown"></i> Supply needs confirmation</span><button type="button" id="network-reset">Back to Main Meter</button></div>
                 <div class="wn-canvas" tabindex="0" aria-label="Water network diagram, scroll horizontally to explore">
                     <svg id="network-diagram" role="group" aria-label="Interactive water network"></svg>
                 </div>
@@ -77,9 +77,9 @@
                     <th scope="row">@node.Label<small>@node.Note</small></th>
                     <td>@node.Station / @Model.RoleLabel(node.Kind)</td>
                     <td>@if (incoming.Count == 0) { <span>@(node.Kind == "source" ? "Source" : "Feed to confirm")</span> }
-                        @foreach (var edge in incoming) { <div><span>@names[edge.From]</span>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
+                        @foreach (var edge in incoming) { <div><span>@names[edge.From]</span>@if (edge.Kind == "backup") { <small>When: @edge.Condition</small> }</div> }</td>
                     <td>@if (outgoing.Count == 0) { <span>@(node.Kind == "unresolved" ? "To confirm" : "No downstream point shown")</span> }
-                        @foreach (var edge in outgoing) { <div><span>@names[edge.To]</span>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
+                        @foreach (var edge in outgoing) { <div><span>@names[edge.To]</span>@if (edge.Kind == "backup") { <small>When: @edge.Condition</small> }</div> }</td>
                     <td>@if (Model.LinkedMeters.TryGetValue(node.Id, out var meter))
                         { <a asp-page="/MeterReadings/History" asp-route-meterId="@meter.Id">View readings: @meter.MeterName</a><small>@(meter.IsActive ? "Active" : "Disabled")</small> }
                         else { <span>@(node.CanLinkMeter ? "Meter not assigned" : "No separate meter")</span> }</td>
@@ -88,11 +88,7 @@
             </tbody>
         </table></div>
     </details>
-    <section class="wn-open-questions" aria-labelledby="questions-heading">
-        <h2 id="questions-heading">Connections to confirm</h2>
-        <ul>@foreach (var question in Model.Network.OpenQuestions) { <li>@question</li> }</ul>
-        <p>Map reviewed @Model.Network.ReviewedOn. Municipal period usage = Main Meter usage + Fire Hydrant usage over matching dates. Counter values are not period usage.</p>
-    </section>
+
 </div>
 @section Scripts {
     <script id="water-network-readings" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Latest))</script>
