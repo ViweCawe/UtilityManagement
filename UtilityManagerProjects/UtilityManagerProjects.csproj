@@ -29,6 +29,10 @@
     <Folder Include="Pages\Departments\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="App_Data\water-network.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   
 
   <ItemGroup>
