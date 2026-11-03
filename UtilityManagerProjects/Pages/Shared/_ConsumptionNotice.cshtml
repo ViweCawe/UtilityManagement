@@ -2,9 +2,16 @@
 <div class="alert alert-info consumption-notice" role="note" style="background:#eff6ff;color:#152436;border-color:#93c5fd;line-height:1.6">
     @if(ViewData["ConsumptionDateNotice"] is string notice) { <p><strong>@notice</strong></p> }
     @if(ViewData["ConsumptionWarnings"] is IEnumerable<string> warnings) { <ul>@foreach(var warning in warnings) { <li>@warning</li> }</ul> }
+    <div>Saved captures in selected dates: <strong>@Model.CapturesInPeriod</strong>.</div>
+    @if(Model.StartingOnlyMeterCount>0) { <p><strong>Starting readings saved for @Model.StartingOnlyMeterCount meter(s).</strong> Usage needs two reading dates for the same meter. Capture another counter on a later date; do not enter the same counter again just to fill a graph.</p> }
     <div><strong>Estimated daily flow</strong> · Water: @Model.Water.CoveredDays / @Model.Water.Dates.Count days covered.</div>
     @if (Model.Electricity.MeterIds.Count>0) { <div>Electricity: @Model.Electricity.CoveredDays / @Model.Electricity.Dates.Count days covered.</div> }
     @if (Model.Water.Missing.Any()) { <ul>@foreach(var message in Model.Water.Missing) { <li>@message</li> }</ul> }
+    @foreach(var scope in new[]{Model.Water,Model.Electricity}.Where(s=>s.CoveredDays==0&&s.CoverageIssues.Any())) {
+        <div><strong>@(ReferenceEquals(scope,Model.Water)?"Water":"Electricity") usage is not ready.</strong></div>
+        <ul>@foreach(var issue in scope.CoverageIssues.Take(3)) { <li>@issue</li> }</ul>
+        @if(scope.CoverageIssues.Count>3) { <div>And @(scope.CoverageIssues.Count-3) more meters. Check the per-meter table or select an individual meter.</div> }
+    }
     <details><summary>How these figures are calculated</summary>
     <strong>Estimated daily flow from meter intervals.</strong>
     Weekly captures are spread evenly over the days between them. The line changes when the next interval average changes; it does not measure actual daily variations.
