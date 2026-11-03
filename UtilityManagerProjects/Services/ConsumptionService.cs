@@ -46,6 +46,8 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
                 CoveredDays=days.Count,TotalUsage=days.Sum(d=>d.Usage),DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count};
         }).OrderBy(r=>r.DepartmentName).ThenBy(r=>r.MeterName).ToList();
 
+    public WaterStorageReport StorageForPeriod(DateTime start,DateTime end) => WaterStorageAccounting.Calculate(network,links,Meters,History,start,end);
+
     public static (DateTime Start, DateTime End, string? Notice) ReportingRange(DateTime start, DateTime end)
     {
         var originalStart=start.Date; var originalEnd=end.Date;

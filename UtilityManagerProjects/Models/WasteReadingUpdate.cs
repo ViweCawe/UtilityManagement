@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace UtilityManagerProjects.Models
 {
@@ -7,12 +7,12 @@ namespace UtilityManagerProjects.Models
         public int Id { get; set; }
 
         [Required]
-        [Range(
-            0.01,
-            double.MaxValue,
-            ErrorMessage = "Waste amount must be greater than zero.")]
+        [Range(typeof(decimal),"0.01","9999999999999999.99",ErrorMessage="Enter a positive waste amount with at most 16 integer digits.")]
         [Display(Name = "Waste Amount")]
         public decimal WasteAmount { get; set; }
+
+        [Required]
+        public DateTime? ReadingDate { get; set; }
 
         [StringLength(500)]
         public string? Notes { get; set; }

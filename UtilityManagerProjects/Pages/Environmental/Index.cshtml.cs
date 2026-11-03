@@ -196,19 +196,8 @@ namespace UtilityManagerProjects.Pages.Environmental
             return CarbonEstimateAvailable ? Math.Round(electricityKwh*carbonFactor!.Value,2) : 0;
         }
 
-        private static bool IsRecycling(WasteReadingDisplay item)
-        {
-            return ContainsText(item.WasteCategory, "recycl") ||
-                   ContainsText(item.WasteTypeName, "recycl") ||
-                   ContainsText(item.WasteMaterial, "recycl");
-        }
-
-        private static bool IsLandfill(WasteReadingDisplay item)
-        {
-            return ContainsText(item.WasteCategory, "landfill") ||
-                   ContainsText(item.WasteTypeName, "landfill") ||
-                   ContainsText(item.WasteMaterial, "landfill");
-        }
+        private static bool IsRecycling(WasteReadingDisplay item) => WasteCategoryClassifier.Classify(item.WasteCategory)==WasteDisposition.Recycling;
+        private static bool IsLandfill(WasteReadingDisplay item) => WasteCategoryClassifier.Classify(item.WasteCategory)==WasteDisposition.Landfill;
 
         private static bool ContainsText(string? value, string search)
         {

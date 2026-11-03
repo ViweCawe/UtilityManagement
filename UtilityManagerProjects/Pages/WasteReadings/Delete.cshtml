@@ -1,0 +1,6 @@
+@page
+@model UtilityManagerProjects.Pages.WasteReadings.DeleteModel
+@{ ViewData["Title"]="Delete waste collection"; }
+<div class="page-shell admin-form-shell"><div class="page-title"><h1>Delete waste collection</h1></div>
+<section class="content-card"><p>Remove @Model.Record?.WasteAmount.ToString("N2") kg of @Model.Record?.WasteTypeName recorded on @Model.Record?.ReadingDate.ToString("dd MMM yyyy") from reports? The audit record is retained.</p>
+<form method="post"><input asp-for="Id" type="hidden"/><div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div><div class="form-actions"><button type="submit" class="utility-btn-danger">Delete collection</button><a asp-page="./Display" asp-route-id="@Model.Id" class="utility-btn-secondary">Cancel</a></div></form></section></div>

@@ -75,6 +75,23 @@ public sealed class WaterNetwork
             if(role is "main" or "hydrant" or "borehole-inlet")
                 if(Connections.Any(e=>e.To==node.Id&&e.Kind!="backup")) throw new InvalidDataException("An inlet reporting meter must not have a normal upstream connection.");
         }
+        var credits=new HashSet<int>();var debits=new HashSet<int>();
+        foreach(var node in Nodes.Where(n=>n.Storage is not null)) {
+            var stock=node.Storage!;
+            if(node.Kind is not ("source" or "storage")) throw new InvalidDataException("Storage balances belong to physical source/storage points only.");
+            if(stock.InletMeterIds is null||stock.OutletMeterIds is null||stock.InletMeterIds.Count>500||stock.OutletMeterIds.Count>500||stock.InletMeterIds.Concat(stock.OutletMeterIds).Any(id=>id<=0)||stock.InletMeterIds.Intersect(stock.OutletMeterIds).Any()) throw new InvalidDataException("Choose distinct positive inlet and outlet meter IDs for each tank.");
+            if(stock.OpeningVolumeLitres.HasValue!=stock.OpeningDate.HasValue||stock.OpeningVolumeLitres<0||stock.OpeningDate.HasValue&&(stock.OpeningDate.Value.Date<new DateTime(1753,1,1)||stock.OpeningDate.Value.Date>DateTime.Today)) throw new InvalidDataException("Opening stock needs a nonnegative measured volume and a date no later than today. It is not the cumulative meter counter.");
+            foreach(var id in stock.InletMeterIds) if(!credits.Add(id)) throw new InvalidDataException("A transfer counter can credit only one storage point. Do not count a common parent meter as the inlet of several tanks.");
+            foreach(var id in stock.OutletMeterIds) if(!debits.Add(id)) throw new InvalidDataException("A transfer counter can debit only one storage point. The same counter can be that supplier's outlet and the receiving tank's inlet.");
+        }
+        foreach(var from in Nodes.Where(n=>n.Storage is not null)) foreach(var id in from.Storage!.OutletMeterIds) {
+            var to=Nodes.SingleOrDefault(n=>n.Storage?.InletMeterIds.Contains(id)==true);if(to is null)continue;
+            var pending=new Queue<string>(Connections.Where(e=>e.From==from.Id).Select(e=>e.To));var found=new HashSet<string>();
+            while(pending.TryDequeue(out var next)) {if(!found.Add(next))continue;foreach(var edge in Connections.Where(e=>e.From==next))pending.Enqueue(edge.To);}
+            if(!found.Contains(to.Id))throw new InvalidDataException("A paired tank transfer must follow a route on the water network. Check the supplier, receiver and counter.");
+        }
+        foreach(var node in Nodes.Where(n=>n.MeasuresFinalUse))
+            if(!node.CanLinkMeter||WaterAccounting.Role(node) is "main" or "borehole-inlet" or "borehole-outlet"||node.MeterId.HasValue&&credits.Contains(node.MeterId.Value)) throw new InvalidDataException("Final use must be a consumption counter, not a supply meter or a transfer credited to storage.");
         // A cycle would make this documented source-to-consumer network misleading.
         var visiting = new HashSet<string>();
         var visited = new HashSet<string>();
@@ -87,6 +104,10 @@ public sealed class WaterNetwork
             visited.Add(id);
         }
         foreach (var id in ids) Visit(id);
+        foreach(var node in Nodes.Where(n=>n.MeasuresFinalUse)) {
+            var queue=new Queue<string>(Connections.Where(e=>e.From==node.Id).Select(e=>e.To));var seen=new HashSet<string>();
+            while(queue.TryDequeue(out var id)) {if(!seen.Add(id))continue;var child=Nodes.Single(n=>n.Id==id);if(child.CanLinkMeter||child.Kind=="storage")throw new InvalidDataException("A meter feeding another meter or tank is a transfer, not final consumption.");foreach(var edge in Connections.Where(e=>e.From==id))queue.Enqueue(edge.To);}
+        }
         foreach(var edge in Connections.Where(e=>!string.IsNullOrEmpty(e.SourceFilter)))
             if(!WaterAccounting.Origins(this,edge.From).Contains(edge.SourceFilter!)) throw new InvalidDataException("A route cannot carry a source its upstream point does not supply. Check the source type and circuit restriction.");
         foreach(var node in Nodes.Where(n=>WaterAccounting.Role(n).Length>0)) {
@@ -109,6 +130,8 @@ public sealed class WaterNetworkNode
     public string? ReportingRole { get; set; }
     public string? SupplyOrigin { get; set; }
     public string? UsageArea { get; set; }
+    public WaterStorageSettings? Storage { get; set; }
+    public bool MeasuresFinalUse { get; set; }
     public string Note { get; init; } = "";
     public string FigmaNodeId { get; init; } = "";
     public double X { get; init; }
@@ -149,4 +172,13 @@ public static class WaterAccounting
         }
         return Visit(id);
     }
+}
+
+public sealed class WaterStorageSettings
+{
+    public DateTime? OpeningDate { get; set; }
+    public decimal? OpeningVolumeLitres { get; set; }
+    public List<int> InletMeterIds { get; set; } = [];
+    public List<int> OutletMeterIds { get; set; } = [];
+    public bool AllFlowsConfirmed { get; set; }
 }

@@ -34,3 +34,9 @@
 @media(max-width:700px) { .ne-route-card,.ne-point { grid-template-columns:1fr; } .ne-flow-point { margin-left:0; } }
 .ne-field>label { margin-bottom:7px; }
 .ne-field { min-width:0; }
+.ne-storage-settings { margin-top:18px; padding:16px; background:#f4f7fb; border:1px solid #cbd5e1; border-radius:8px; }
+.ne-storage-settings>summary { font-weight:600; cursor:pointer; }
+.ne-storage-settings>.ne-field { margin:14px 0; }
+.ne-storage-settings fieldset { border:1px solid #cbd5e1; padding:12px; margin:16px 0; max-height:260px; overflow-y:auto; }
+.ne-storage-settings legend { font-size:14px; font-weight:600; }
+.network-editor .ne-meter-choice { display:flex; align-items:center; gap:10px; margin:7px 0; }

@@ -1,4 +1,4 @@
-﻿using DataLibrary.Models;
+using DataLibrary.Models;
 
 namespace DataLibrary.Data
 {
@@ -11,7 +11,9 @@ namespace DataLibrary.Data
             int id,
             decimal wasteAmount,
             string notes,
-            int updatedByEmployeeId);
+            int updatedByEmployeeId,DateTime? readingDate = null);
+
+        Task<int> DeleteWasteReading(int id,int employeeId);
 
         Task<WasteReading?> GetWasteReadingById(
             int id);

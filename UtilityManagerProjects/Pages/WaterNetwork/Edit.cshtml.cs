@@ -50,6 +50,8 @@ public sealed class EditModel(WaterNetworkStore store, IMeterData meters, IDataA
             var network = Models.WaterNetwork.Load(stream);
             if (network.Nodes.Any(n => n.MeterId.HasValue && !AvailableMeters.Any(m => m.Id == n.MeterId)))
                 throw new InvalidDataException("A linked meter is unavailable. Remove its assignment or choose an active water meter.");
+            var boundaryIds=network.Nodes.Where(n=>n.Storage is not null).SelectMany(n=>n.Storage!.InletMeterIds.Concat(n.Storage.OutletMeterIds));
+            if(boundaryIds.Any(id=>!AvailableMeters.Any(m=>m.Id==id)||!network.Nodes.Any(n=>n.MeterId==id))) throw new InvalidDataException("Each storage boundary must use an active water meter linked to its actual point on the map.");
             await store.SaveAsync(network, Revision, User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "Admin");
             TempData["NetworkSaved"] = "Network saved.";
             return RedirectToPage("./Index");

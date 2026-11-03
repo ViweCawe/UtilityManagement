@@ -45,12 +45,12 @@ namespace UtilityManagerProjects.Pages.WasteReadings
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid)
-            {
-                await LoadReadingAsync(WasteRecordUpdate.Id);
-
-                return Page();
-            }
+            if(Id>0 && Id!=WasteRecordUpdate.Id) return BadRequest();
+            var existing=await wasteReadingData.GetWasteReadingById(WasteRecordUpdate.Id);
+            if(existing is null||existing.IsDeleted) return NotFound();
+            if(WasteRecordUpdate.ReadingDate is not DateTime date || date.Date<new DateTime(1753,1,1)||date.Date>DateTime.Today) ModelState.AddModelError("WasteRecordUpdate.ReadingDate","Choose a collection date no later than today.");
+            if(decimal.Round(WasteRecordUpdate.WasteAmount,2)!=WasteRecordUpdate.WasteAmount) ModelState.AddModelError("WasteRecordUpdate.WasteAmount","Use at most two decimal places.");
+            if(!ModelState.IsValid) {await LoadReadingAsync(existing.Id,false);return Page();}
 
             var identityUserId = userManager.GetUserId(User);
 
@@ -62,22 +62,23 @@ namespace UtilityManagerProjects.Pages.WasteReadings
             var employee =
                 await employeeData.GetEmployeeByUserId(identityUserId);
 
-            if (employee == null)
+            if (employee == null || !employee.IsActive)
             {
                 ModelState.AddModelError(
                     string.Empty,
                     "No employee record is linked to the signed-in user.");
 
-                await LoadReadingAsync(WasteRecordUpdate.Id);
+                await LoadReadingAsync(WasteRecordUpdate.Id,false);
 
                 return Page();
             }
 
-            await wasteReadingData.UpdateWasteReadings(
+            try { await wasteReadingData.UpdateWasteReadings(
                 WasteRecordUpdate.Id,
                 WasteRecordUpdate.WasteAmount,
                 WasteRecordUpdate.Notes ?? string.Empty,
-                employee.Id);
+                employee.Id,WasteRecordUpdate.ReadingDate);
+            } catch(System.Data.Common.DbException) { ModelState.AddModelError("","The collection could not be updated. Reload and try again.");await LoadReadingAsync(existing.Id,false);return Page(); }
 
             TempData["SuccessMessage"] =
                 "Waste reading updated successfully.";
@@ -87,19 +88,19 @@ namespace UtilityManagerProjects.Pages.WasteReadings
                 new { id = WasteRecordUpdate.Id });
         }
 
-        private async Task<IActionResult> LoadReadingAsync(int id)
+        private async Task<IActionResult> LoadReadingAsync(int id,bool populateInput=true)
         {
             WasteRecord =
                 await wasteReadingData.GetWasteReadingById(id);
 
-            if (WasteRecord == null)
+            if (WasteRecord == null || WasteRecord.IsDeleted)
             {
-                return RedirectToPage("./List");
+                return NotFound();
             }
 
-            WasteRecordUpdate = new WasteReadingUpdate
+            if(populateInput) WasteRecordUpdate = new WasteReadingUpdate
             {
-                Id = WasteRecord.Id,
+                Id = WasteRecord.Id, ReadingDate=WasteRecord.ReadingDate,
                 WasteAmount = WasteRecord.WasteAmount,
                 Notes = WasteRecord.Notes ?? string.Empty
             };

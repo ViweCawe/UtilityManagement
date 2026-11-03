@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.WasteReadings.ListModel
 
 @{
@@ -6,6 +6,8 @@
 }
 
 <div class="page-shell">
+@if(ViewData["WasteDateNotice"] is string notice){<p class="alert alert-info">@notice</p>}
+@if(TempData["SuccessMessage"] is string success){<p class="alert alert-success" role="status">@success</p>}
 
     <div class="page-header-row">
         <div class="page-title">
@@ -86,8 +88,8 @@
                 <p>Total Waste Generated</p>
                 <h2>@Model.TotalWasteGenerated.ToString("N2") <span>kg</span></h2>
                 <span class="@(Model.WasteGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
-                    @(Model.WasteGrowthPercent >= 0 ? "▲" : "▼")
-                    @Math.Abs(Model.WasteGrowthPercent).ToString("N1")% vs previous period
+                    @(Model.WasteGrowthAvailable ? (Model.WasteGrowthPercent >= 0 ? "▲" : "▼") : "")
+                    @(Model.WasteGrowthAvailable?Math.Abs(Model.WasteGrowthPercent).ToString("N1")+"%":"No previous amount") vs previous period
                 </span>
             </div>
         </div>
@@ -225,8 +227,8 @@
                     </div>
                     <div>
                         <span class="@(Model.WeeklyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
-                            @(Model.WeeklyGrowthPercent >= 0 ? "▲" : "▼")
-                            @Math.Abs(Model.WeeklyGrowthPercent).ToString("N1")%
+                            @(Model.WeeklyGrowthAvailable ? (Model.WeeklyGrowthPercent >= 0 ? "▲" : "▼") : "")
+                            @(Model.WeeklyGrowthAvailable?Math.Abs(Model.WeeklyGrowthPercent).ToString("N1")+"%":"No previous amount")
                         </span>
                     </div>
                 </div>
@@ -238,8 +240,8 @@
                     </div>
                     <div>
                         <span class="@(Model.MonthlyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
-                            @(Model.MonthlyGrowthPercent >= 0 ? "▲" : "▼")
-                            @Math.Abs(Model.MonthlyGrowthPercent).ToString("N1")%
+                            @(Model.MonthlyGrowthAvailable ? (Model.MonthlyGrowthPercent >= 0 ? "▲" : "▼") : "")
+                            @(Model.MonthlyGrowthAvailable?Math.Abs(Model.MonthlyGrowthPercent).ToString("N1")+"%":"No previous amount")
                         </span>
                     </div>
                 </div>
@@ -253,7 +255,7 @@
         <div class="content-card-header">
             <div>
                 <h3>All Waste Readings</h3>
-                <p>Data from <strong>dbo.spWasteReadings_All</strong>.</p>
+                <p>Every collection in the selected dates and search. Each amount is an individual waste collection, not a cumulative counter.</p>
             </div>
         </div>
 

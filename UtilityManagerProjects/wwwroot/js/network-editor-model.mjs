@@ -23,6 +23,21 @@ export function validateNetwork(map) {
     for(const node of map.nodes.filter(n=>n.isExternalSupply===true))
         if(node.canLinkMeter===false || !['source','storage'].includes(node.kind) || map.connections.some(e=>e.to===node.id && e.kind!=='backup'))
             throw new Error('An external supply must be a metered Source or Storage point without a normal upstream connection.');
+    const credits=new Map(),debits=new Set();
+    for(const n of map.nodes.filter(n=>n.storage)) {
+        const b=n.storage,ins=b.inletMeterIds,outs=b.outletMeterIds;
+        if(!['source','storage'].includes(n.kind)||!Array.isArray(ins)||!Array.isArray(outs)||ins.length>500||outs.length>500||[...ins,...outs].some(id=>!Number.isInteger(id)||id<=0)||ins.some(id=>outs.includes(id)))throw new Error('Storage needs distinct inlet and outlet counters on a physical source/storage point.');
+        if((b.openingDate!=null)!==(b.openingVolumeLitres!=null)||b.openingVolumeLitres!=null&&(!Number.isFinite(b.openingVolumeLitres)||b.openingVolumeLitres<0))throw new Error('Enter both a measured opening volume and its date. Do not use the cumulative counter as stock.');
+        if(b.openingDate!=null){const date=new Date(b.openingDate);if(!Number.isFinite(date.getTime())||date.getFullYear()<1753||date.setHours(0,0,0,0)>new Date().setHours(0,0,0,0))throw new Error('Choose a valid opening stock date no later than today.');}
+        for(const id of ins){if(credits.has(id))throw new Error('A transfer counter can credit only one receiving tank.');credits.set(id,n.id);}
+        for(const id of outs){if(debits.has(id))throw new Error('A transfer counter can debit only one supplying tank.');debits.add(id);}
+    }
+    for(const n of map.nodes.filter(n=>n.measuresFinalUse)) {
+        if(n.canLinkMeter===false||['main','borehole-inlet','borehole-outlet'].includes(reportingRole(n))||credits.has(n.meterId))throw new Error('A supply/transfer credited to storage cannot also count as final use.');
+        const queue=map.connections.filter(e=>e.from===n.id).map(e=>e.to),seen=new Set();
+        while(queue.length){const id=queue.shift();if(seen.has(id))continue;seen.add(id);const child=map.nodes.find(p=>p.id===id);if(child.canLinkMeter!==false||child.kind==='storage')throw new Error('A counter feeding another meter/tank is a transfer, not final consumption.');queue.push(...map.connections.filter(e=>e.from===id).map(e=>e.to));}
+    }
+    for(const n of map.nodes.filter(n=>n.storage))for(const id of n.storage.outletMeterIds){const to=credits.get(id);if(!to)continue;const queue=map.connections.filter(e=>e.from===n.id).map(e=>e.to),seen=new Set();while(queue.length){const p=queue.shift();if(seen.has(p))continue;seen.add(p);queue.push(...map.connections.filter(e=>e.from===p).map(e=>e.to));}if(!seen.has(to))throw new Error('A paired tank transfer must follow a route on the map.');}
     const visiting = new Set(), visited = new Set();
     function visit(id) {
         if (visited.has(id)) return;
