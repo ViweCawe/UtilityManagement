@@ -1,12 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-
-namespace UtilityManagerProjects.Pages.Area
-{
-    public class CreateModel : PageModel
-    {
-        public void OnGet()
-        {
-        }
-    }
-}
+using Microsoft.AspNetCore.Authorization;
+namespace UtilityManagerProjects.Pages.Area;
+[Authorize(Roles="Admin")]
+public sealed class CreateModel(UtilityManagerProjects.Services.ReferenceDataStore store) : Admin.ReferenceEditorModel(store)
+{ protected override bool IsArea => true; }

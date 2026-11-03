@@ -1,4 +1,4 @@
-﻿@page "{id:int}"
+@page "{id:int}"
 @model UtilityManagerProjects.Pages.MeterReadings.DisplayModel
 
 @{
@@ -6,6 +6,8 @@
 }
 
 <div class="page-shell">
+    @if (Model.Reading?.IsBaseline == true) { <div class="alert alert-info">This is the baseline capture. It does not represent consumption since zero. Capture a later counter reading to calculate interval usage.</div> }
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     @if (Model.Reading != null)
     {

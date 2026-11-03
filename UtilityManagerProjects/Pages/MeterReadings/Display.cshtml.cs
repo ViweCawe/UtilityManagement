@@ -81,6 +81,8 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                 return Page();
             }
 
+            try
+            {
             await meterReadingData.UpdateMeterReadings(
                 ReadingUpdate.Id,
 
@@ -88,6 +90,14 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                 ReadingUpdate.Notes ?? string.Empty,
                 employee.Id,
                 ReadingUpdate.ReadingDateUpdate) ;
+
+            }
+            catch (System.Data.Common.DbException)
+            {
+                ModelState.AddModelError(string.Empty,"Could not update the capture. Use a unique capture time and a counter between its chronological neighbours.");
+                Reading=await meterReadingData.GetMeterReadingsById(ReadingUpdate.Id);
+                return Page();
+            }
 
             return RedirectToPage(
                 "./Display",

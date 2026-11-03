@@ -37,3 +37,10 @@ test('an empty network is rejected, while a replacement source with a new identi
     assert.throws(() => validateNetwork({ nodes: [], connections: [] }));
     assert.doesNotThrow(() => arrangeNetwork({ nodes: [point('new-source', { kind: 'source' })], connections: [] }));
 });
+
+test('external supply is explicit and rejects internal or unmetered boundaries', () => {
+    assert.doesNotThrow(() => validateNetwork({nodes: [point('inlet', {kind:'storage', isExternalSupply:true})], connections: []}));
+    assert.throws(() => validateNetwork({nodes: [point('outlet', {isExternalSupply:true})], connections: []}));
+    assert.throws(() => validateNetwork({nodes: [point('source', {kind:'source', canLinkMeter:false, isExternalSupply:true})], connections: []}));
+    assert.throws(() => validateNetwork({nodes: [point('parent'), point('tank', {kind:'storage', isExternalSupply:true})], connections: [route('parent','tank')]}));
+});

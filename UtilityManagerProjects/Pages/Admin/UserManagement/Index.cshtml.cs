@@ -12,13 +12,15 @@ namespace UtilityManagerProjects.Pages.Admin.UserManagement
     {
         private readonly UserManager<IdentityUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
+        private readonly UtilityManagerProjects.Services.UserAdministration administration;
 
         public IndexModel(
             UserManager<IdentityUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager, UtilityManagerProjects.Services.UserAdministration administration)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
+            this.administration=administration;
         }
 
         [BindProperty]
@@ -39,7 +41,7 @@ namespace UtilityManagerProjects.Pages.Admin.UserManagement
 
         public async Task<IActionResult> OnPostCreateRoleAsync()
         {
-            NewRoleName = NewRoleName.Trim();
+            NewRoleName = (NewRoleName ?? "").Trim();
 
             if (!ModelState.IsValid)
             {
@@ -82,6 +84,7 @@ namespace UtilityManagerProjects.Pages.Admin.UserManagement
         public async Task<IActionResult> OnPostDeleteRoleAsync(string roleId)
         {
             var role = await roleManager.FindByIdAsync(roleId);
+            if(string.Equals(role?.Name,"Admin",StringComparison.OrdinalIgnoreCase)) { StatusMessage="The Admin role is required and cannot be deleted.";return RedirectToPage(); }
 
             if (role == null)
             {
@@ -109,6 +112,15 @@ namespace UtilityManagerProjects.Pages.Admin.UserManagement
                     " ",
                     result.Errors.Select(x => x.Description));
 
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostDeleteUserAsync(string userId)
+        {
+            try {
+                var result=await administration.Delete(userId,User);
+                StatusMessage=result.Succeeded?"User deleted. Reading history has been preserved.":string.Join(" ",result.Errors.Select(e=>e.Description));
+            } catch(System.Data.Common.DbException) { StatusMessage="Unable to delete this user. Reload and try again."; }
             return RedirectToPage();
         }
 

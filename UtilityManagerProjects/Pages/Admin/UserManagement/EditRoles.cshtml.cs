@@ -12,15 +12,17 @@ namespace UtilityManagerProjects.Pages.Admin.UserManagement
         private readonly UserManager<IdentityUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly SignInManager<IdentityUser> signInManager;
+        private readonly UtilityManagerProjects.Services.UserAdministration administration;
 
         public EditRolesModel(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            SignInManager<IdentityUser> signInManager)
+            SignInManager<IdentityUser> signInManager, UtilityManagerProjects.Services.UserAdministration administration)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
             this.signInManager = signInManager;
+            this.administration=administration;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -54,47 +56,11 @@ namespace UtilityManagerProjects.Pages.Admin.UserManagement
                 return NotFound();
             }
 
-            var currentRoles =
-                await userManager.GetRolesAsync(user);
-
-            var selectedRoles = RoleSelections
-                .Where(x => x.IsSelected)
-                .Select(x => x.RoleName)
-                .ToList();
-
-            var rolesToAdd =
-                selectedRoles.Except(
-                    currentRoles,
-                    StringComparer.OrdinalIgnoreCase);
-
-            var rolesToRemove =
-                currentRoles.Except(
-                    selectedRoles,
-                    StringComparer.OrdinalIgnoreCase);
-
-            var addResult =
-                await userManager.AddToRolesAsync(
-                    user,
-                    rolesToAdd);
-
-            if (!addResult.Succeeded)
-            {
-                AddErrors(addResult);
-                await LoadRolesAsync(user);
-                return Page();
-            }
-
-            var removeResult =
-                await userManager.RemoveFromRolesAsync(
-                    user,
-                    rolesToRemove);
-
-            if (!removeResult.Succeeded)
-            {
-                AddErrors(removeResult);
-                await LoadRolesAsync(user);
-                return Page();
-            }
+            if(!ModelState.IsValid) { await LoadRolesAsync(user);return Page(); }
+            IdentityResult result;
+            try { result=await administration.SetRoles(UserId,RoleSelections.Where(r=>r.IsSelected).Select(r=>r.RoleName),User); }
+            catch(System.Data.Common.DbException) { ModelState.AddModelError("","Unable to update roles. Reload and try again.");await LoadRolesAsync(user);return Page(); }
+            if(!result.Succeeded) { AddErrors(result);await LoadRolesAsync(user);return Page(); }
 
             // If the logged-in administrator changed their own roles,
             // immediately rebuild the authentication cookie.

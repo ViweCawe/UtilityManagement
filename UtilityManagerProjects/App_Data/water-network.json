@@ -10,7 +10,8 @@
       "figmaNodeId": "9:220",
       "x": 470,
       "y": 100,
-      "note": "Records the municipal water entering our main supply and feeding both stations. Municipality describes where this water comes from; there is no separate Municipality Supply meter. The physical tank arrangement remains to be confirmed."
+      "note": "Records the municipal water entering our main supply and feeding both stations. Municipality describes where this water comes from; there is no separate Municipality Supply meter. The physical tank arrangement remains to be confirmed.",
+      "isExternalSupply": true
     },
     {
       "id": "fire-hydrant",
@@ -20,7 +21,8 @@
       "figmaNodeId": "9:301",
       "x": 5,
       "y": 140,
-      "note": "Separate municipal branch with its own meter. Excluded from the Main Meter and billed main supply. Compare period usage from this meter plus Main Meter usage to measure total municipal water; do not add lifetime counter values."
+      "note": "Separate municipal branch with its own meter. Excluded from the Main Meter and billed main supply. Compare period usage from this meter plus Main Meter usage to measure total municipal water; do not add lifetime counter values.",
+      "isExternalSupply": true
     },
     {
       "id": "kitchen-stores",
@@ -30,7 +32,8 @@
       "figmaNodeId": "9:739",
       "x": 160,
       "y": 280,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "garage-roof",
@@ -40,7 +43,8 @@
       "figmaNodeId": "9:866",
       "x": 470,
       "y": 280,
-      "note": "Parent distribution meter supplied by Main Meter. Garage Roof feeds its downstream areas; those flows are already included in the upstream Main Meter reading."
+      "note": "Parent distribution meter supplied by Main Meter. Garage Roof feeds its downstream areas; those flows are already included in the upstream Main Meter reading.",
+      "isExternalSupply": false
     },
     {
       "id": "workshop",
@@ -50,7 +54,8 @@
       "figmaNodeId": "11:624",
       "x": 780,
       "y": 280,
-      "note": "Main supply serves basins, fountains and Level 4 toilets (unmetered outlets), and Old Cable Car (metered). Borehole connection serves toilet flushing only. Keep these circuits distinct when interpreting readings."
+      "note": "Main supply serves basins, fountains and Level 4 toilets (unmetered outlets), and Old Cable Car (metered). Borehole connection serves toilet flushing only. Keep these circuits distinct when interpreting readings.",
+      "isExternalSupply": false
     },
     {
       "id": "borehole-in",
@@ -60,7 +65,8 @@
       "figmaNodeId": "11:430",
       "x": 1090,
       "y": 140,
-      "note": "Metered borehole tank receiving drilled water. Readings measure recorded flow into storage, not the current volume in the tank."
+      "note": "Metered borehole tank receiving drilled water. Readings measure recorded flow into storage, not the current volume in the tank.",
+      "isExternalSupply": true
     },
     {
       "id": "borehole-out",
@@ -70,7 +76,8 @@
       "figmaNodeId": "11:480",
       "x": 1090,
       "y": 280,
-      "note": "Meter measures litres leaving borehole storage. Supplies toilet flushing only; basins use the Main Meter supply."
+      "note": "Meter measures litres leaving borehole storage. Supplies toilet flushing only; basins use the Main Meter supply.",
+      "isExternalSupply": false
     },
     {
       "id": "old-cable-car",
@@ -80,7 +87,8 @@
       "figmaNodeId": "11:715",
       "x": 780,
       "y": 460,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "staff-room-lower",
@@ -90,7 +98,8 @@
       "figmaNodeId": "11:1038",
       "x": 5,
       "y": 460,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "misting",
@@ -100,7 +109,8 @@
       "figmaNodeId": "9:1108",
       "x": 200,
       "y": 460,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "ice-machine",
@@ -110,7 +120,8 @@
       "figmaNodeId": "11:166",
       "x": 395,
       "y": 460,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "vista-mezze",
@@ -120,7 +131,8 @@
       "figmaNodeId": "9:1148",
       "x": 200,
       "y": 610,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "tap-bar",
@@ -130,7 +142,8 @@
       "figmaNodeId": "9:1038",
       "x": 395,
       "y": 610,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "staff-toilets-lower",
@@ -140,7 +153,8 @@
       "figmaNodeId": "11:1045",
       "x": 1090,
       "y": 460,
-      "note": "Level 1 Visitor Toilets: borehole water normally supplies flushing. Main Meter water supplies flushing only when the borehole runs out. Basins use main water."
+      "note": "Level 1 Visitor Toilets: borehole water normally supplies flushing. Main Meter water supplies flushing only when the borehole runs out. Basins use main water.",
+      "isExternalSupply": false
     },
     {
       "id": "vida-cafe",
@@ -150,7 +164,8 @@
       "figmaNodeId": "11:1226",
       "x": 5,
       "y": 800,
-      "note": "Garage Roof feed is shown by connector 12:1305, added on the board during this review."
+      "note": "Garage Roof feed is shown by connector 12:1305, added on the board during this review.",
+      "isExternalSupply": false
     },
     {
       "id": "cable-car-transfer",
@@ -161,7 +176,8 @@
       "x": 505,
       "y": 0,
       "note": "Water is transported from the Lower Station Main Meter source. Transfer volume is not additional consumption.",
-      "canLinkMeter": false
+      "canLinkMeter": false,
+      "isExternalSupply": false
     },
     {
       "id": "docking-bay",
@@ -171,7 +187,8 @@
       "figmaNodeId": "1:58",
       "x": 505,
       "y": 140,
-      "note": "Receiver tank for water transported by cable car. Attached meters record cumulative water passing through this stage; readings are not tank levels."
+      "note": "Receiver tank for water transported by cable car. Attached meters record cumulative water passing through this stage; readings are not tank levels.",
+      "isExternalSupply": false
     },
     {
       "id": "reservoir",
@@ -181,7 +198,8 @@
       "figmaNodeId": "1:349",
       "x": 505,
       "y": 280,
-      "note": "Stores pumped water from the Docking Bay Tank and also receives rainwater. Capacity and level readings are not provided. Attached meters record cumulative water passing through this stage; readings are not tank levels."
+      "note": "Stores pumped water from the Docking Bay Tank and also receives rainwater. Capacity and level readings are not provided. Attached meters record cumulative water passing through this stage; readings are not tank levels.",
+      "isExternalSupply": false
     },
     {
       "id": "rainwater",
@@ -192,7 +210,8 @@
       "x": 865,
       "y": 280,
       "note": "Explicit additional input in the reservoir annotation; no rainwater meter is shown.",
-      "canLinkMeter": false
+      "canLinkMeter": false,
+      "isExternalSupply": false
     },
     {
       "id": "dosing",
@@ -202,7 +221,8 @@
       "figmaNodeId": "1:592",
       "x": 300,
       "y": 420,
-      "note": "The board says dosing flow is recorded here. Confirm the meter ID and distinguish its flow reading from tank level. Attached meters record cumulative water passing through this stage; readings are not tank levels."
+      "note": "The board says dosing flow is recorded here. Confirm the meter ID and distinguish its flow reading from tank level. Attached meters record cumulative water passing through this stage; readings are not tank levels.",
+      "isExternalSupply": false
     },
     {
       "id": "header",
@@ -212,7 +232,8 @@
       "figmaNodeId": "1:677",
       "x": 505,
       "y": 560,
-      "note": "Distributor for Top Station outlets; also a storage tank. Do not add its throughput to upstream supply as new consumption. Attached meters record cumulative water passing through this stage; readings are not tank levels."
+      "note": "Distributor for Top Station outlets; also a storage tank. Do not add its throughput to upstream supply as new consumption. Attached meters record cumulative water passing through this stage; readings are not tank levels.",
+      "isExternalSupply": false
     },
     {
       "id": "scullery",
@@ -222,7 +243,8 @@
       "figmaNodeId": "3:94",
       "x": 865,
       "y": 560,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "toilets-main",
@@ -232,7 +254,8 @@
       "figmaNodeId": "1:1102",
       "x": 0,
       "y": 720,
-      "note": "Feeds Male and Female Toilets. Verify whether its meter is at the inlet or outlet."
+      "note": "Feeds Male and Female Toilets. Verify whether its meter is at the inlet or outlet.",
+      "isExternalSupply": false
     },
     {
       "id": "ten67",
@@ -242,7 +265,8 @@
       "figmaNodeId": "1:1110",
       "x": 210,
       "y": 720,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "staff-room-top",
@@ -252,7 +276,8 @@
       "figmaNodeId": "1:1037",
       "x": 420,
       "y": 720,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "disabled-toilets",
@@ -262,7 +287,8 @@
       "figmaNodeId": "1:1114",
       "x": 630,
       "y": 720,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "wifi-lounge",
@@ -272,7 +298,8 @@
       "figmaNodeId": "1:1106",
       "x": 840,
       "y": 720,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "wifi-kitchen",
@@ -282,7 +309,8 @@
       "figmaNodeId": "1:1098",
       "x": 1050,
       "y": 720,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "male-female-toilets",
@@ -292,7 +320,8 @@
       "figmaNodeId": "1:1514",
       "x": 0,
       "y": 860,
-      "note": ""
+      "note": "",
+      "isExternalSupply": false
     },
     {
       "id": "ticket-office-toilets",
@@ -303,7 +332,8 @@
       "x": 5,
       "y": 610,
       "note": "Shown in the updated board.",
-      "canLinkMeter": true
+      "canLinkMeter": true,
+      "isExternalSupply": false
     },
     {
       "id": "workshop-basins",
@@ -314,7 +344,8 @@
       "x": 780,
       "y": 610,
       "note": "Unmetered outlet described in Workshop annotation. No separate meter reading is available.",
-      "canLinkMeter": false
+      "canLinkMeter": false,
+      "isExternalSupply": false
     },
     {
       "id": "workshop-fountains",
@@ -325,7 +356,8 @@
       "x": 990,
       "y": 610,
       "note": "Unmetered outlet described in Workshop annotation. No separate meter reading is available.",
-      "canLinkMeter": false
+      "canLinkMeter": false,
+      "isExternalSupply": false
     },
     {
       "id": "level4-toilets",
@@ -336,7 +368,8 @@
       "x": 780,
       "y": 760,
       "note": "Unmetered outlet described in Workshop annotation. No separate meter reading is available.",
-      "canLinkMeter": false
+      "canLinkMeter": false,
+      "isExternalSupply": false
     }
   ],
   "connections": [

@@ -1,0 +1,10 @@
+CREATE PROCEDURE dbo.spAdminLocation_Delete @Id INT AS
+BEGIN
+ SET NOCOUNT ON; SET XACT_ABORT ON;
+ BEGIN TRY BEGIN TRANSACTION;
+ DECLARE @Lock INT; SELECT @Lock=Id FROM dbo.Stations WITH(UPDLOCK,HOLDLOCK) WHERE Id=@Id;
+ IF EXISTS(SELECT 1 FROM dbo.Area WITH(UPDLOCK,HOLDLOCK) WHERE StationId=@Id) OR EXISTS(SELECT 1 FROM dbo.Meters WITH(UPDLOCK,HOLDLOCK) WHERE StationId=@Id) THROW 51110,'This location is used by areas or meters. Keep it for history, or deactivate it when no longer active.',1;
+ DELETE dbo.Stations WHERE Id=@Id;
+ COMMIT;
+ END TRY BEGIN CATCH IF @@TRANCOUNT>0 ROLLBACK; THROW; END CATCH
+END;

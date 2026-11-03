@@ -1,3 +1,5 @@
+using UtilityManagerProjects.Services;
+using UtilityManagerProjects.Models;
 using DataLibrary.Data;
 using DataLibrary.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -14,13 +16,20 @@ namespace UtilityManagerProjects.Pages.Reports
     {
         private readonly IMeterReadingData meterReadingData;
         private readonly IWasteReadingData wasteReadingData;
+        private readonly ConsumptionService calculations;
+        public ConsumptionPeriod Consumption { get; private set; } = new();
+        public bool WaterChangeAvailable { get; private set; }
+        public bool ElectricityChangeAvailable { get; private set; }
+        public bool PreviousWaterAvailable { get; private set; }
+        public bool PreviousElectricityAvailable { get; private set; }
 
         private const string ExcelMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-        public IndexModel(IMeterReadingData meterReadingData, IWasteReadingData wasteReadingData)
+        public IndexModel(IMeterReadingData meterReadingData, IWasteReadingData wasteReadingData, ConsumptionService calculations)
         {
             this.meterReadingData = meterReadingData;
             this.wasteReadingData = wasteReadingData;
+            this.calculations = calculations;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -90,6 +99,7 @@ namespace UtilityManagerProjects.Pages.Reports
             ResolveDateRange();
             await LoadReportData();
 
+            if (Consumption.AllDaily.Count>1_000_000) { ModelState.AddModelError(string.Empty,"Reduce the date range or select a meter before exporting this many daily rows."); return Page(); }
             var workbook = BuildExcelWorkbook();
             var fileName = $"Utility-Management-Report-{CurrentStart:yyyyMMdd}-{CurrentEnd:yyyyMMdd}.xlsx";
             return File(workbook, ExcelMimeType, fileName);
@@ -97,22 +107,19 @@ namespace UtilityManagerProjects.Pages.Reports
 
         private async Task LoadReportData()
         {
-            var unfilteredCurrent = (await meterReadingData.GetMeterReadingsByDateRange(CurrentStart, CurrentEnd))
-                .Where(IsSupportedMeter)
-                .ToList();
-
-            MeterOptions = unfilteredCurrent.GroupBy(x => x.MeterId).Select(x => x.First())
-                .OrderBy(x => x.MeterName).ToList();
-            DepartmentOptions = unfilteredCurrent.Select(x => x.DepartmentName)
-                .Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x).ToList();
-
-            MeterReadings = ApplyMeterFilters(unfilteredCurrent)
-                .OrderByDescending(x => x.ReadingDate).ToList();
-
-            var previousMeterReadings = ApplyMeterFilters((await meterReadingData
-                .GetMeterReadingsByDateRange(PreviousStart, PreviousEnd)).Where(IsSupportedMeter)).ToList();
-
+            await calculations.LoadAsync();
+            var unfilteredCurrent = calculations.History;
+            MeterOptions = unfilteredCurrent.GroupBy(x => x.MeterId).Select(x => x.First()).OrderBy(x => x.MeterName).ToList();
+            DepartmentOptions = unfilteredCurrent.Select(x => x.DepartmentName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+            MeterReadings = ApplyMeterFilters(unfilteredCurrent).Where(r => IsInRange(r.ReadingDate, CurrentStart, CurrentEnd)).OrderByDescending(r => r.ReadingDate).ToList();
+            Consumption = calculations.ForPeriod(CurrentStart, CurrentEnd, MeterId, Department);
+            ViewData["Consumption"] = Consumption;
+            ViewData["ConsumptionWarnings"] = calculations.Warnings;
+            var previous = calculations.ForPeriod(PreviousStart, PreviousEnd, MeterId, Department);
+            var previousMeterReadings = previous.SummaryRows;
+            PreviousWaterAvailable=previous.Water.CoveredDays>0; PreviousElectricityAvailable=previous.Electricity.CoveredDays>0;
+            WaterChangeAvailable = Consumption.Water.IsComplete && previous.Water.IsComplete && previous.Water.Total > 0;
+            ElectricityChangeAvailable = Consumption.Electricity.IsComplete && previous.Electricity.IsComplete && previous.Electricity.Total > 0;
             var allWasteReadings = (await wasteReadingData.GetWasteReadingDisplay())
                 .Where(x => x.IsDeleted == false)
                 .ToList();
@@ -130,8 +137,8 @@ namespace UtilityManagerProjects.Pages.Reports
             TotalWasteReadings = WasteReadings.Count;
             SelectedDayCount = (CurrentEnd.Date - CurrentStart.Date).Days + 1;
 
-            WaterTotal = GetMeterTotal(MeterReadings, MeterType.Water);
-            ElectricityTotal = GetMeterTotal(MeterReadings, MeterType.Electricity);
+            WaterTotal = Consumption.Water.Total;
+            ElectricityTotal = Consumption.Electricity.Total;
             WasteTotal = WasteReadings.Sum(x => x.WasteReading);
 
             
@@ -152,18 +159,12 @@ namespace UtilityManagerProjects.Pages.Reports
             WasteDiversionPercent = CalculatePercent(RecycledWaste, WasteTotal);
             PreviousWasteDiversionPercent = CalculatePercent(PreviousRecycledWaste, PreviousWasteTotal);
 
-            WaterChangePercent = CalculateGrowth(WaterTotal, PreviousWaterTotal);
-            ElectricityChangePercent = CalculateGrowth(ElectricityTotal, PreviousElectricityTotal);
+            WaterChangePercent = WaterChangeAvailable ? CalculateGrowth(WaterTotal, PreviousWaterTotal) : 0;
+            ElectricityChangePercent = ElectricityChangeAvailable ? CalculateGrowth(ElectricityTotal, PreviousElectricityTotal) : 0;
             WasteChangePercent = CalculateGrowth(WasteTotal, PreviousWasteTotal);
 
-            CompleteMeterDays = MeterReadings
-                .GroupBy(x => x.ReadingDate.Date)
-                .Count(day => day.Any(x => x.MeterType == MeterType.Water) &&
-                              day.Any(x => x.MeterType == MeterType.Electricity));
-
-            DataCoveragePercent = SelectedDayCount == 0
-                ? 0
-                : Math.Round((decimal)CompleteMeterDays / SelectedDayCount * 100, 1);
+            CompleteMeterDays = Consumption.CoveredDays;
+            DataCoveragePercent = Consumption.CoveragePercent;
 
             BuildSummaryRows();
             BuildMeterDailyAverages();
@@ -196,6 +197,10 @@ namespace UtilityManagerProjects.Pages.Reports
             {
                 (CurrentStart, CurrentEnd) = (CurrentEnd, CurrentStart);
             }
+            var range=ConsumptionService.ReportingRange(CurrentStart,CurrentEnd);
+            CurrentStart=range.Start; CurrentEnd=range.End;
+            ViewData["ConsumptionDateNotice"]=range.Notice;
+
 
             var days = (CurrentEnd.Date - CurrentStart.Date).Days + 1;
             PreviousEnd = CurrentStart.AddDays(-1);
@@ -221,17 +226,14 @@ namespace UtilityManagerProjects.Pages.Reports
 
         private void BuildMeterDailyAverages()
         {
-            MeterDailyAverages = MeterReadings.GroupBy(x => new { x.MeterId, x.MeterName, x.MeterType, x.DepartmentName })
-                .Select(group => new MeterDailyAverageRow
-                {
-                    MeterId = group.Key.MeterId,
-                    MeterName = group.Key.MeterName,
-                    MeterType = group.Key.MeterType,
-                    DepartmentName = group.Key.DepartmentName,
-                    ReadingCount = group.Count(),
-                    TotalUsage = group.Sum(x => x.Usage),
-                    DailyAverage = SelectedDayCount == 0 ? 0 : Math.Round((decimal)group.Sum(x => x.Usage) / SelectedDayCount, 1)
-                }).OrderBy(x => x.DepartmentName).ThenBy(x => x.MeterName).ToList();
+            MeterDailyAverages = calculations.Meters
+                .Where(m => (!MeterId.HasValue || m.Id == MeterId) && (string.IsNullOrWhiteSpace(Department) || string.Equals(m.DepartmentName, Department, StringComparison.OrdinalIgnoreCase)))
+                .Select(m => {
+                    var days = Consumption.AllDaily.Where(d => d.MeterId == m.Id).ToList();
+                    return new MeterDailyAverageRow { MeterId=m.Id, MeterName=m.MeterName, MeterType=m.MeterType, DepartmentName=m.DepartmentName,
+                        ReadingCount=MeterReadings.Count(r=>r.MeterId==m.Id), CoveredDays=days.Count,
+                        TotalUsage=days.Sum(d=>d.Usage), DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count };
+                }).OrderBy(x=>x.DepartmentName).ThenBy(x=>x.MeterName).ToList();
         }
 
         private static bool IsInRange(DateTime date, DateTime startDate, DateTime endDate)
@@ -245,7 +247,7 @@ namespace UtilityManagerProjects.Pages.Reports
                    category.Contains("recycl", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static decimal GetMeterTotal(IEnumerable<MeterReading> readings, MeterType meterType)
+        private static decimal GetMeterTotal(IEnumerable<DailyUsage> readings, MeterType meterType)
         {
             return readings.Where(x => x.MeterType == meterType).Sum(x => x.Usage);
         }
@@ -259,7 +261,7 @@ namespace UtilityManagerProjects.Pages.Reports
         {
             if (previousValue == 0)
             {
-                return currentValue > 0 ? 100 : 0;
+                return 0;
             }
 
             return Math.Round((double)((currentValue - previousValue) / previousValue * 100), 1);
@@ -267,35 +269,35 @@ namespace UtilityManagerProjects.Pages.Reports
 
         private void BuildSummaryRows()
         {
-            var waterPeak = GetPeakMeterDay(MeterReadings, MeterType.Water);
-            var electricityPeak = GetPeakMeterDay(MeterReadings, MeterType.Electricity);
+            var waterPeak = GetPeakMeterDay(Consumption.SummaryRows, MeterType.Water);
+            var electricityPeak = GetPeakMeterDay(Consumption.SummaryRows, MeterType.Electricity);
             var wastePeak = GetPeakWasteDay(WasteReadings);
 
             SummaryRows = new List<ReportSummaryRow>
             {
                 new()
                 {
-                    ReportArea = "Water",
+                    ReportArea = "Water", HasData=Consumption.Water.CoveredDays>0,
                     RecordCount = MeterReadings.Count(x => x.MeterType == MeterType.Water),
                     Total = WaterTotal,
                     Unit = "L",
-                    DailyAverage = SelectedDayCount == 0 ? 0 : Math.Round(WaterTotal / SelectedDayCount, 1),
+                    DailyAverage = Consumption.Water.Average,
                     PeakValue = waterPeak.Value,
                     PeakDate = waterPeak.Date,
                     ChangePercent = WaterChangePercent,
-                    ManagementNote = BuildManagementNote(WaterChangePercent, "consumption")
+                    ManagementNote = WaterChangeAvailable ? BuildManagementNote(WaterChangePercent, "flow") : "Comparison unavailable: incomplete coverage or previous total is zero."
                 },
                 new()
                 {
-                    ReportArea = "Electricity",
+                    ReportArea = "Electricity", HasData=Consumption.Electricity.CoveredDays>0,
                     RecordCount = MeterReadings.Count(x => x.MeterType == MeterType.Electricity),
                     Total = ElectricityTotal,
                     Unit = "kWh",
-                    DailyAverage = SelectedDayCount == 0 ? 0 : Math.Round(ElectricityTotal / SelectedDayCount, 1),
+                    DailyAverage = Consumption.Electricity.Average,
                     PeakValue = electricityPeak.Value,
                     PeakDate = electricityPeak.Date,
                     ChangePercent = ElectricityChangePercent,
-                    ManagementNote = BuildManagementNote(ElectricityChangePercent, "consumption")
+                    ManagementNote = ElectricityChangeAvailable ? BuildManagementNote(ElectricityChangePercent, "flow") : "Comparison unavailable: incomplete coverage or previous total is zero."
                 },
                 new()
                 {
@@ -327,7 +329,7 @@ namespace UtilityManagerProjects.Pages.Reports
             return "Stable against the previous matching period.";
         }
 
-        private static PeakDay GetPeakMeterDay(IEnumerable<MeterReading> readings, MeterType meterType)
+        private static PeakDay GetPeakMeterDay(IEnumerable<DailyUsage> readings, MeterType meterType)
         {
             var peak = readings
                 .Where(x => x.MeterType == meterType)
@@ -352,21 +354,10 @@ namespace UtilityManagerProjects.Pages.Reports
 
         private void BuildTrendData()
         {
-            var buckets = BuildTrendBuckets(CurrentStart, CurrentEnd);
+            var buckets = Enumerable.Range(0, SelectedDayCount).Select(i => new TrendBucket { Start=CurrentStart.AddDays(i),End=CurrentStart.AddDays(i),Label=CurrentStart.AddDays(i).ToString("dd MMM yyyy") }).ToList();
             TrendLabelsJson = JsonSerializer.Serialize(buckets.Select(x => x.Label));
-
-            WaterTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
-                MeterReadings
-                    .Where(x => x.MeterType == MeterType.Water &&
-                                IsInRange(x.ReadingDate, bucket.Start, bucket.End))
-                    .Sum(x => x.Usage)));
-
-            ElectricityTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
-                MeterReadings
-                    .Where(x => x.MeterType == MeterType.Electricity &&
-                                IsInRange(x.ReadingDate, bucket.Start, bucket.End))
-                    .Sum(x => x.Usage)));
-
+            WaterTrendJson = JsonSerializer.Serialize(Consumption.Water.Series());
+            ElectricityTrendJson = JsonSerializer.Serialize(Consumption.Electricity.Series());
             WasteTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
                 WasteReadings
                     .Where(x => IsInRange(x.ReadingDate, bucket.Start, bucket.End))
@@ -453,9 +444,36 @@ namespace UtilityManagerProjects.Pages.Reports
                     archive,
                     "xl/worksheets/sheet3.xml",
                     BuildWorksheetXml(wasteRows, new[] { 15d, 24d, 26d, 28d, 16d }, 1, $"A1:E{wasteRows.Count}", null));
+                var evidenceRows=BuildIntervalEvidenceCells();
+                WriteDocumentEntry(archive,"xl/worksheets/sheet5.xml",BuildWorksheetXml(evidenceRows,new[]{12d,28d,16d,24d,18d,16d,24d,18d,16d,18d,18d,12d},1,$"A1:L{evidenceRows.Count}",null));
+                var dailyRows = BuildDailyFlowCells();
+                WriteDocumentEntry(archive,"xl/worksheets/sheet4.xml",BuildWorksheetXml(dailyRows,new[]{16d,12d,30d,25d,18d,14d,14d,30d},1,$"A1:H{dailyRows.Count}",null));
             }
 
             return stream.ToArray();
+        }
+
+        private List<List<ExcelCell>> BuildIntervalEvidenceCells()
+        {
+            var rows=new List<List<ExcelCell>> { Row(TextCell("Meter ID",3),TextCell("Meter",3),TextCell("Opening ID",3),TextCell("Opening date (may be outside filter)",3),TextCell("Opening counter",3),TextCell("Closing ID",3),TextCell("Closing date (may be outside filter)",3),TextCell("Closing counter",3),TextCell("Calendar days",3),TextCell("Counter change",3),TextCell("Daily estimate",3),TextCell("Unit",3)) };
+            var captures=calculations.History.ToDictionary(r=>r.Id);
+            foreach(var pair in Consumption.AllDaily.Select(d=>(d.MeterId,d.OpeningReadingId,d.ClosingReadingId)).Distinct().OrderBy(p=>p.MeterId).ThenBy(p=>p.ClosingReadingId))
+            {
+                var opening=captures[pair.OpeningReadingId]; var closing=captures[pair.ClosingReadingId];
+                var days=(closing.ReadingDate.Date-opening.ReadingDate.Date).Days;
+                var delta=(decimal)closing.CurrentReading-opening.CurrentReading;
+                rows.Add(Row(NumberCell(pair.MeterId,5),TextCell(closing.MeterName,4),NumberCell(opening.Id,5),DateCell(opening.ReadingDate),NumberCell(opening.CurrentReading,5),NumberCell(closing.Id,5),DateCell(closing.ReadingDate),NumberCell(closing.CurrentReading,5),NumberCell(days,5),NumberCell(delta,5),NumberCell(delta/days,5),TextCell(closing.Unit,4)));
+            }
+            return rows;
+        }
+
+        private List<List<ExcelCell>> BuildDailyFlowCells()
+        {
+            var rows = new List<List<ExcelCell>> { Row(TextCell("Estimated date",3),TextCell("Meter ID",3),TextCell("Meter",3),TextCell("Department",3),TextCell("Estimated flow",3),TextCell("Unit",3),TextCell("Closing capture",3),TextCell("Included in summary",3)) };
+            var included=Consumption.SummaryRows.Select(r=>(r.MeterId,r.ReadingDate)).ToHashSet();
+            foreach(var day in Consumption.AllDaily.OrderBy(r=>r.ReadingDate).ThenBy(r=>r.MeterId))
+                rows.Add(Row(DateCell(day.ReadingDate),NumberCell(day.MeterId,5),TextCell(day.MeterName,4),TextCell(day.DepartmentName,4),NumberCell(day.Usage,5),TextCell(day.MeterType==MeterType.Water?"L":"kWh",4),NumberCell(day.ClosingReadingId,5),TextCell(included.Contains((day.MeterId,day.ReadingDate))?"Yes":"No: downstream or incomplete coverage",4)));
+            return rows;
         }
 
         private List<List<ExcelCell>> BuildExecutiveSummaryCells()
@@ -467,11 +485,11 @@ namespace UtilityManagerProjects.Pages.Reports
                 Row(EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell()),
                 Row(TextCell("EXECUTIVE KPIs", 8), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell()),
                 Row(TextCell("Metric", 3), TextCell("Current Period", 3), TextCell("Unit", 3), TextCell("Previous Period", 3), TextCell("Change", 3), TextCell("Management Interpretation", 3)),
-                Row(TextCell("Water Consumption", 4), NumberCell(WaterTotal, 5), TextCell("L", 4), NumberCell(PreviousWaterTotal, 5), PercentCell((decimal)WaterChangePercent / 100), TextCell(BuildManagementNote(WaterChangePercent, "consumption"), 4)),
-                Row(TextCell("Electricity Consumption", 4), NumberCell(ElectricityTotal, 5), TextCell("kWh", 4), NumberCell(PreviousElectricityTotal, 5), PercentCell((decimal)ElectricityChangePercent / 100), TextCell(BuildManagementNote(ElectricityChangePercent, "consumption"), 4)),
+                Row(TextCell("Estimated water flow", 4), Consumption.Water.CoveredDays>0?NumberCell(WaterTotal, 5):TextCell("Unavailable",4), TextCell("L", 4), PreviousWaterAvailable?NumberCell(PreviousWaterTotal, 5):TextCell("Unavailable",4), WaterChangeAvailable?PercentCell((decimal)WaterChangePercent / 100):TextCell("Unavailable",4), TextCell(WaterChangeAvailable?BuildManagementNote(WaterChangePercent, "flow"):"Comparison unavailable: incomplete coverage or zero prior total.",4)),
+                Row(TextCell("Estimated electricity flow", 4), Consumption.Electricity.CoveredDays>0?NumberCell(ElectricityTotal, 5):TextCell("Unavailable",4), TextCell("kWh", 4), PreviousElectricityAvailable?NumberCell(PreviousElectricityTotal, 5):TextCell("Unavailable",4), ElectricityChangeAvailable?PercentCell((decimal)ElectricityChangePercent / 100):TextCell("Unavailable",4), TextCell(ElectricityChangeAvailable?BuildManagementNote(ElectricityChangePercent, "flow"):"Comparison unavailable: incomplete coverage or zero prior total.",4)),
                 Row(TextCell("Waste Generated", 4), NumberCell(WasteTotal, 5), TextCell("kg", 4), NumberCell(PreviousWasteTotal, 5), PercentCell((decimal)WasteChangePercent / 100), TextCell(BuildManagementNote(WasteChangePercent, "generation"), 4)),
                 Row(TextCell("Waste Diversion", 4), PercentCell(WasteDiversionPercent / 100), TextCell("%", 4), PercentCell(PreviousWasteDiversionPercent / 100), PercentCell((WasteDiversionPercent - PreviousWasteDiversionPercent) / 100), TextCell("Dry and wet recycling as a share of total recorded waste.", 4)),
-                Row(TextCell("Meter Data Coverage", 4), PercentCell(DataCoveragePercent / 100), TextCell("%", 4), EmptyCell(4), EmptyCell(4), TextCell($"Both meter types captured on {CompleteMeterDays} of {SelectedDayCount} days.", 4)),
+                Row(TextCell("Meter Data Coverage", 4), PercentCell(DataCoveragePercent / 100), TextCell("%", 4), EmptyCell(4), EmptyCell(4), TextCell($"All required selected meter intervals cover {CompleteMeterDays} of {SelectedDayCount} days.", 4)),
                 Row(EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell()),
                 Row(TextCell("OPERATIONAL SUMMARY", 8), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell()),
                 Row(TextCell("Dataset", 3), TextCell("Records", 3), TextCell("Daily Average", 3), TextCell("Peak Value", 3), TextCell("Peak Date", 3), TextCell("Unit", 3))
@@ -480,11 +498,15 @@ namespace UtilityManagerProjects.Pages.Reports
             rows.AddRange(SummaryRows.Select(row => Row(
                 TextCell(row.ReportArea, 4),
                 NumberCell(row.RecordCount, 5),
-                NumberCell(row.DailyAverage, 5),
-                NumberCell(row.PeakValue, 5),
+                row.HasData?NumberCell(row.DailyAverage, 5):TextCell("Unavailable",4),
+                row.HasData?NumberCell(row.PeakValue, 5):TextCell("Unavailable",4),
                 row.PeakDate.HasValue ? DateCell(row.PeakDate.Value) : EmptyCell(6),
                 TextCell(row.Unit, 4))));
 
+            rows.Add(Row(TextCell("Methodology",3),TextCell("Estimated daily flow from consecutive counters; unknown days excluded",4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
+            rows.Add(Row(TextCell("Water boundary",3),TextCell(Consumption.Water.Label,4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
+            rows.Add(Row(TextCell("Water coverage",3),NumberCell(Consumption.Water.CoveredDays,5),TextCell($"of {SelectedDayCount} days",4),EmptyCell(),EmptyCell(),EmptyCell()));
+            foreach(var missing in Consumption.Water.Missing) rows.Add(Row(TextCell("Missing assignment",3),TextCell(missing,4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
             return rows;
         }
 
@@ -492,7 +514,7 @@ namespace UtilityManagerProjects.Pages.Reports
         {
             var rows = new List<List<ExcelCell>>
             {
-                Row(TextCell("Reading Date", 3), TextCell("Meter Type", 3), TextCell("Area", 3), TextCell("Consumption", 3), TextCell("Unit", 3))
+                Row(TextCell("Capture date", 3), TextCell("Meter Type", 3), TextCell("Area", 3), TextCell("Full counter interval (not filtered period)", 3), TextCell("Unit", 3))
             };
 
             rows.AddRange(MeterReadings
@@ -682,6 +704,8 @@ namespace UtilityManagerProjects.Pages.Reports
   <Override PartName=""/xl/styles.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml""/>
   <Override PartName=""/xl/worksheets/sheet1.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>
   <Override PartName=""/xl/worksheets/sheet2.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>
+  <Override PartName=""/xl/worksheets/sheet5.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>
+  <Override PartName=""/xl/worksheets/sheet4.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>
   <Override PartName=""/xl/worksheets/sheet3.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>
 </Types>";
 
@@ -695,6 +719,8 @@ namespace UtilityManagerProjects.Pages.Reports
   <sheets>
     <sheet name=""Executive Summary"" sheetId=""1"" r:id=""rId1""/>
     <sheet name=""Meter Readings"" sheetId=""2"" r:id=""rId2""/>
+    <sheet name=""Interval Evidence"" sheetId=""5"" r:id=""rId6""/>
+    <sheet name=""Estimated Daily Flow"" sheetId=""4"" r:id=""rId5""/>
     <sheet name=""Waste Readings"" sheetId=""3"" r:id=""rId3""/>
   </sheets>
   <calcPr calcId=""191029"" fullCalcOnLoad=""1""/>
@@ -705,6 +731,8 @@ namespace UtilityManagerProjects.Pages.Reports
   <Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet1.xml""/>
   <Relationship Id=""rId2"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet2.xml""/>
   <Relationship Id=""rId3"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet3.xml""/>
+  <Relationship Id=""rId6"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet5.xml""/>
+  <Relationship Id=""rId5"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet4.xml""/>
   <Relationship Id=""rId4"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"" Target=""styles.xml""/>
 </Relationships>";
 
@@ -721,6 +749,7 @@ namespace UtilityManagerProjects.Pages.Reports
 
         public class ReportSummaryRow
         {
+            public bool HasData { get; set; } = true;
             public string ReportArea { get; set; } = string.Empty;
             public int RecordCount { get; set; }
             public decimal Total { get; set; }
@@ -739,7 +768,8 @@ namespace UtilityManagerProjects.Pages.Reports
             public MeterType MeterType { get; set; }
             public string DepartmentName { get; set; } = string.Empty;
             public int ReadingCount { get; set; }
-            public int TotalUsage { get; set; }
+            public decimal TotalUsage { get; set; }
+            public int CoveredDays { get; set; }
             public decimal DailyAverage { get; set; }
             public string Unit => MeterType == MeterType.Water ? "L" : "kWh";
         }

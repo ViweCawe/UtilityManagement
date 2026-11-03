@@ -321,7 +321,7 @@
     }
 
     .trend-negative {
-        color: #fb7185 !important;
+        color: var(--utility-red) !important;
     }
 
     .content-card {

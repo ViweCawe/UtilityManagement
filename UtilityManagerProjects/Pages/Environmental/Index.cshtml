@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.Environmental.IndexModel
 
 @{
@@ -129,6 +129,7 @@
 </style>
 
 <div class="page-shell environmental-page">
+    @if (ViewData["Consumption"] is UtilityManagerProjects.Models.ConsumptionPeriod consumption) { <partial name="_ConsumptionNotice" model="consumption" /> }
 
     <div class="page-header-row">
         <div class="page-title">
@@ -149,17 +150,17 @@
         </div>
 
         <div class="filter-group environment-custom-date-filter">
-            <label>Start Date</label>
+            <label for="StartDate">Start Date</label>
             <input type="date"
-                   name="StartDate"
+                   id="StartDate" name="StartDate"
                    value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
                    class="utility-input" />
         </div>
 
         <div class="filter-group environment-custom-date-filter">
-            <label>End Date</label>
+            <label for="EndDate">End Date</label>
             <input type="date"
-                   name="EndDate"
+                   id="EndDate" name="EndDate"
                    value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
                    class="utility-input" />
         </div>
@@ -185,9 +186,9 @@
             </div>
             <div class="stat-content">
                 <p>Water Use</p>
-                <h2>@Model.WaterUsage.ToString("N0") <span>L</span></h2>
+                <h2>@(Model.Consumption.Water.CoveredDays>0 ? Model.WaterUsage.ToString("N1") : "—") <span>L</span></h2>
                 <span class="@(Model.WaterPerPerson <= Model.WaterTarget ? "trend-positive" : "trend-negative")">
-                    @Model.WaterPerPerson.ToString("N2") L/person · Target @Model.WaterTarget.ToString("N2")
+                    @(Model.WaterPerPersonAvailable ? Model.WaterPerPerson.ToString("N2") : "—") L supplied/person · Indicative target @Model.WaterTarget.ToString("N2")
                 </span>
             </div>
         </div>
@@ -198,9 +199,9 @@
             </div>
             <div class="stat-content">
                 <p>Electricity Use</p>
-                <h2>@Model.ElectricityUsage.ToString("N0") <span>kWh</span></h2>
+                <h2>@(Model.Consumption.Electricity.CoveredDays>0 ? Model.ElectricityUsage.ToString("N1") : "—") <span>kWh</span></h2>
                 <span class="@(Model.ElectricityPerPerson <= Model.ElectricityTarget ? "trend-positive" : "trend-negative")">
-                    @Model.ElectricityPerPerson.ToString("N2") kWh/person · Target @Model.ElectricityTarget.ToString("N2")
+                    @(Model.ElectricityPerPersonAvailable ? Model.ElectricityPerPerson.ToString("N2") : "—") kWh/person · Target @Model.ElectricityTarget.ToString("N2")
                 </span>
             </div>
         </div>
@@ -272,9 +273,9 @@
             </div>
             <div class="stat-content">
                 <p>Carbon Estimate</p>
-                <h2>@Model.EstimatedCarbonKg.ToString("N0") <span>kg</span></h2>
+                <h2>@(Model.CarbonEstimateAvailable?Model.EstimatedCarbonKg.ToString("N1"):"—") <span>kg</span></h2>
                 <span class="@(Model.EstimatedCarbonPerPerson <= Model.CarbonTarget ? "trend-positive" : "trend-negative")">
-                    @Model.EstimatedCarbonPerPerson.ToString("N2") kg/person · Target @Model.CarbonTarget.ToString("N2")
+                    @(Model.CarbonPerPersonAvailable ? Model.EstimatedCarbonPerPerson.ToString("N2") : "—") kg/person · Target @Model.CarbonTarget.ToString("N2")
                 </span>
             </div>
         </div>
@@ -292,11 +293,11 @@
             <div class="meter-chart-grid">
                 <div class="chart-panel">
                     <div class="chart-panel-header">
-                        <strong>Water consumption</strong>
+                        <strong>Estimated daily water flow</strong>
                         <span>Litres (L)</span>
                     </div>
                     <div class="mini-trend-chart-shell">
-                        <canvas id="waterTrendChart" aria-label="Water consumption trend" role="img"></canvas>
+                        <canvas id="waterTrendChart" aria-label="Estimated daily water flow trend" role="img"></canvas>
                     </div>
                 </div>
 
@@ -472,7 +473,7 @@
         const wasteSplitLabels = @Html.Raw(Model.WasteSplitLabelsJson);
         const wasteSplitData = @Html.Raw(Model.WasteSplitDataJson);
 
-        Chart.defaults.color = '#8ea2bd';
+        Chart.defaults.color = '#52647a';
         Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
 
         function createConsumptionTrend(canvasId, label, data, color, unit) {
@@ -486,7 +487,7 @@
         borderColor: color,
         backgroundColor: `${color}1f`,
         fill: true,
-        tension: 0.35,
+        tension: 0, spanGaps: false,
         borderWidth: 2.5,
         pointRadius: trendLabels.length > 31 ? 0 : 2,
         pointHoverRadius: 5
@@ -503,7 +504,7 @@
         legend: { display: false },
         tooltip: {
         callbacks: {
-        label: context => `${label}: ${context.parsed.y.toLocaleString()} ${unit}`
+        label: context => `${label}: ${(context.parsed.y == null ? 'Not covered' : context.parsed.y.toLocaleString())} ${unit}`
         }
         }
         },
@@ -546,7 +547,7 @@
         {
         label: 'Other',
         data: otherWasteTrend,
-        backgroundColor: '#94a3b8',
+        backgroundcolor: '#52647a',
         borderRadius: 4
         }
         ]
@@ -565,7 +566,7 @@
         },
         tooltip: {
         callbacks: {
-        label: context => `${context.dataset.label}: ${context.parsed.y.toLocaleString()} kg`
+        label: context => `${context.dataset.label}: ${(context.parsed.y == null ? 'Not covered' : context.parsed.y.toLocaleString())} kg`
         }
         }
         },

@@ -21,9 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\UtilityManagementApp\UtilityManagementApp.sqlproj" />
     <ProjectReference Include="..\DataLibrary\DataLibrary.csproj" />
-    <ProjectReference Include="..\UtilityManagementApp\UtilityManagementApp.sqlproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,14 +30,6 @@
 
   <ItemGroup>
     <Content Update="App_Data\water-network.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  
-
-  <ItemGroup>
-    <Reference Include="DataLibrary">
-      <HintPath>..\DataLibrary\obj\Debug\net10.0\DataLibrary.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>
