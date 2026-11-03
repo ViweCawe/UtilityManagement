@@ -44,3 +44,12 @@ test('external supply is explicit and rejects internal or unmetered boundaries',
     assert.throws(() => validateNetwork({nodes: [point('source', {kind:'source', canLinkMeter:false, isExternalSupply:true})], connections: []}));
     assert.throws(() => validateNetwork({nodes: [point('parent'), point('tank', {kind:'storage', isExternalSupply:true})], connections: [route('parent','tank')]}));
 });
+
+test('Main reporting boundary stays unique and cannot measure mixed sources',()=>{
+ const main=point('m',{kind:'source',isExternalSupply:true,supplyOrigin:'municipal',reportingRole:'main'});
+ const bore=point('b',{kind:'source',isExternalSupply:true,supplyOrigin:'borehole'});
+ assert.doesNotThrow(()=>validateNetwork({nodes:[main,bore],connections:[]}));
+ assert.throws(()=>validateNetwork({nodes:[main,point('second',{kind:'source',reportingRole:'main',supplyOrigin:'municipal'})],connections:[]}));
+ assert.throws(()=>validateNetwork({nodes:[main,bore,point('mixed',{reportingRole:'borehole-outlet'})],connections:[route('m','mixed'),route('b','mixed')]}));
+ assert.throws(()=>validateNetwork({nodes:[main,point('basin')],connections:[route('m','basin',{sourceFilter:'borehole'})]}));
+});

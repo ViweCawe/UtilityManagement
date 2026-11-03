@@ -277,7 +277,7 @@ namespace UtilityManagerProjects.Pages.Reports
             {
                 new()
                 {
-                    ReportArea = "Water", HasData=Consumption.Water.CoveredDays>0,
+                    ReportArea = Consumption.Water.Label, HasData=Consumption.Water.CoveredDays>0,
                     RecordCount = MeterReadings.Count(x => x.MeterType == MeterType.Water),
                     Total = WaterTotal,
                     Unit = "L",
@@ -485,7 +485,7 @@ namespace UtilityManagerProjects.Pages.Reports
                 Row(EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell()),
                 Row(TextCell("EXECUTIVE KPIs", 8), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell(), EmptyCell()),
                 Row(TextCell("Metric", 3), TextCell("Current Period", 3), TextCell("Unit", 3), TextCell("Previous Period", 3), TextCell("Change", 3), TextCell("Management Interpretation", 3)),
-                Row(TextCell("Estimated water flow", 4), Consumption.Water.CoveredDays>0?NumberCell(WaterTotal, 5):TextCell("Unavailable",4), TextCell("L", 4), PreviousWaterAvailable?NumberCell(PreviousWaterTotal, 5):TextCell("Unavailable",4), WaterChangeAvailable?PercentCell((decimal)WaterChangePercent / 100):TextCell("Unavailable",4), TextCell(WaterChangeAvailable?BuildManagementNote(WaterChangePercent, "flow"):"Comparison unavailable: incomplete coverage or zero prior total.",4)),
+                Row(TextCell(Consumption.Water.Label, 4), Consumption.Water.CoveredDays>0?NumberCell(WaterTotal, 5):TextCell("Unavailable",4), TextCell("L", 4), PreviousWaterAvailable?NumberCell(PreviousWaterTotal, 5):TextCell("Unavailable",4), WaterChangeAvailable?PercentCell((decimal)WaterChangePercent / 100):TextCell("Unavailable",4), TextCell(WaterChangeAvailable?BuildManagementNote(WaterChangePercent, "flow"):"Comparison unavailable: incomplete coverage or zero prior total.",4)),
                 Row(TextCell("Estimated electricity flow", 4), Consumption.Electricity.CoveredDays>0?NumberCell(ElectricityTotal, 5):TextCell("Unavailable",4), TextCell("kWh", 4), PreviousElectricityAvailable?NumberCell(PreviousElectricityTotal, 5):TextCell("Unavailable",4), ElectricityChangeAvailable?PercentCell((decimal)ElectricityChangePercent / 100):TextCell("Unavailable",4), TextCell(ElectricityChangeAvailable?BuildManagementNote(ElectricityChangePercent, "flow"):"Comparison unavailable: incomplete coverage or zero prior total.",4)),
                 Row(TextCell("Waste Generated", 4), NumberCell(WasteTotal, 5), TextCell("kg", 4), NumberCell(PreviousWasteTotal, 5), PercentCell((decimal)WasteChangePercent / 100), TextCell(BuildManagementNote(WasteChangePercent, "generation"), 4)),
                 Row(TextCell("Waste Diversion", 4), PercentCell(WasteDiversionPercent / 100), TextCell("%", 4), PercentCell(PreviousWasteDiversionPercent / 100), PercentCell((WasteDiversionPercent - PreviousWasteDiversionPercent) / 100), TextCell("Dry and wet recycling as a share of total recorded waste.", 4)),
@@ -502,6 +502,12 @@ namespace UtilityManagerProjects.Pages.Reports
                 row.HasData?NumberCell(row.PeakValue, 5):TextCell("Unavailable",4),
                 row.PeakDate.HasValue ? DateCell(row.PeakDate.Value) : EmptyCell(6),
                 TextCell(row.Unit, 4))));
+
+            rows.Add(Row(TextCell("INDEPENDENT WATER BOUNDARIES (NOT ADDITIVE)",8),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
+            foreach(var supply in Consumption.WaterSupplies)
+                rows.Add(Row(TextCell(supply.Label,4),supply.Flow.CoveredDays>0?NumberCell(supply.Flow.Total,5):TextCell("Unavailable",4),TextCell("L",4),NumberCell(supply.Flow.CoveredDays,5),TextCell("Covered days",4),TextCell("Independent flow boundary; storage inlet and outlet overlap.",4)));
+            foreach(var area in Consumption.WaterAreas)
+                rows.Add(Row(TextCell(area.Area,4),area.Combined.CoveredDays>0?NumberCell(area.Combined.Total,5):TextCell("Unavailable",4),TextCell("L",4),area.Municipal.CoveredDays>0?NumberCell(area.Municipal.Total,5):TextCell("Municipal split unmeasured",4),area.Borehole.CoveredDays>0?NumberCell(area.Borehole.Total,5):TextCell("Borehole split unmeasured",4),TextCell(area.HasCombinedMeter?"Combined counter: do not infer source volumes":"Dedicated inlet meter flow",4)));
 
             rows.Add(Row(TextCell("Methodology",3),TextCell("Estimated daily flow from consecutive counters; unknown days excluded",4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
             rows.Add(Row(TextCell("Water boundary",3),TextCell(Consumption.Water.Label,4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));

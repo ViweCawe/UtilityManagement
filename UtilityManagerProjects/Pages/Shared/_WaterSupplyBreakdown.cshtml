@@ -1,0 +1,26 @@
+@model UtilityManagerProjects.Models.ConsumptionPeriod
+@{
+ string InletValue(UtilityManagerProjects.Models.ConsumptionScope scope,bool mappedSupply) => scope.CoveredDays>0?scope.Total.ToString("N1")+" L":!mappedSupply?"Not a mapped supply":scope.Missing.Any()?"Link inlet meter":scope.MeterIds.Any()?"Awaiting comparable readings":"Not separately measured";
+}
+@if(Model.WaterSupplies.Any()||Model.WaterAreas.Any()) {
+<section class="content-card" aria-label="Water sources and shared areas">
+ <div class="content-card-header"><div><h2>Water by source</h2><p>Main Meter is the control total for its municipal branch. Downstream meter readings are already inside that flow and are not added again.</p></div></div>
+ @if(Model.WaterSupplies.Any()) {
+ <div class="table-wrap"><table class="utility-table"><thead><tr><th>Measurement boundary</th><th>Recorded flow</th><th>Daily average</th><th>Days covered</th></tr></thead><tbody>
+ @foreach(var row in Model.WaterSupplies) {
+  <tr><td><strong>@row.Label</strong><small class="table-subtext d-block">@row.Flow.Label</small></td><td>@(row.Flow.CoveredDays>0?row.Flow.Total.ToString("N1")+" L":"Not available")</td><td>@(row.Flow.CoveredDays>0?row.Flow.Average.ToString("N1")+" L/day":"—")</td><td>@row.Flow.CoveredDays / @row.Flow.Dates.Count @foreach(var issue in row.Flow.Missing) { <small class="table-subtext d-block">@issue</small> }</td></tr>
+ }
+ </tbody></table></div>
+ <p class="form-hint">Borehole Incoming measures storage inflow; Borehole Out measures water leaving storage. Do not add them together. Fire Hydrant is separate from Main Meter. Child meters need not add exactly to Main Meter because storage changes and unmetered branches are not measured here.</p>
+ }
+ @if(Model.WaterAreas.Any()) {
+ <h3>Usage areas · inlet measurements</h3>
+ <div class="table-wrap"><table class="utility-table"><thead><tr><th>Usage area</th><th>Combined measured flow</th><th>Separately metered municipal flow</th><th>Separately metered borehole flow</th><th>Metering status</th></tr></thead><tbody>
+ @foreach(var row in Model.WaterAreas) {
+ <tr><td>@row.Area</td><td>@(row.Combined.CoveredDays>0?row.Combined.Total.ToString("N1")+" L":"—")</td><td>@InletValue(row.Municipal,row.HasMunicipalSupply)</td><td>@InletValue(row.Borehole,row.HasBoreholeSupply)</td><td>@(row.HasCombinedMeter?"Combined counter: source split unavailable":"Mapped inlet readings")<small class="table-subtext d-block">@row.Combined.CoveredDays / @row.Combined.Dates.Count days covered</small></td></tr>
+ }
+ </tbody></table></div>
+ <p class="form-hint">Area columns use the same days covered by their mapped counters. A combined counter cannot separate municipal basin water from borehole flushing water used at the same time. No percentage split is assumed. Separate inlet meters can be linked to the same usage area when installed.</p>
+ }
+</section>
+}

@@ -1,25 +1,25 @@
 @page "/WaterNetwork/Edit"
 @model UtilityManagerProjects.Pages.WaterNetwork.EditModel
 @using System.Text.Json
-@{
-    ViewData["Title"] = "Edit Water Network";
-}
+@{ ViewData["Title"]="Edit Water Network"; }
 @section Styles { <link rel="stylesheet" href="~/css/network-editor.css" asp-append-version="true" /> }
 <div class="page-shell network-editor">
-    <header class="ne-header"><div><h1>Edit Water Network</h1><p>Add meters, tanks and outlets, then choose what supplies each point.</p></div><a asp-page="./Index">Back to network</a></header>
-    <div class="ne-help">Create a new meter in <a asp-page="/Meters/Create">Add Meter or Tank</a> first, then select it here. An unmetered outlet can be added without a meter. Removing a point preserves its meter and reading history.</div>
-    <form method="post" id="network-edit-form">
-        <div asp-validation-summary="All" class="ne-errors" role="alert"></div>
-        <input asp-for="NetworkJson" type="hidden" />
-        <input asp-for="Revision" type="hidden" />
-        <div id="network-editor-error" class="ne-errors" role="alert" hidden></div>
-        <noscript><p>Enable JavaScript to edit the network. The viewing page remains available.</p></noscript>
-        <div id="network-editor-controls" hidden>
-            <section class="ne-section"><div class="ne-title"><h2>1. Network points</h2><button type="button" id="add-network-point">Add point</button></div><p>Name each point, choose its role, and link its actual meter when available.</p><div id="network-editor-points"></div></section>
-            <section class="ne-section"><div class="ne-title"><h2>2. Supply connections</h2><button type="button" id="add-network-route">Add connection</button></div><p>“From” supplies “To”. Conditional routes need a description of when they are used.</p><div id="network-editor-routes"></div></section>
-            <footer class="ne-actions"><a asp-page="./Edit">Reload saved map</a><span>The diagram is arranged automatically when saved.</span><a asp-page="./Index">Cancel</a><button type="submit">Save network</button></footer>
-        </div>
-    </form>
+ <header class="ne-header"><div><h1>Edit water network</h1><p>Start at a supply, then follow its meters and branches downstream.</p></div><a asp-page="./Index">Back to network</a></header>
+ <form method="post" id="network-edit-form" data-create-meter-url="@Url.Page("/Meters/Create")">
+  <div asp-validation-summary="All" class="ne-errors" role="alert"></div><input asp-for="NetworkJson" type="hidden"/><input asp-for="Revision" type="hidden"/>
+  <div id="network-editor-error" class="ne-errors" role="alert" hidden></div>
+  <noscript><p>Enable JavaScript to edit the map. The network viewing page remains available.</p></noscript>
+  <div id="network-editor-controls" hidden>
+   <section class="ne-section"><h2>1. Choose what you want to do</h2>
+    <label>Task<select id="network-editor-task"><option value="add">Connect a new meter or outlet</option><option value="move">Change suppliers for an existing point</option><option value="review">Review names, meter links and reporting roles</option></select></label>
+    <p class="form-hint">Creating a meter and connecting it are separate steps. Moving a point changes its supply routes, not its meter identity or saved readings.</p>
+    <div id="network-editor-workspace"></div>
+   </section>
+   <section class="ne-section"><h2>2. Review the flow, from source to use</h2><p>Points are grouped by supply and ordered with their suppliers first. Shared areas show both sources. Open a point to edit its details.</p><div id="network-editor-points"></div></section>
+   <section class="ne-section"><h2>3. Check before saving</h2><div id="network-editor-review"></div><p>Changing suppliers or reporting boundaries also changes how existing readings are grouped. The meter records and reading history are kept.</p><p>A combined meter cannot split municipal basin water from borehole flushing water. Separate inlet counters are needed for exact source volumes at an area.</p></section>
+   <footer class="ne-actions"><a asp-page="./Edit">Reload saved map</a><a asp-page="./Index">Cancel</a><button type="submit">Save reviewed network</button></footer>
+  </div>
+ </form>
 </div>
-<script id="network-editor-meters" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.AvailableMeters.Select(m => new { id = m.Id, name = m.MeterName, role = (int)m.NetworkRole })))</script>
+<script id="network-editor-meters" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.AvailableMeters.Select(m=>new{id=m.Id,name=m.MeterName,role=(int)m.NetworkRole})))</script>
 @section Scripts { <script type="module" src="~/js/network-editor.js" asp-append-version="true"></script> }

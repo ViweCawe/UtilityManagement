@@ -505,7 +505,7 @@
     <section class="top-kpi-grid dashboard-kpi-grid">
 
         <div class="figma-card kpi-card kpi-water">
-            <p>Estimated Water Flow</p>
+            <p>@Model.Consumption.Water.Label</p>
             <h2>@(Model.Consumption.Water.CoveredDays>0 ? Model.WaterConsumption.ToString("N1") : "—") <span>L</span></h2>
 
             <div class="mini-trend">
@@ -543,14 +543,14 @@
         </div>
 
         <div class="figma-card kpi-card kpi-coverage">
-            <p>Meter Data Coverage</p>
+            <p>Selected KPI coverage</p>
             <h2>@Model.DataCoveragePercent.ToString("N1")<span>%</span></h2>
 
             <div class="mini-trend">
                 <span class="@(Model.DataCoveragePercent >= 90 ? "trend-positive" : "trend-negative")">
                     @(Model.DataCoveragePercent >= 90 ? " Healthy" : " Attention")
                 </span>
-                <small>days covered by meter intervals</small>
+                <small>coverage of the displayed KPI boundaries</small>
             </div>
 
             <div class="coverage-meter" aria-label="Meter data coverage @Model.DataCoveragePercent.ToString("N1") percent">
@@ -564,6 +564,7 @@
 
     </section>
 
+    <partial name="_WaterSupplyBreakdown" model="Model.Consumption" />
     <partial name="_MeterDailyAverages" model="Model.DailyAverages" />
 
     <section class="stats-grid stats-grid-3">

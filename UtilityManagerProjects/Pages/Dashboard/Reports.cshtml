@@ -450,7 +450,7 @@
 
     <section class="report-kpi-grid">
         <article class="report-kpi water">
-            <div class="report-kpi-label"><span>Estimated Water Flow</span><i class="bi bi-droplet-fill"></i></div>
+            <div class="report-kpi-label"><span>@Model.Consumption.Water.Label</span><i class="bi bi-droplet-fill"></i></div>
             <h2>@(Model.Consumption.Water.CoveredDays>0 ? Model.WaterTotal.ToString("N1") : "—") <span>L</span></h2>
             <span class="report-variance @(Model.WaterChangePercent <= 0 ? "good" : "bad")">
                 @(Model.WaterChangePercent <= 0 ? "↓" : "↑") @(Model.WaterChangeAvailable ? Math.Abs(Model.WaterChangePercent).ToString("N1")+"%" : "—")
@@ -489,13 +489,14 @@
         <div class="health-item"><span>Report generated</span><strong>@Model.GeneratedOn.ToString("dd MMM yyyy")</strong></div>
     </section>
 
+    <partial name="_WaterSupplyBreakdown" model="Model.Consumption" />
     <section class="report-chart-grid">
         <article class="report-card">
-            <div class="report-card-header"><div><h3>Water Trend</h3><p>Consumption over the reporting period</p></div><span class="unit-tag">LITRES</span></div>
+            <div class="report-card-header"><div><h3>@Model.Consumption.Water.Label</h3><p>Measured boundary flow over the reporting period</p></div><span class="unit-tag">LITRES</span></div>
             <div class="report-chart-shell"><canvas id="reportWaterChart" aria-label="Water trend" role="img"></canvas></div>
         </article>
         <article class="report-card">
-            <div class="report-card-header"><div><h3>Electricity Trend</h3><p>Consumption over the reporting period</p></div><span class="unit-tag">KWH</span></div>
+            <div class="report-card-header"><div><h3>Electricity Trend</h3><p>Measured boundary flow over the reporting period</p></div><span class="unit-tag">KWH</span></div>
             <div class="report-chart-shell"><canvas id="reportElectricityChart" aria-label="Electricity trend" role="img"></canvas></div>
         </article>
         <article class="report-card">

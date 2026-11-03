@@ -9,6 +9,7 @@ public sealed class MeterDailyAverageRow
  public int? LatestCounter { get; set; }
  public DateTime? LatestCounterDate { get; set; }
  public string CalculationStatus { get; set; } = "";
+ public string SupplyDescription { get; set; } = "";
  public int ReadingCount { get; set; }
  public decimal TotalUsage { get; set; }
  public decimal DailyAverage { get; set; }

@@ -1,26 +1,27 @@
+import { reportingRole, nodeOrigins } from './water-network-accounting.mjs';
 export function validateNetwork(map) {
     if (!Array.isArray(map.nodes) || map.nodes.length < 1 || map.nodes.length > 500 || !Array.isArray(map.connections) || map.connections.length > 1500)
         throw new Error('Use 1–500 points and at most 1500 connections.');
     const ids = new Set(), meters = new Set(), pairs = new Set();
     for (const n of map.nodes) {
         if (!n || !/^[a-z0-9-]{1,80}$/.test(n.id) || ids.has(n.id) || !n.label?.trim() || n.label.length > 100 ||
-            !['Lower', 'Top'].includes(n.station) || !['source', 'storage', 'distribution', 'usage', 'transfer', 'unresolved'].includes(n.kind) || (n.note?.length || 0) > 1000)
+            !['Lower', 'Top'].includes(n.station) || !['source', 'storage', 'distribution', 'usage', 'transfer', 'unresolved'].includes(n.kind) || (n.note?.length || 0) > 1000 || (n.usageArea?.length||0)>100 || !['','main','borehole-inlet','borehole-outlet','hydrant'].includes(reportingRole(n)) || !['','municipal','borehole','rain','other'].includes(n.supplyOrigin||''))
             throw new Error('Every point needs a unique identity, a name, a station and a role.');
         ids.add(n.id);
         if (n.meterId != null) {
-            if (!n.canLinkMeter || !Number.isInteger(n.meterId) || n.meterId <= 0 || meters.has(n.meterId)) throw new Error('Assign each meter to only one metered point.');
+            if (n.canLinkMeter===false || !Number.isInteger(n.meterId) || n.meterId <= 0 || meters.has(n.meterId)) throw new Error('Assign each meter to only one metered point.');
             meters.add(n.meterId);
         }
     }
     for (const e of map.connections) {
         const pair = `${e.from}/${e.to}`;
         if (!ids.has(e.from) || !ids.has(e.to) || e.from === e.to || pairs.has(pair) ||
-            !['supply', 'transfer', 'rain', 'backup'].includes(e.kind) || (e.condition?.length || 0) > 200 || (e.kind === 'backup' && !e.condition?.trim()))
+            !['supply', 'transfer', 'rain', 'backup'].includes(e.kind) || (e.condition?.length || 0) > 200 || (e.purpose?.length||0)>120 || !['','municipal','borehole','rain','other'].includes(e.sourceFilter||'') || (e.kind === 'backup' && !e.condition?.trim()))
             throw new Error('Choose different From and To points, avoid duplicate connections, and describe conditional routes.');
         pairs.add(pair);
     }
     for(const node of map.nodes.filter(n=>n.isExternalSupply===true))
-        if(!node.canLinkMeter || !['source','storage'].includes(node.kind) || map.connections.some(e=>e.to===node.id && e.kind!=='backup'))
+        if(node.canLinkMeter===false || !['source','storage'].includes(node.kind) || map.connections.some(e=>e.to===node.id && e.kind!=='backup'))
             throw new Error('An external supply must be a metered Source or Storage point without a normal upstream connection.');
     const visiting = new Set(), visited = new Set();
     function visit(id) {
@@ -31,6 +32,16 @@ export function validateNetwork(map) {
         visiting.delete(id); visited.add(id);
     }
     for (const id of ids) visit(id);
+    for(const e of map.connections) if(e.sourceFilter&&!nodeOrigins(map,e.from).has(e.sourceFilter)) throw new Error('This supplier does not carry the chosen water source. Check the source type and route restriction.');
+    const roles=new Set();
+    for(const n of map.nodes) {
+        const role=reportingRole(n);if(!role) continue;
+        if(n.canLinkMeter===false||roles.has(role)) throw new Error('Choose one distinct metered point for each reporting boundary.');roles.add(role);
+        if(['main','hydrant','borehole-inlet'].includes(role)&&map.connections.some(e=>e.to===n.id&&e.kind!=='backup')) throw new Error('An inlet reporting meter must not have a normal upstream supplier.');
+        const expected=['main','hydrant'].includes(role)?'municipal':'borehole',sources=nodeOrigins(map,n.id);
+        if(sources.size!==1||!sources.has(expected)) throw new Error('This reporting meter measures the wrong or mixed sources. A combined counter cannot be a municipal or borehole total.');
+    }
+
 }
 
 export function arrangeNetwork(map) {

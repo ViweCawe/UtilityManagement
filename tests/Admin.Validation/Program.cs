@@ -96,7 +96,7 @@ public sealed class ValidationAuthentication(IOptionsMonitor<AuthenticationSchem
 }
 public sealed class SampleData
 {
- readonly List<Meter> meters=Enumerable.Range(1,5).Select(i=>new Meter{Id=i,MeterName=new[]{"Main Meter","Fire Hydrant","Borehole Incoming","Garage Roof","Electricity"}[i-1],MeterType=i==5?MeterType.Electricity:MeterType.Water,IsActive=true,DepartmentName="Operations",AreaName="Lower station"}).ToList();
+ readonly List<Meter> meters=Enumerable.Range(1,6).Select(i=>new Meter{Id=i,MeterName=new[]{"Main Meter","Fire Hydrant","Borehole Incoming","Garage Roof","Electricity","New usage meter"}[i-1],MeterType=i==5?MeterType.Electricity:MeterType.Water,IsActive=true,DepartmentName="Operations",AreaName="Lower station"}).ToList();
  public T Data<T>() where T:class => Proxy.Make<T>((method,args)=>{
   var resultType=method.ReturnType.GetGenericArguments()[0];
   if(!resultType.IsGenericType) throw new NotSupportedException(method.Name);

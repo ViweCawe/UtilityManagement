@@ -4,14 +4,16 @@
   "nodes": [
     {
       "id": "main-tank",
-      "label": "Main Meter — Source",
+      "label": "Main Meter \u2014 Source",
       "station": "Lower",
       "kind": "source",
       "figmaNodeId": "9:220",
       "x": 470,
       "y": 100,
       "note": "Records the municipal water entering our main supply and feeding both stations. Municipality describes where this water comes from; there is no separate Municipality Supply meter. The physical tank arrangement remains to be confirmed.",
-      "isExternalSupply": true
+      "isExternalSupply": true,
+      "reportingRole": "main",
+      "supplyOrigin": "municipal"
     },
     {
       "id": "fire-hydrant",
@@ -22,7 +24,9 @@
       "x": 5,
       "y": 140,
       "note": "Separate municipal branch with its own meter. Excluded from the Main Meter and billed main supply. Compare period usage from this meter plus Main Meter usage to measure total municipal water; do not add lifetime counter values.",
-      "isExternalSupply": true
+      "isExternalSupply": true,
+      "reportingRole": "hydrant",
+      "supplyOrigin": "municipal"
     },
     {
       "id": "kitchen-stores",
@@ -54,8 +58,9 @@
       "figmaNodeId": "11:624",
       "x": 780,
       "y": 280,
-      "note": "Main supply serves basins, fountains and Level 4 toilets (unmetered outlets), and Old Cable Car (metered). Borehole connection serves toilet flushing only. Keep these circuits distinct when interpreting readings.",
-      "isExternalSupply": false
+      "note": "Main supply serves basins, fountains and Level 4 toilets (unmetered outlets), and Old Cable Car (metered). Borehole connection serves toilet flushing only. Keep these circuits distinct when interpreting readings. One combined meter is recorded for this area. Its municipal and borehole portions are not separately measured.",
+      "isExternalSupply": false,
+      "usageArea": "Workshop"
     },
     {
       "id": "borehole-in",
@@ -66,7 +71,9 @@
       "x": 1090,
       "y": 140,
       "note": "Metered borehole tank receiving drilled water. Readings measure recorded flow into storage, not the current volume in the tank.",
-      "isExternalSupply": true
+      "isExternalSupply": true,
+      "reportingRole": "borehole-inlet",
+      "supplyOrigin": "borehole"
     },
     {
       "id": "borehole-out",
@@ -77,7 +84,9 @@
       "x": 1090,
       "y": 280,
       "note": "Meter measures litres leaving borehole storage. Supplies toilet flushing only; basins use the Main Meter supply.",
-      "isExternalSupply": false
+      "isExternalSupply": false,
+      "reportingRole": "borehole-outlet",
+      "supplyOrigin": "borehole"
     },
     {
       "id": "old-cable-car",
@@ -114,7 +123,7 @@
     },
     {
       "id": "ice-machine",
-      "label": "Ice Machine — Garage",
+      "label": "Ice Machine \u2014 Garage",
       "station": "Lower",
       "kind": "usage",
       "figmaNodeId": "11:166",
@@ -153,12 +162,13 @@
       "figmaNodeId": "11:1045",
       "x": 1090,
       "y": 460,
-      "note": "Level 1 Visitor Toilets: borehole water normally supplies flushing. Main Meter water supplies flushing only when the borehole runs out. Basins use main water.",
-      "isExternalSupply": false
+      "note": "Level 1 Visitor Toilets: borehole water normally supplies flushing. Main Meter water supplies flushing only when the borehole runs out. Basins use main water. One combined meter is recorded for this area. Its municipal and borehole portions are not separately measured.",
+      "isExternalSupply": false,
+      "usageArea": "Level 1 Visitor Toilets"
     },
     {
       "id": "vida-cafe",
-      "label": "Vida Café",
+      "label": "Vida Caf\u00e9",
       "station": "Lower",
       "kind": "usage",
       "figmaNodeId": "11:1226",
@@ -337,7 +347,7 @@
     },
     {
       "id": "workshop-basins",
-      "label": "Workshop Basins · unmetered",
+      "label": "Workshop Basins \u00b7 unmetered",
       "station": "Lower",
       "kind": "usage",
       "figmaNodeId": "11:624",
@@ -349,7 +359,7 @@
     },
     {
       "id": "workshop-fountains",
-      "label": "Workshop Fountains · unmetered",
+      "label": "Workshop Fountains \u00b7 unmetered",
       "station": "Lower",
       "kind": "usage",
       "figmaNodeId": "11:624",
@@ -361,7 +371,7 @@
     },
     {
       "id": "level4-toilets",
-      "label": "Level 4 Toilets · unmetered",
+      "label": "Level 4 Toilets \u00b7 unmetered",
       "station": "Lower",
       "kind": "usage",
       "figmaNodeId": "11:624",
@@ -391,15 +401,19 @@
       "to": "workshop",
       "figmaConnectorId": "11:1018",
       "kind": "supply",
-      "condition": "",
-      "from": "main-tank"
+      "condition": "Basins normally use municipal water. Municipal flushing only when borehole water runs out.",
+      "from": "main-tank",
+      "purpose": "Basins; backup flushing when borehole runs out",
+      "sourceFilter": "municipal"
     },
     {
       "to": "old-cable-car",
       "figmaConnectorId": "11:716",
       "kind": "supply",
       "condition": "",
-      "from": "workshop"
+      "from": "workshop",
+      "sourceFilter": "municipal",
+      "purpose": "Municipal distribution"
     },
     {
       "to": "staff-room-lower",
@@ -439,9 +453,11 @@
     {
       "to": "staff-toilets-lower",
       "figmaConnectorId": "User clarification 2026-11-02 (replaces 11:1204 origin)",
-      "kind": "backup",
-      "condition": "Borehole water has run out; flushing only",
-      "from": "main-tank"
+      "kind": "supply",
+      "condition": "Basins normally use municipal water. Municipal flushing only when borehole water runs out.",
+      "from": "main-tank",
+      "purpose": "Basins; backup flushing when borehole runs out",
+      "sourceFilter": "municipal"
     },
     {
       "to": "borehole-out",
@@ -455,7 +471,9 @@
       "figmaConnectorId": "11:1137",
       "kind": "supply",
       "condition": "",
-      "from": "borehole-out"
+      "from": "borehole-out",
+      "purpose": "Toilet flushing",
+      "sourceFilter": "borehole"
     },
     {
       "to": "cable-car-transfer",
@@ -574,14 +592,18 @@
       "to": "workshop-basins",
       "kind": "supply",
       "condition": "",
-      "figmaConnectorId": "11:624 annotation"
+      "figmaConnectorId": "11:624 annotation",
+      "sourceFilter": "municipal",
+      "purpose": "Basins / clean-water circuit"
     },
     {
       "from": "workshop",
       "to": "workshop-fountains",
       "kind": "supply",
       "condition": "",
-      "figmaConnectorId": "11:624 annotation"
+      "figmaConnectorId": "11:624 annotation",
+      "sourceFilter": "municipal",
+      "purpose": "Basins / clean-water circuit"
     },
     {
       "from": "workshop",
@@ -595,8 +617,11 @@
       "to": "workshop",
       "kind": "supply",
       "condition": "Toilet flushing only",
-      "figmaConnectorId": "12:1534"
+      "figmaConnectorId": "12:1534",
+      "purpose": "Toilet flushing",
+      "sourceFilter": "borehole"
     }
   ],
-  "openQuestions": []
+  "openQuestions": [],
+  "circuitDefinitionsVersion": 1
 }
