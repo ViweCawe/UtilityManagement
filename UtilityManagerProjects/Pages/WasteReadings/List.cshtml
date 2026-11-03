@@ -302,7 +302,7 @@
                                 <td>
                                     <div class="table-date">
                                         <strong>@item.ReadingDate.ToString("dd MMM yyyy")</strong>
-                                        <span>@item.ReadingDate.ToString("HH:mm")</span>
+
                                     </div>
                                 </td>
 
@@ -458,7 +458,7 @@
         const splitLabels = @Html.Raw(Model.WasteSplitLabelsJson);
         const splitData = @Html.Raw(Model.WasteSplitDataJson);
 
-        Chart.defaults.color = '#8ea2bd';
+        Chart.defaults.color = '#52647a';
         Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
 
         new Chart(document.getElementById('dailyWasteChart'), {

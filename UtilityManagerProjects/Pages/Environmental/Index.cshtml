@@ -150,17 +150,17 @@
         </div>
 
         <div class="filter-group environment-custom-date-filter">
-            <label>Start Date</label>
+            <label for="StartDate">Start Date</label>
             <input type="date"
-                   name="StartDate"
+                   id="StartDate" name="StartDate"
                    value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
                    class="utility-input" />
         </div>
 
         <div class="filter-group environment-custom-date-filter">
-            <label>End Date</label>
+            <label for="EndDate">End Date</label>
             <input type="date"
-                   name="EndDate"
+                   id="EndDate" name="EndDate"
                    value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
                    class="utility-input" />
         </div>
@@ -473,7 +473,7 @@
         const wasteSplitLabels = @Html.Raw(Model.WasteSplitLabelsJson);
         const wasteSplitData = @Html.Raw(Model.WasteSplitDataJson);
 
-        Chart.defaults.color = '#8ea2bd';
+        Chart.defaults.color = '#52647a';
         Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
 
         function createConsumptionTrend(canvasId, label, data, color, unit) {
@@ -547,7 +547,7 @@
         {
         label: 'Other',
         data: otherWasteTrend,
-        backgroundColor: '#94a3b8',
+        backgroundcolor: '#52647a',
         borderRadius: 4
         }
         ]

@@ -404,8 +404,8 @@
             </select>
         </div>
         <div class="filter-group report-custom-date-filter">
-            <label>Start Date</label>
-            <input type="date" name="StartDate" value="@Model.CurrentStart.ToString("yyyy-MM-dd")" class="utility-input" />
+            <label for="StartDate">Start Date</label>
+            <input type="date" id="StartDate" name="StartDate" value="@Model.CurrentStart.ToString("yyyy-MM-dd")" class="utility-input" />
         </div>
         <div class="filter-group">
             <label>Meter</label>
@@ -428,8 +428,8 @@
             </select>
         </div>
         <div class="filter-group report-custom-date-filter">
-            <label>End Date</label>
-            <input type="date" name="EndDate" value="@Model.CurrentEnd.ToString("yyyy-MM-dd")" class="utility-input" />
+            <label for="EndDate">End Date</label>
+            <input type="date" id="EndDate" name="EndDate" value="@Model.CurrentEnd.ToString("yyyy-MM-dd")" class="utility-input" />
         </div>
         <div class="filter-actions">
             <button type="submit" class="utility-btn-primary"><i class="bi bi-funnel"></i> Apply</button>
@@ -486,7 +486,7 @@
         <div class="health-item"><span>Total source records</span><strong>@Model.TotalReadings.ToString("N0")</strong></div>
         <div class="health-item"><span>Meter data coverage</span><strong>@Model.DataCoveragePercent.ToString("N1")%</strong></div>
         <div class="health-item"><span>Complete meter days</span><strong>@Model.CompleteMeterDays of @Model.SelectedDayCount</strong></div>
-        <div class="health-item"><span>Report generated</span><strong>@Model.GeneratedOn.ToString("dd MMM · HH:mm")</strong></div>
+        <div class="health-item"><span>Report generated</span><strong>@Model.GeneratedOn.ToString("dd MMM yyyy")</strong></div>
     </section>
 
     <section class="report-chart-grid">
@@ -571,7 +571,7 @@
         const reportElectricityTrend = @Html.Raw(Model.ElectricityTrendJson);
         const reportWasteTrend = @Html.Raw(Model.WasteTrendJson);
 
-        Chart.defaults.color = '#708096';
+        Chart.defaults.color = '#52647a';
         Chart.defaults.font.family = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
         Chart.defaults.borderColor = 'rgba(148, 163, 184, .18)';
 

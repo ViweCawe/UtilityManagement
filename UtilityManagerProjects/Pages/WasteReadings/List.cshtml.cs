@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace UtilityManagerProjects.Pages.WasteReadings
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class ListModel : PageModel
     {
         private readonly IWasteReadingData wasteReading;

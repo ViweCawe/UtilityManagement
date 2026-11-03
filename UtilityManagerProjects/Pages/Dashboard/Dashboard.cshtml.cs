@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace UtilityManagerProjects.Pages.Dashboard
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class DashboardModel : PageModel
     {
         private readonly IMeterReadingData readingData;
@@ -89,6 +89,7 @@ namespace UtilityManagerProjects.Pages.Dashboard
         public List<MeterReading> MeterReadings { get; set; } = new();
         public List<MeterReading> RecentMeterReadings { get; set; } = new();
 
+        public List<MeterDailyAverageRow> DailyAverages { get; private set; } = [];
         public List<MeterTypeKpi> MeterTypeKpis { get; set; } = new();
 
         public List<DashboardAlert> Alerts { get; set; } = new();
@@ -114,6 +115,7 @@ namespace UtilityManagerProjects.Pages.Dashboard
             MeterOptions = unfilteredCurrent.GroupBy(x => x.MeterId).Select(x => x.First()).OrderBy(x => x.MeterName).ToList();
             DepartmentOptions = unfilteredCurrent.Select(x => x.DepartmentName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
             Consumption = calculations.ForPeriod(CurrentStart, CurrentEnd, MeterId, Department);
+            DailyAverages=calculations.DailyAverages(Consumption,MeterId,Department);
             ViewData["Consumption"] = Consumption;
             ViewData["ConsumptionWarnings"] = calculations.Warnings;
             var previous = calculations.ForPeriod(PreviousStart, PreviousEnd, MeterId, Department);

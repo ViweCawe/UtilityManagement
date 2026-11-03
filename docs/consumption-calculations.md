@@ -57,4 +57,4 @@ Run:
 - `dotnet run --project tests/WaterNetwork.Validation/WaterNetwork.Validation.csproj`
 - `node --test tests/network-editor.test.mjs tests/water-network.test.mjs`
 
-The consumption suite uses actual service/page-model code with fake data contracts and reconciles the exported workbook to displayed totals. It does not execute SQL. An isolated Razor host validates compilation separately. Full application build is blocked by the existing missing SQL-project reference; live SQL migration, database concurrency, authenticated browser behaviour and visual layout must be verified in a test environment before production. No live database was changed by this work.
+The consumption suite uses actual service/page-model code with fake data contracts and reconciles the exported workbook to displayed totals. It does not execute SQL. An isolated Razor host validates compilation separately. The web project builds independently of SSDT after the navigation/admin cleanup; the SQL project remains in the solution for database deployment. Live SQL migration and database concurrency must be verified against SQL Server before production. No live database was changed by this work.

@@ -13,15 +13,17 @@ namespace UtilityManagerProjects.Pages.Admin.UserRoles
         private readonly UserManager<IdentityUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly SignInManager<IdentityUser> signInManager;
+        private readonly UtilityManagerProjects.Services.UserAdministration administration;
 
         public AssignModel(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            SignInManager<IdentityUser> signInManager)
+            SignInManager<IdentityUser> signInManager, UtilityManagerProjects.Services.UserAdministration administration)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
             this.signInManager = signInManager;
+            this.administration=administration;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -33,19 +35,7 @@ namespace UtilityManagerProjects.Pages.Admin.UserRoles
         [BindProperty]
         public List<RoleSelection> Roles { get; set; } = new();
 
-        public async Task<IActionResult> OnGetAsync()
-        {
-            var user =
-                await userManager.FindByIdAsync(UserId);
-
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            await LoadRolesAsync(user);
-            return Page();
-        }
+        public IActionResult OnGet() => RedirectToPage("/Admin/UserManagement/EditRoles",new {userId=UserId});
 
         public async Task<IActionResult> OnPostAsync()
         {
@@ -57,55 +47,11 @@ namespace UtilityManagerProjects.Pages.Admin.UserRoles
                 return NotFound();
             }
 
-            var currentRoles =
-                await userManager.GetRolesAsync(user);
-
-            var selectedRoles = Roles
-                .Where(x => x.IsSelected)
-                .Select(x => x.RoleName)
-                .ToList();
-
-            var rolesToAdd = selectedRoles
-                .Except(
-                    currentRoles,
-                    StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            var rolesToRemove = currentRoles
-                .Except(
-                    selectedRoles,
-                    StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (rolesToAdd.Any())
-            {
-                var addResult =
-                    await userManager.AddToRolesAsync(
-                        user,
-                        rolesToAdd);
-
-                if (!addResult.Succeeded)
-                {
-                    AddErrors(addResult);
-                    await LoadRolesAsync(user);
-                    return Page();
-                }
-            }
-
-            if (rolesToRemove.Any())
-            {
-                var removeResult =
-                    await userManager.RemoveFromRolesAsync(
-                        user,
-                        rolesToRemove);
-
-                if (!removeResult.Succeeded)
-                {
-                    AddErrors(removeResult);
-                    await LoadRolesAsync(user);
-                    return Page();
-                }
-            }
+            if(!ModelState.IsValid) { await LoadRolesAsync(user);return Page(); }
+            IdentityResult result;
+            try { result=await administration.SetRoles(UserId,Roles.Where(r=>r.IsSelected).Select(r=>r.RoleName),User); }
+            catch(System.Data.Common.DbException) { ModelState.AddModelError("","Unable to update roles. Reload and try again.");await LoadRolesAsync(user);return Page(); }
+            if(!result.Succeeded) { AddErrors(result);await LoadRolesAsync(user);return Page(); }
 
             var currentUserId =
                 userManager.GetUserId(User);

@@ -31,6 +31,15 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
             Warnings.Add("A counter decreases in the reading history. That interval is excluded until the reset or incorrect capture is resolved.");
     }
 
+    public List<MeterDailyAverageRow> DailyAverages(ConsumptionPeriod period,int? meterId=null,string? department=null) => Meters
+        .Where(m=>(!meterId.HasValue||m.Id==meterId) && (string.IsNullOrWhiteSpace(department)||string.Equals(m.DepartmentName,department,StringComparison.OrdinalIgnoreCase)))
+        .Select(m=>{
+            var days=period.AllDaily.Where(d=>d.MeterId==m.Id).ToList();
+            return new MeterDailyAverageRow {MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
+                ReadingCount=History.Count(r=>r.MeterId==m.Id&&r.ReadingDate.Date>=period.Water.Start&&r.ReadingDate.Date<=period.Water.End),
+                CoveredDays=days.Count,TotalUsage=days.Sum(d=>d.Usage),DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count};
+        }).OrderBy(r=>r.DepartmentName).ThenBy(r=>r.MeterName).ToList();
+
     public static (DateTime Start, DateTime End, string? Notice) ReportingRange(DateTime start, DateTime end)
     {
         var originalStart=start.Date; var originalEnd=end.Date;

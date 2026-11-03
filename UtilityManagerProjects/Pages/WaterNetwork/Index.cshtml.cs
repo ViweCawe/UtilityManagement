@@ -75,7 +75,7 @@ public class IndexModel(IConfiguration configuration,
         {
             readings.TryGetValue(pair.Value.Id, out var reading);
             Latest[pair.Key] = new { meterId = pair.Value.Id, name = pair.Value.MeterName,
-                currentReading = reading?.CurrentReading, capturedAt = reading?.ReadingDate.ToString("dd MMM yyyy HH:mm"),
+                currentReading = reading?.CurrentReading, capturedAt = reading?.ReadingDate.ToString("dd MMM yyyy"),
                 unit = pair.Value.Unit, historyUrl = Url.Page("/MeterReadings/History", new { meterId = pair.Value.Id }) };
         }
     }

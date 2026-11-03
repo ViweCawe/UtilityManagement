@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace UtilityManagerProjects.Pages.MeterReadings
 {
-    [Authorize(Roles ="Admin")]
+    [Authorize]
     public class ListModel : PageModel
     {
         private readonly IMeterReadingData meterReading;
@@ -134,13 +134,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
 
             TotalMeters = LatestReadings.Count;
 
-            DailyAverages = calculations.Meters
-                .Where(m => (!MeterId.HasValue || m.Id==MeterId) && (string.IsNullOrWhiteSpace(Department) || string.Equals(m.DepartmentName,Department,StringComparison.OrdinalIgnoreCase)))
-                .Select(m=> {
-                    var days=Consumption.AllDaily.Where(d=>d.MeterId==m.Id).ToList();
-                    return new MeterDailyAverageRow { MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
-                        ReadingCount=currentReadings.Count(r=>r.MeterId==m.Id),CoveredDays=days.Count,TotalUsage=days.Sum(d=>d.Usage),DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count };
-                }).OrderBy(x=>x.DepartmentName).ThenBy(x=>x.MeterName).ToList();
+            DailyAverages = calculations.DailyAverages(Consumption,MeterId,Department);
         }
 
         private IEnumerable<MeterReading> ApplyMeterFilters(IEnumerable<MeterReading> readings)
@@ -148,19 +142,6 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             if (MeterId.HasValue) readings = readings.Where(x => x.MeterId == MeterId.Value);
             if (!string.IsNullOrWhiteSpace(Department)) readings = readings.Where(x => string.Equals(x.DepartmentName, Department, StringComparison.OrdinalIgnoreCase));
             return readings;
-        }
-
-        public class MeterDailyAverageRow
-        {
-            public int MeterId { get; set; }
-            public string MeterName { get; set; } = string.Empty;
-            public MeterType MeterType { get; set; }
-            public string DepartmentName { get; set; } = string.Empty;
-            public int ReadingCount { get; set; }
-            public decimal TotalUsage { get; set; }
-            public decimal DailyAverage { get; set; }
-            public int CoveredDays { get; set; }
-            public string Unit => MeterType == MeterType.Water ? "L" : "kWh";
         }
 
         public string GetMeterUnit(MeterType meterType)

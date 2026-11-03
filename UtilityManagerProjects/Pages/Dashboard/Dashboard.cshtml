@@ -435,7 +435,7 @@
 
     <div class="page-header-row">
         <div class="page-title">
-            <h1 style="color:grey">Utilities Management Dashboard</h1>
+            <h1>Dashboard</h1>
             <p>Water and electricity performance. Showing @Model.DateRangeLabel.</p>
         </div>
 
@@ -463,9 +463,9 @@
         </div>
 
         <div class="filter-group dashboard-custom-date-filter">
-            <label>Start Date</label>
+            <label for="StartDate">Start Date</label>
             <input type="date"
-                   name="StartDate"
+                   id="StartDate" name="StartDate"
                    value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
                    class="utility-input" />
         </div>
@@ -484,9 +484,9 @@
         </div>
 
         <div class="filter-group dashboard-custom-date-filter">
-            <label>End Date</label>
+            <label for="EndDate">End Date</label>
             <input type="date"
-                   name="EndDate"
+                   id="EndDate" name="EndDate"
                    value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
                    class="utility-input" />
         </div>
@@ -519,7 +519,7 @@
             <canvas id="waterMiniChart"></canvas>
             <div class="kpi-support">
                 <span>Daily average</span>
-                <strong>@Model.AverageDailyWater.ToString("N0") L</strong>
+                <strong>@(Model.Consumption.Water.CoveredDays>0?Model.AverageDailyWater.ToString("N1"):"—") L</strong>
             </div>
         </div>
 
@@ -538,7 +538,7 @@
             <canvas id="electricityMiniChart"></canvas>
             <div class="kpi-support">
                 <span>Daily average</span>
-                <strong>@Model.AverageDailyElectricity.ToString("N0") kWh</strong>
+                <strong>@(Model.Consumption.Electricity.CoveredDays>0?Model.AverageDailyElectricity.ToString("N1"):"—") kWh</strong>
             </div>
         </div>
 
@@ -563,6 +563,8 @@
         </div>
 
     </section>
+
+    <partial name="_MeterDailyAverages" model="Model.DailyAverages" />
 
     <section class="stats-grid stats-grid-3">
 
@@ -692,12 +694,12 @@
     <section class="executive-insights-grid">
         <div class="executive-insight">
             <p>Average Daily Water</p>
-            <strong>@Model.AverageDailyWater.ToString("N0") L</strong>
+            <strong>@(Model.Consumption.Water.CoveredDays>0?Model.AverageDailyWater.ToString("N1"):"—") L</strong>
             <span>Normalised over @Model.SelectedDayCount selected days</span>
         </div>
         <div class="executive-insight">
             <p>Average Daily Electricity</p>
-            <strong>@Model.AverageDailyElectricity.ToString("N0") kWh</strong>
+            <strong>@(Model.Consumption.Electricity.CoveredDays>0?Model.AverageDailyElectricity.ToString("N1"):"—") kWh</strong>
             <span>Normalised over @Model.SelectedDayCount selected days</span>
         </div>
         <div class="executive-insight">
@@ -963,7 +965,7 @@
 
         const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 
-        Chart.defaults.color = '#7c8ca5';
+        Chart.defaults.color = '#52647a';
         Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.15)';
         Chart.defaults.font.family = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 

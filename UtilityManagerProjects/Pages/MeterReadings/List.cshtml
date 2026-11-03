@@ -39,17 +39,17 @@
         </div>
 
         <div class="filter-group meter-custom-date-filter" >
-            <label>Start Date</label>
+            <label for="StartDate">Start Date</label>
             <input type="date"
-                   name="StartDate"
+                   id="StartDate" name="StartDate"
                    value="@(Model.StartDate?.ToString("yyyy-MM-dd") ?? Model.CurrentStart.ToString("yyyy-MM-dd"))"
                    class="utility-input" />
         </div>
 
         <div class="filter-group meter-custom-date-filter">
-            <label>End Date</label>
+            <label for="EndDate">End Date</label>
             <input type="date"
-                   name="EndDate"
+                   id="EndDate" name="EndDate"
                    value="@(Model.EndDate?.ToString("yyyy-MM-dd") ?? Model.CurrentEnd.ToString("yyyy-MM-dd"))"
                    class="utility-input" />
         </div>
@@ -89,13 +89,7 @@
 
     </form>
 
-    <section class="content-card">
-        <div class="content-card-header"><div><h3>Daily Average by Meter</h3><p>Average flow per covered day, estimated from consecutive captures. Internal meter rows must not be added as site consumption.</p></div></div>
-        <div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter</th><th>Department</th><th>Type</th><th>Readings</th><th>Total Usage</th><th>Covered Days</th><th>Daily Average</th></tr></thead><tbody>
-        @foreach (var row in Model.DailyAverages) { <tr><td>@row.MeterName (#@row.MeterId)</td><td>@row.DepartmentName</td><td>@row.MeterType</td><td>@row.ReadingCount</td><td>@(row.CoveredDays>0?row.TotalUsage.ToString("N1"):"—") @row.Unit</td><td>@row.CoveredDays</td><td><strong>@(row.CoveredDays>0?row.DailyAverage.ToString("N1"):"—") @row.Unit/day</strong></td></tr> }
-        @if (!Model.DailyAverages.Any()) { <tr><td colspan="7" class="empty-state">No readings found for this filter.</td></tr> }
-        </tbody></table></div>
-    </section>
+    <p class="form-hint">Looking for per-meter daily averages? <a asp-page="/Dashboard/Dashboard" asp-route-DateFilter="@Model.DateFilter" asp-route-StartDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-EndDate="@Model.EndDate?.ToString("yyyy-MM-dd")" asp-route-MeterId="@Model.MeterId" asp-route-Department="@Model.Department">View them on the Dashboard</a>.</p>
 
     <section class="stats-grid stats-grid-4">
 
@@ -262,7 +256,7 @@
                                 <td>
                                     <div class="table-date">
                                         <strong>@reading.ReadingDate.ToString("dd MMM yyyy")</strong>
-                                        <span>@reading.ReadingDate.ToString("HH:mm")</span>
+
                                     </div>
                                 </td>
 
