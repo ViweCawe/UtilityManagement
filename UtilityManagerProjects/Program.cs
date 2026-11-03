@@ -33,6 +33,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
        .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddScoped<UtilityManagerProjects.Services.WaterNetworkStore>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();

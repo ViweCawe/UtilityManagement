@@ -13,7 +13,7 @@ if (payload) {
     const details = document.getElementById('selected-point-routes');
     const namespace = 'http://www.w3.org/2000/svg';
     const roleLabels = { source: 'Source', storage: 'Storage tank', distribution: 'Distribution', usage: 'Water use', transfer: 'Transfer', unresolved: 'To confirm' };
-    let selectedId = 'main-tank';
+    let selectedId = (network.nodes.find(n => n.id === 'main-tank') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id;
 
     function svg(type, attributes = {}, text) {
         const element = document.createElementNS(namespace, type);
@@ -146,7 +146,7 @@ if (payload) {
         routeList('Water comes from', supplies.map(e => e.from), selected.kind === 'source' ? 'Source point.' : undefined);
         routeList('Water goes to', destinations.map(e => e.to));
         for (const edge of network.connections.filter(e => e.kind === 'backup' && (e.to === selectedId || e.from === selectedId))) {
-            routeList(`Backup only: ${edge.condition}`, [edge.to === selectedId ? edge.from : edge.to]);
+            routeList(`Conditional supply: ${edge.condition}`, [edge.to === selectedId ? edge.from : edge.to]);
         }
         const explanation = document.createElement('p');
         explanation.className = 'wn-trace-summary';
@@ -154,13 +154,15 @@ if (payload) {
         details.append(explanation);
     }
 
-    document.getElementById('network-reset').addEventListener('click', () => select('main-tank'));
+    document.getElementById('network-reset').addEventListener('click', () => select((network.nodes.find(n => n.id === 'main-tank') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id));
     station.addEventListener('change', () => {
         fillPoints();
-        select(station.value === 'Lower' ? 'main-tank' : 'header');
+        select(network.nodes.find(n => n.station === station.value && n.kind === 'source')?.id || network.nodes.find(n => n.station === station.value).id);
     });
     point.addEventListener('change', () => select(point.value));
     backup.addEventListener('change', render);
+    for (const option of station.options) option.disabled = !network.nodes.some(n => n.station === option.value);
+    station.value = nodes.get(selectedId).station;
     fillPoints();
     select(selectedId);
     document.getElementById('network-controls').hidden = false;

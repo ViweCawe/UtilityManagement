@@ -1,0 +1,22 @@
+.network-editor { color: #172b4d; }
+.network-editor [hidden] { display: none !important; }
+.ne-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; background: #152436; color: #f8fafc; border-radius: 14px; padding: 24px; }
+.ne-header h1 { color: #fff; font-size: 1.8rem; }
+.ne-header p { color: #d6dadd; margin: 0; }
+.ne-header a { color: #dbeafe; }
+.ne-help { margin: 20px 0; background: #eff6ff; border: 1px solid #bfdbfe; padding: 18px; border-radius: 10px; }
+.ne-section { background: #fff; border: 1px solid #dbe5ee; padding: 24px; margin: 24px 0; border-radius: 14px; }
+.ne-title, .ne-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.ne-section h2 { font-size: 1.2rem; color: #172b4d; }
+.ne-section p { color: #475569; }
+.ne-point, .ne-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 14px; padding: 18px; margin-top: 16px; border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 10px; }
+.network-editor label { display: grid; gap: 7px; color: #172b4d; font-size: .85rem; font-weight: 600; }
+.network-editor :is(input:not([type=checkbox]),select) { min-height: 42px; width: 100%; padding: 9px; border: 1px solid #94a3b8; border-radius: 6px; color: #152436; background: #fff; }
+.network-editor input[type=checkbox] { width: 20px; height: 20px; accent-color: #2563eb; }
+.network-editor button { padding: 10px 16px; border: 1px solid #1d4ed8; background: #2563eb; color: #fff; border-radius: 7px; font-weight: 600; }
+.ne-row button, .ne-point button { color: #991b1b; background: #fff; border-color: #fca5a5; }
+.ne-actions { padding: 22px; border-radius: 12px; background: #fff; border: 1px solid #cbd5e1; }
+.ne-errors:not(:empty) { padding: 16px; margin-top: 18px; background: #fff1f2; color: #881337; border: 1px solid #fda4af; border-radius: 8px; }
+.network-editor :is(button,input,select,a):focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }
+@media(max-width: 900px) { .ne-point, .ne-row { grid-template-columns: 1fr 1fr; } }
+@media(max-width: 600px) { .ne-point, .ne-row { grid-template-columns: 1fr; } .ne-header { flex-direction: column; align-items: start; } .ne-section { padding: 14px; } }

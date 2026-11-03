@@ -48,3 +48,10 @@ if (DataLibrary.Models.MeterAssetRules.Validate(DataLibrary.Models.AssetKind.Tan
 if (DataLibrary.Models.MeterAssetRules.Validate(DataLibrary.Models.AssetKind.Meter, DataLibrary.Models.WaterNetworkRole.Storage, DataLibrary.Models.MeterType.Water, null) is null) throw new Exception("Storage meter accepted");
 if (DataLibrary.Models.MeterAssetRules.Validate(DataLibrary.Models.AssetKind.Meter, DataLibrary.Models.WaterNetworkRole.Source, DataLibrary.Models.MeterType.Water, 5m) is null) throw new Exception("Meter capacity accepted");
 Console.WriteLine("PASS: asset classification guards");
+
+Reject("null point", d => d["nodes"]!.AsArray().Add((JsonNode?)null));
+Reject("duplicate meter assignment", d => { d["nodes"]![0]!["meterId"] = 7; d["nodes"]![1]!["meterId"] = 7; });
+Reject("unmetered point with assignment", d => { d["nodes"]![0]!["canLinkMeter"] = false; d["nodes"]![0]!["meterId"] = 7; });
+var editable = new WaterNetwork { Nodes = [ new WaterNetworkNode { Id="new-source", Label="New source", Station="Lower", Kind="source", MeterId=4 } ] };
+editable.Validate();
+Console.WriteLine("PASS: editable points need no Figma ID; invalid assignments and null points rejected.");

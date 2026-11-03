@@ -39,9 +39,11 @@ test('staff-toilet fallback is included only when explicitly requested', () => {
     const regular = traceNetwork(network, 'staff-toilets-lower');
     assert.deepEqual(new Set(regular.upstream), new Set(['borehole-in', 'borehole-out']));
     const alternative = traceNetwork(network, 'staff-toilets-lower', true);
-    for (const id of ['garage-roof', 'main-tank', 'borehole-in', 'borehole-out']) assert.ok(alternative.upstream.has(id));
+    for (const id of ['main-tank', 'borehole-in', 'borehole-out']) assert.ok(alternative.upstream.has(id));
     const backup = network.connections.find(e => e.kind === 'backup');
-    assert.equal(backup.condition, 'Borehole supply is closed');
+    assert.equal(backup.from, 'main-tank');
+    assert.equal(backup.condition, 'Borehole water has run out; flushing only');
+    assert.ok(!alternative.upstream.has('garage-roof'));
     assert.equal(traceEdge(backup, 'staff-toilets-lower', regular), false);
     assert.equal(traceEdge(backup, 'staff-toilets-lower', alternative, true), true);
 });
