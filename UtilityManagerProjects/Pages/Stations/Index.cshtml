@@ -1,32 +1,12 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.Stations.IndexModel
-@{
-}
-
-
-<h2>Station</h2>
-
-<a asp-page="Create" class="btn btn-primary">Create New</a>
-
-<table class="table table-striped">
-    <thead class="thead-dark">
-        <tr>
-            <th>Station Name</th>
-            <th>Satus</th>
-            <th>Actions</th>
-        </tr>
-   </thead>
-
-   <tbody>
-        @foreach (var station in Model.StationList)
-        {
-          <tr>
-            <td>@station.StationName</td>
-            <td>@(station.IsActive ? "Active" : "Inactive")</td>
-            <td></td>
-          </tr>
-                
-        }
-
-   </tbody>
-</table>
+@{ ViewData["Title"]="Locations"; }
+<div class="page-shell">
+ <div class="page-header-row"><div class="page-title"><h1>Locations</h1><p>Manage the stations where your areas and meters are located.</p></div><a asp-page="./Edit" class="utility-btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>Add location</a></div>
+ @if(TempData["SuccessMessage"] is string success) { <div class="alert alert-success" role="status">@success</div> }
+ @if(TempData["ErrorMessage"] is string error) { <div class="alert alert-warning" role="alert">@error</div> }
+ <section class="content-card"><div class="table-wrap"><table class="utility-table"><thead><tr><th>Name</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+ @foreach(var row in Model.Rows) { <tr><td>@row.Name</td><td>@(row.IsActive?"Active":"Inactive")</td><td><div class="row-actions"><a asp-page="./Edit" asp-route-id="@row.Id" class="utility-btn-secondary">Edit</a><form method="post" asp-page-handler="Delete"><input type="hidden" name="id" value="@row.Id"/><button type="submit" class="utility-btn-danger" onclick="return confirm('Delete this record? Records used by meters or areas cannot be deleted.');">Delete</button></form></div></td></tr> }
+ @if(!Model.Rows.Any()) { <tr><td colspan="3" class="empty-state">No locations yet.</td></tr> }
+ </tbody></table></div></section>
+</div>

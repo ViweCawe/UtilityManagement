@@ -30,11 +30,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddDefaultIdentity<IdentityUser>(options => { options.SignIn.RequireConfirmedAccount = false; options.User.RequireUniqueEmail = true; })
        .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddScoped<UtilityManagerProjects.Services.WaterNetworkStore>();
-builder.Services.AddRazorPages();
+builder.Services.AddScoped<UtilityManagerProjects.Services.ConsumptionService>();
+builder.Services.AddScoped<UtilityManagerProjects.Services.ReferenceDataStore>();
+builder.Services.AddScoped<UtilityManagerProjects.Services.UserAdministration>();
+UtilityManagerProjects.Services.AppAccess.AddUtilityPages(builder.Services);
 
 var app = builder.Build();
 

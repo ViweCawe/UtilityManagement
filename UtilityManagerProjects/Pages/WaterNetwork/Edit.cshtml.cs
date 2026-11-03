@@ -30,7 +30,10 @@ public sealed class EditModel(WaterNetworkStore store, IMeterData meters, IDataA
             .ToDictionary(p => p.Key, p => int.TryParse(p.Value, out var id) ? (int?)id : null);
         foreach (var link in savedLinks) links[link.NodeId] = link.MeterId;
         foreach (var node in loaded.Network.Nodes)
+        {
             node.MeterId = links.GetValueOrDefault(node.Id);
+            node.IsExternalSupply ??= node.Id is "main-tank" or "fire-hydrant" or "borehole-in";
+        }
         NetworkJson = JsonSerializer.Serialize(loaded.Network, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
 

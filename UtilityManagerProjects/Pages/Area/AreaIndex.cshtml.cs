@@ -1,60 +1,17 @@
-
-
-using DataLibrary.Data;
+using System.Data.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-
-namespace UtilityManagerProjects.Pages.Areas
+using UtilityManagerProjects.Services;
+namespace UtilityManagerProjects.Pages.Areas;
+[Authorize(Roles="Admin")]
+public sealed class IndexModel(ReferenceDataStore store) : PageModel
 {
-    public class IndexModel : PageModel
-    {
-        private readonly IAreaData areaData;
-        private readonly IStationData stationData;
-
-        public IndexModel(IAreaData areaData, IStationData stationData)
-        {
-            this.areaData = areaData;
-            this.stationData = stationData;
-        }
-
-        public List<AreaRow> Areas { get; private set; } = new();
-        public int TotalAreas => Areas.Count;
-        public int TotalStations => Areas
-            .Where(x => x.StationId > 0)
-            .Select(x => x.StationId)
-            .Distinct()
-            .Count();
-
-        public async Task OnGetAsync()
-        {
-            var areasTask = areaData.GetAreas();
-            var stationsTask = stationData.GetStations();
-
-            await Task.WhenAll(areasTask, stationsTask);
-
-            var stations = (await stationsTask).ToDictionary(
-                x => x.Id,
-                x => x.StationName);
-
-            Areas = (await areasTask)
-                .Select(area => new AreaRow
-                {
-                    Id = area.Id,
-                    AreaName = area.AreaName,
-                    StationId = area.StationId,
-                    StationName = stations.TryGetValue(area.StationId, out var stationName)
-                        ? stationName
-                        : "Unassigned"
-                })
-                .OrderBy(x => x.AreaName)
-                .ToList();
-        }
-
-        public class AreaRow
-        {
-            public int Id { get; set; }
-            public string AreaName { get; set; } = string.Empty;
-            public int StationId { get; set; }
-            public string StationName { get; set; } = string.Empty;
-        }
-    }
+ public List<ReferenceDataStore.Row> Rows { get; private set; } = [];
+ public async Task OnGetAsync() => Rows=await store.Areas();
+ public async Task<IActionResult> OnPostDeleteAsync(int id) {
+  try { await store.DeleteArea(id);TempData["SuccessMessage"]="Record deleted."; }
+  catch(DbException ex) { TempData["ErrorMessage"]=Admin.ReferenceEditorModel.ReferenceError(ex); }
+  return RedirectToPage();
+ }
 }

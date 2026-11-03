@@ -1,0 +1,15 @@
+@page
+@model UtilityManagerProjects.Pages.Admin.UserManagement.EditModel
+@{ ViewData["Title"]=Model.UserId is null?"Add user":"Edit user"; }
+<div class="page-shell admin-form-shell">
+ <div class="page-header-row"><div class="page-title"><h1>@ViewData["Title"]</h1><p>Manage access to Utility Manager.</p></div></div>
+ <form method="post" class="content-card utility-form">
+  <input type="hidden" asp-for="UserId" />
+  <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+  <div class="form-group"><label asp-for="Email"></label><input asp-for="Email" class="utility-input" autocomplete="off" /><span asp-validation-for="Email" class="text-danger"></span></div>
+  @if(Model.UserId is null) { <div class="form-group"><label asp-for="Password">Initial password</label><input asp-for="Password" class="utility-input" autocomplete="new-password"/><span asp-validation-for="Password" class="text-danger"></span><p class="form-hint">Use at least six characters with upper and lowercase letters, a number and a symbol.</p></div> }
+  else { <p class="form-hint">Changing an email signs out the user. Password recovery remains available on the sign-in page.</p> }
+  <div class="form-actions"><button type="submit" class="utility-btn-primary">Save user</button><a asp-page="./Index" class="utility-btn-secondary">Cancel</a></div>
+ </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

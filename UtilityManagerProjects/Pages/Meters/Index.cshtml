@@ -83,7 +83,7 @@
                         <th>Meter Name</th>
                         <th>Type</th>
                         <th>Status</th>
-                        <th>Last Updated</th>
+                        <th>Last updated</th>
                         <th><span class="visually-hidden">Actions</span></th>
                     </tr>
                 </thead>
@@ -106,11 +106,11 @@
                                 <td class="meter-updated">
                                     @if (meter.LastUpdatedAt.HasValue)
                                     {
-                                        <time datetime="@meter.LastUpdatedAt.Value.ToString("O")">@meter.LastUpdatedAt.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</time>
+                                        <time datetime="@meter.LastUpdatedAt.Value.ToString("O")">@meter.LastUpdatedAt.Value.ToLocalTime().ToString("dd MMM yyyy")</time>
                                     }
                                     else
                                     {
-                                        <span title="Add a LastReadingAt or UpdatedAt field to the meter query">Not recorded</span>
+                                        <span>Not recorded</span>
                                     }
                                 </td>
                                 <td>

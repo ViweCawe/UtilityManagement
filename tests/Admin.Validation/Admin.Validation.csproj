@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+ <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+ <ItemGroup>
+  <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
+  <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.22" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.2" />
+  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.2" />
+  <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.2" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.2" />
+  <Compile Include="../../UtilityManagerProjects/**/*.cs" Exclude="../../UtilityManagerProjects/Program.cs;../../UtilityManagerProjects/obj/**/*.cs;../../UtilityManagerProjects/bin/**/*.cs" LinkBase="App" />
+  <Compile Include="../../DataLibrary/Models/*.cs" LinkBase="Models" />
+  <Compile Include="../../DataLibrary/Data/I*.cs" LinkBase="Contracts" />
+  <Compile Include="../../DataLibrary/Db/IDataAccess.cs;../../DataLibrary/Db/ConnectionStringData.cs" LinkBase="Contracts" />
+  <Content Include="../../UtilityManagerProjects/Pages/**/*.cshtml" Link="Pages/%(RecursiveDir)%(Filename)%(Extension)" />
+  <Content Include="../../UtilityManagerProjects/Areas/**/*.cshtml" Link="Areas/%(RecursiveDir)%(Filename)%(Extension)" />
+ </ItemGroup>
+</Project>

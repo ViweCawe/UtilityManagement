@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.Reports.IndexModel
 
 @{
@@ -371,6 +371,7 @@
 </style>
 
 <div class="page-shell report-bi">
+    @if (ViewData["Consumption"] is UtilityManagerProjects.Models.ConsumptionPeriod consumption) { <partial name="_ConsumptionNotice" model="consumption" /> }
     <div class="page-header-row">
         <div class="page-title">
             <span class="report-eyebrow"><i class="bi bi-file-earmark-bar-graph-fill"></i> Management reporting</span>
@@ -403,8 +404,8 @@
             </select>
         </div>
         <div class="filter-group report-custom-date-filter">
-            <label>Start Date</label>
-            <input type="date" name="StartDate" value="@Model.CurrentStart.ToString("yyyy-MM-dd")" class="utility-input" />
+            <label for="StartDate">Start Date</label>
+            <input type="date" id="StartDate" name="StartDate" value="@Model.CurrentStart.ToString("yyyy-MM-dd")" class="utility-input" />
         </div>
         <div class="filter-group">
             <label>Meter</label>
@@ -427,8 +428,8 @@
             </select>
         </div>
         <div class="filter-group report-custom-date-filter">
-            <label>End Date</label>
-            <input type="date" name="EndDate" value="@Model.CurrentEnd.ToString("yyyy-MM-dd")" class="utility-input" />
+            <label for="EndDate">End Date</label>
+            <input type="date" id="EndDate" name="EndDate" value="@Model.CurrentEnd.ToString("yyyy-MM-dd")" class="utility-input" />
         </div>
         <div class="filter-actions">
             <button type="submit" class="utility-btn-primary"><i class="bi bi-funnel"></i> Apply</button>
@@ -437,30 +438,30 @@
     </form>
 
     <section class="content-card">
-        <div class="content-card-header"><div><h3>Daily Average by Meter</h3><p>Total interval usage divided by @Model.SelectedDayCount calendar days; missing capture days are not treated as extra readings.</p></div></div>
-        <div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter</th><th>Department</th><th>Type</th><th>Captured readings</th><th>Total usage</th><th>Daily average</th></tr></thead><tbody>
+        <div class="content-card-header"><div><h3>Daily Average by Meter</h3><p>Interval usage is spread across elapsed days; averages use covered days for each meter. These rows may overlap along the network and must not be added as site supply.</p></div></div>
+        <div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter</th><th>Department</th><th>Type</th><th>Captured readings</th><th>Total usage</th><th>Covered days</th><th>Daily average</th></tr></thead><tbody>
         @foreach (var row in Model.MeterDailyAverages)
         {
-            <tr><td>@row.MeterName (#@row.MeterId)</td><td>@row.DepartmentName</td><td>@row.MeterType</td><td>@row.ReadingCount</td><td>@row.TotalUsage.ToString("N0") @row.Unit</td><td><strong>@row.DailyAverage.ToString("N1") @row.Unit/day</strong></td></tr>
+            <tr><td>@row.MeterName (#@row.MeterId)</td><td>@row.DepartmentName</td><td>@row.MeterType</td><td>@row.ReadingCount</td><td>@(row.CoveredDays>0?row.TotalUsage.ToString("N1"):"—") @row.Unit</td><td>@row.CoveredDays</td><td><strong>@(row.CoveredDays>0?row.DailyAverage.ToString("N1"):"—") @row.Unit/day</strong></td></tr>
         }
-        @if (!Model.MeterDailyAverages.Any()) { <tr><td colspan="6" class="empty-state">No meter readings found for this filter.</td></tr> }
+        @if (!Model.MeterDailyAverages.Any()) { <tr><td colspan="7" class="empty-state">No meter readings found for this filter.</td></tr> }
         </tbody></table></div>
     </section>
 
     <section class="report-kpi-grid">
         <article class="report-kpi water">
-            <div class="report-kpi-label"><span>Water Consumption</span><i class="bi bi-droplet-fill"></i></div>
-            <h2>@Model.WaterTotal.ToString("N0") <span>L</span></h2>
+            <div class="report-kpi-label"><span>Estimated Water Flow</span><i class="bi bi-droplet-fill"></i></div>
+            <h2>@(Model.Consumption.Water.CoveredDays>0 ? Model.WaterTotal.ToString("N1") : "—") <span>L</span></h2>
             <span class="report-variance @(Model.WaterChangePercent <= 0 ? "good" : "bad")">
-                @(Model.WaterChangePercent <= 0 ? "↓" : "↑") @Math.Abs(Model.WaterChangePercent).ToString("N1")%
+                @(Model.WaterChangePercent <= 0 ? "↓" : "↑") @(Model.WaterChangeAvailable ? Math.Abs(Model.WaterChangePercent).ToString("N1")+"%" : "—")
             </span><small>vs previous period</small>
         </article>
 
         <article class="report-kpi electricity">
             <div class="report-kpi-label"><span>Electricity Consumption</span><i class="bi bi-lightning-charge-fill"></i></div>
-            <h2>@Model.ElectricityTotal.ToString("N0") <span>kWh</span></h2>
+            <h2>@(Model.Consumption.Electricity.CoveredDays>0 ? Model.ElectricityTotal.ToString("N1") : "—") <span>kWh</span></h2>
             <span class="report-variance @(Model.ElectricityChangePercent <= 0 ? "good" : "bad")">
-                @(Model.ElectricityChangePercent <= 0 ? "↓" : "↑") @Math.Abs(Model.ElectricityChangePercent).ToString("N1")%
+                @(Model.ElectricityChangePercent <= 0 ? "↓" : "↑") @(Model.ElectricityChangeAvailable ? Math.Abs(Model.ElectricityChangePercent).ToString("N1")+"%" : "—")
             </span><small>vs previous period</small>
         </article>
 
@@ -485,7 +486,7 @@
         <div class="health-item"><span>Total source records</span><strong>@Model.TotalReadings.ToString("N0")</strong></div>
         <div class="health-item"><span>Meter data coverage</span><strong>@Model.DataCoveragePercent.ToString("N1")%</strong></div>
         <div class="health-item"><span>Complete meter days</span><strong>@Model.CompleteMeterDays of @Model.SelectedDayCount</strong></div>
-        <div class="health-item"><span>Report generated</span><strong>@Model.GeneratedOn.ToString("dd MMM · HH:mm")</strong></div>
+        <div class="health-item"><span>Report generated</span><strong>@Model.GeneratedOn.ToString("dd MMM yyyy")</strong></div>
     </section>
 
     <section class="report-chart-grid">
@@ -511,7 +512,7 @@
         <div class="report-table-wrap">
             <table class="report-table">
                 <thead>
-                    <tr><th>Dataset</th><th class="numeric">Records</th><th class="numeric">Total</th><th class="numeric">Daily Average</th><th class="numeric">Peak Day</th><th>Management Interpretation</th></tr>
+                    <tr><th>Dataset</th><th class="numeric">Records</th><th class="numeric">Total</th><th class="numeric">Daily Average</th><th class="numeric">Highest estimated day</th><th>Management Interpretation</th></tr>
                 </thead>
                 <tbody>
                     @foreach (var row in Model.SummaryRows)
@@ -520,7 +521,7 @@
                             <td><span class="dataset-pill dataset-@row.ReportArea.ToLowerInvariant()">@row.ReportArea</span></td>
                             <td class="numeric">@row.RecordCount.ToString("N0")</td>
                             <td class="numeric"><strong>@row.Total.ToString("N1")</strong> @row.Unit</td>
-                            <td class="numeric">@row.DailyAverage.ToString("N1") @row.Unit</td>
+                            <td class="numeric">@(row.HasData?row.DailyAverage.ToString("N1"):"—") @row.Unit</td>
                             <td class="numeric">
                                 @row.PeakValue.ToString("N1") @row.Unit
                                 @if (row.PeakDate.HasValue)
@@ -570,7 +571,7 @@
         const reportElectricityTrend = @Html.Raw(Model.ElectricityTrendJson);
         const reportWasteTrend = @Html.Raw(Model.WasteTrendJson);
 
-        Chart.defaults.color = '#708096';
+        Chart.defaults.color = '#52647a';
         Chart.defaults.font.family = "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
         Chart.defaults.borderColor = 'rgba(148, 163, 184, .18)';
 
@@ -591,7 +592,7 @@
         borderColor: color,
         backgroundColor: chartType === 'bar' ? `${color}cc` : gradient,
         fill: chartType !== 'bar',
-        tension: .35,
+        tension: 0, spanGaps: false,
         borderWidth: 2.3,
         borderRadius: chartType === 'bar' ? 4 : 0,
         pointRadius: reportTrendLabels.length > 31 ? 0 : 2,

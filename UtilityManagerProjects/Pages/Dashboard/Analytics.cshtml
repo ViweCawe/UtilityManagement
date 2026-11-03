@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.Analytics.IndexModel
 
 @{
@@ -6,6 +6,7 @@
 }
 
 <div class="page-shell">
+    @if (ViewData["Consumption"] is UtilityManagerProjects.Models.ConsumptionPeriod consumption) { <partial name="_ConsumptionNotice" model="consumption" /> }
 
     <div class="page-header-row">
         <div class="page-title">
@@ -45,17 +46,17 @@
                             <td>
                                 <span class="reading-pill @pillClass">@row.Category</span>
                             </td>
-                            <td>@row.Current7Days.ToString("N0") @row.Unit</td>
-                            <td>@row.Previous7Days.ToString("N0") @row.Unit</td>
+                            <td>@(row.HasCurrent7?row.Current7Days.ToString("N1"):"—") @row.Unit</td>
+                            <td>@(row.HasPrevious7?row.Previous7Days.ToString("N1"):"—") @row.Unit</td>
                             <td class="@(row.WeeklyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
                                 @(row.WeeklyGrowthPercent >= 0 ? "▲" : "▼")
-                                @Math.Abs(row.WeeklyGrowthPercent)%
+                                @(row.WeeklyAvailable?Math.Abs(row.WeeklyGrowthPercent).ToString("N1")+"%":"—")
                             </td>
-                            <td>@row.Current30Days.ToString("N0") @row.Unit</td>
-                            <td>@row.Previous30Days.ToString("N0") @row.Unit</td>
+                            <td>@(row.HasCurrent30?row.Current30Days.ToString("N1"):"—") @row.Unit</td>
+                            <td>@(row.HasPrevious30?row.Previous30Days.ToString("N1"):"—") @row.Unit</td>
                             <td class="@(row.MonthlyGrowthPercent >= 0 ? "trend-positive" : "trend-negative")">
                                 @(row.MonthlyGrowthPercent >= 0 ? "▲" : "▼")
-                                @Math.Abs(row.MonthlyGrowthPercent)%
+                                @(row.MonthlyAvailable?Math.Abs(row.MonthlyGrowthPercent).ToString("N1")+"%":"—")
                             </td>
                         </tr>
                     }

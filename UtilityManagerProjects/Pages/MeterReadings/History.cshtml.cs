@@ -37,6 +37,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             }
 
             ReadingHistory = (await meterReadingData.GetMeterReadingsByMeterId(MeterId))
+                .Where(x=>!x.IsDeleted)
                 .OrderByDescending(x => x.ReadingDate)
                 .ToList();
 
@@ -48,9 +49,9 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             }
 
             TotalReadings = ReadingHistory.Count;
-            TotalUsage = ReadingHistory.Sum(x => x.Usage);
-            HighestUsage = ReadingHistory.Max(x => x.Usage);
-            LowestUsage = ReadingHistory.Min(x => x.Usage);
+            TotalUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Sum(x => (decimal)x.Usage);
+            HighestUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Select(x=>(decimal)x.Usage).DefaultIfEmpty(0).Max();
+            LowestUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Select(x=>(decimal)x.Usage).DefaultIfEmpty(0).Min();
 
             return Page();
         }

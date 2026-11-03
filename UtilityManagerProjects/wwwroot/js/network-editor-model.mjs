@@ -19,6 +19,9 @@ export function validateNetwork(map) {
             throw new Error('Choose different From and To points, avoid duplicate connections, and describe conditional routes.');
         pairs.add(pair);
     }
+    for(const node of map.nodes.filter(n=>n.isExternalSupply===true))
+        if(!node.canLinkMeter || !['source','storage'].includes(node.kind) || map.connections.some(e=>e.to===node.id && e.kind!=='backup'))
+            throw new Error('An external supply must be a metered Source or Storage point without a normal upstream connection.');
     const visiting = new Set(), visited = new Set();
     function visit(id) {
         if (visited.has(id)) return;

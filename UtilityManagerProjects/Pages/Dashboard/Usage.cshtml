@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.Usage.IndexModel
 
 @{
@@ -6,6 +6,7 @@
 }
 
 <div class="page-shell">
+    @if (ViewData["Consumption"] is UtilityManagerProjects.Models.ConsumptionPeriod consumption) { <partial name="_ConsumptionNotice" model="consumption" /> }
 
     <div class="page-header-row">
         <div class="page-title">
@@ -27,7 +28,7 @@
                 <thead>
                     <tr>
                         <th>Category</th>
-                        <th>Total Usage</th>
+                        <th>Covered flow (up to 10 years)</th>
                         <th>Current 7 Days</th>
                         <th>Current 30 Days</th>
                     </tr>
@@ -44,9 +45,9 @@
                                     @row.Category
                                 </span>
                             </td>
-                            <td>@row.Total.ToString("N0") @row.Unit</td>
-                            <td>@row.Current7Days.ToString("N0") @row.Unit</td>
-                            <td>@row.Current30Days.ToString("N0") @row.Unit</td>
+                            <td>@(row.HasTotal?row.Total.ToString("N1"):"—") @row.Unit</td>
+                            <td>@(row.HasWeek?row.Current7Days.ToString("N1"):"—") @row.Unit</td>
+                            <td>@(row.HasMonth?row.Current30Days.ToString("N1"):"—") @row.Unit</td>
                         </tr>
                     }
                 </tbody>

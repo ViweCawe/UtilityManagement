@@ -1,0 +1,10 @@
+CREATE PROCEDURE dbo.spAdminArea_Delete @Id INT AS
+BEGIN
+ SET NOCOUNT ON; SET XACT_ABORT ON;
+ BEGIN TRY BEGIN TRANSACTION;
+ DECLARE @Lock INT; SELECT @Lock=Id FROM dbo.Area WITH(UPDLOCK,HOLDLOCK) WHERE Id=@Id;
+ IF EXISTS(SELECT 1 FROM dbo.Meters WITH(UPDLOCK,HOLDLOCK) WHERE AreaId=@Id) THROW 51109,'This area is used by meters. Keep it for history, or deactivate it after moving active meters.',1;
+ DELETE dbo.Area WHERE Id=@Id;
+ COMMIT;
+ END TRY BEGIN CATCH IF @@TRANCOUNT>0 ROLLBACK; THROW; END CATCH
+END;

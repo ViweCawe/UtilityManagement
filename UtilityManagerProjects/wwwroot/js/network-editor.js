@@ -46,12 +46,17 @@ try {
             row.append(field('Point name', name), field('Station', select([['Lower', 'Lower Station'], ['Top', 'Top Station']], node.station, value => { node.station = value; renderRoutes(); })),
                 field('Role', select(Object.entries(roles), node.kind, value => node.kind = value)));
             const metered = document.createElement('input'); metered.type = 'checkbox'; metered.checked = node.canLinkMeter !== false;
-            metered.addEventListener('change', () => { node.canLinkMeter = metered.checked; if (!metered.checked) node.meterId = null; renderPoints(); });
+            metered.addEventListener('change', () => { node.canLinkMeter = metered.checked; if (!metered.checked) { node.meterId = null; node.isExternalSupply = false; } renderPoints(); });
             row.append(field('Has a meter', metered));
             if (node.canLinkMeter !== false) row.append(field('Actual meter', select([['', 'Not assigned yet'], ...meters.map(m => [String(m.id), `${m.name} (#${m.id})`])], node.meterId, value => {
                 node.meterId = value ? Number(value) : null;
                 if (node.label === 'New point' && node.meterId) { const meter = meters.find(m => m.id === node.meterId); node.label = meter.name; node.kind = ({ 1: 'source', 2: 'transfer', 3: 'distribution', 4: 'usage', 5: 'storage' })[meter.role] || node.kind; renderPoints(); renderRoutes(); }
             })));
+            if (node.canLinkMeter !== false) {
+                const external=document.createElement('input'); external.type='checkbox'; external.checked=node.isExternalSupply===true;
+                external.addEventListener('change',()=>node.isExternalSupply=external.checked);
+                row.append(field('External supply: include in site water total',external));
+            }
             row.append(field('Description', input(node.note, value => node.note = value, 1000)), button('Remove point', () => {
                 if (window.confirm(`Remove ${node.label} and its diagram connections? The meter and readings will be kept.`)) { removePoint(map, node.id); renderPoints(); renderRoutes(); }
             })); root.append(row);

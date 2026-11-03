@@ -30,6 +30,9 @@ namespace DataLibrary.Models
         public string EmployeeEmail { get; set; } = string.Empty;
         public string UpdatedByEmployeeEmail { get; set; } = string.Empty;
         public int Usage { get; set; }
+        public DateTime? PreviousReadingDate { get; set; }
+        public int? IntervalDays { get; set; }
+        public bool IsBaseline { get; set; }
         public string? Notes { get; set; } = string.Empty;
         public bool IsDeleted { get; set; } = false;
 

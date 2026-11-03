@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Compile Include="../../DataLibrary/Models/*.cs" Link="Models/%(Filename)%(Extension)" />
+    <Compile Include="../../DataLibrary/Data/I*.cs" Link="Data/%(Filename)%(Extension)" />
+    <Compile Include="../../DataLibrary/Db/IDataAccess.cs" Link="IDataAccess.cs" />
+    <Compile Include="../../DataLibrary/Db/ConnectionStringData.cs" Link="ConnectionStringData.cs" />
+    <Compile Include="../../UtilityManagerProjects/Models/WaterNetwork.cs" Link="WaterNetwork.cs" />
+    <Compile Include="../../UtilityManagerProjects/Models/MeterDailyAverageRow.cs" Link="MeterDailyAverageRow.cs" />
+    <Compile Include="../../UtilityManagerProjects/Models/Consumption.cs" Link="Consumption.cs" />
+    <Compile Include="../../UtilityManagerProjects/Services/WaterNetworkStore.cs" Link="WaterNetworkStore.cs" />
+    <Compile Include="../../UtilityManagerProjects/Services/ConsumptionService.cs" Link="ConsumptionService.cs" />
+    <Compile Include="../../UtilityManagerProjects/Pages/Dashboard/Reports.cshtml.cs" Link="Reports.cs" />
+    <Compile Include="../../UtilityManagerProjects/Pages/Environmental/Index.cshtml.cs" Link="Environmental.cs" />
+    <Compile Include="../../UtilityManagerProjects/Pages/Dashboard/Dashboard.cshtml.cs" Link="Dashboard.cs" />
+    <Compile Include="../../UtilityManagerProjects/Pages/Dashboard/Usage.cshtml.cs" Link="Usage.cs" />
+    <Compile Include="../../UtilityManagerProjects/Pages/Dashboard/Analytics.cshtml.cs" Link="Analytics.cs" />
+    <Compile Include="../../UtilityManagerProjects/Pages/MeterReadings/List.cshtml.cs" Link="Readings.cs" />
+  </ItemGroup>
+</Project>
