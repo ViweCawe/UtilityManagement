@@ -1,3 +1,5 @@
+using UtilityManagerProjects.Services;
+using UtilityManagerProjects.Models;
 using DataLibrary.Data;
 using DataLibrary.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +13,13 @@ namespace UtilityManagerProjects.Pages.Environmental
         private readonly IMeterReadingData meterReadingData;
         private readonly IWasteReadingData wasteReadingData;
         private readonly IDailyPeopleCountData dailyPeopleCountData;
+        private readonly ConsumptionService calculations;
+        private readonly decimal? carbonFactor;
+        public bool CarbonEstimateAvailable => Consumption.Electricity.IsComplete && carbonFactor.HasValue;
+        public bool CarbonPerPersonAvailable => CarbonEstimateAvailable && TotalPeople>0;
+        public ConsumptionPeriod Consumption { get; private set; } = new();
+        public bool WaterPerPersonAvailable => Consumption.Water.IsComplete && TotalPeople > 0;
+        public bool ElectricityPerPersonAvailable => Consumption.Electricity.IsComplete && TotalPeople > 0;
 
         private const decimal WaterTargetPerPerson = 5.00m;
         private const decimal ElectricityTargetPerPerson = 1.00m;
@@ -20,11 +29,14 @@ namespace UtilityManagerProjects.Pages.Environmental
         public IndexModel(
             IMeterReadingData meterReadingData,
             IWasteReadingData wasteReadingData,
-            IDailyPeopleCountData dailyPeopleCountData)
+            IDailyPeopleCountData dailyPeopleCountData, ConsumptionService calculations, IConfiguration configuration)
         {
             this.meterReadingData = meterReadingData;
             this.wasteReadingData = wasteReadingData;
             this.dailyPeopleCountData = dailyPeopleCountData;
+            this.calculations = calculations;
+            var factor=configuration.GetValue<decimal?>("Environmental:GridEmissionFactorKgCo2ePerKwh");
+            carbonFactor=factor>0?factor:null;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -83,9 +95,11 @@ namespace UtilityManagerProjects.Pages.Environmental
         {
             ResolveDateRange();
 
-            var meterReadings = (await meterReadingData.GetMeterReadingsByDateRange(CurrentStart, CurrentEnd))
-                .Where(x => x.MeterType == MeterType.Water || x.MeterType == MeterType.Electricity)
-                .ToList();
+            await calculations.LoadAsync();
+            Consumption = calculations.ForPeriod(CurrentStart, CurrentEnd);
+            ViewData["Consumption"] = Consumption;
+            ViewData["ConsumptionWarnings"] = calculations.Warnings;
+            var meterReadings = calculations.History.Where(r=>IsInRange(r.ReadingDate,CurrentStart,CurrentEnd)).ToList();
 
             var wasteReadings = (await wasteReadingData.GetWasteReadingDisplay())
                 .Where(x => x.IsDeleted == false && IsInRange(x.ReadingDate, CurrentStart, CurrentEnd))
@@ -98,18 +112,13 @@ namespace UtilityManagerProjects.Pages.Environmental
             TotalEmployees = peopleCounts.Sum(x => x.Employees);
             TotalPeople = TotalVisitors + TotalEmployees;
 
-            WaterUsage = meterReadings
-                .Where(x => x.MeterType == MeterType.Water)
-                .Sum(x => x.Usage);
-
-            ElectricityUsage = meterReadings
-                .Where(x => x.MeterType == MeterType.Electricity)
-                .Sum(x => x.Usage);
+            WaterUsage = Consumption.Water.Total;
+            ElectricityUsage = Consumption.Electricity.Total;
 
             WasteTotal = wasteReadings.Sum(x => x.WasteReading);
 
-            WaterPerPerson = CalculatePerPerson(WaterUsage, TotalPeople);
-            ElectricityPerPerson = CalculatePerPerson(ElectricityUsage, TotalPeople);
+            WaterPerPerson = WaterPerPersonAvailable ? CalculatePerPerson(WaterUsage, TotalPeople) : 0;
+            ElectricityPerPerson = ElectricityPerPersonAvailable ? CalculatePerPerson(ElectricityUsage, TotalPeople) : 0;
 
             RecyclingWaste = wasteReadings
                 .Where(x => GetWasteClassification(x) == "Recycling")
@@ -161,6 +170,10 @@ namespace UtilityManagerProjects.Pages.Environmental
             {
                 (CurrentStart, CurrentEnd) = (CurrentEnd, CurrentStart);
             }
+            var range=ConsumptionService.ReportingRange(CurrentStart,CurrentEnd);
+            CurrentStart=range.Start; CurrentEnd=range.End;
+            ViewData["ConsumptionDateNotice"]=range.Notice;
+
         }
 
         private static bool IsInRange(DateTime date, DateTime startDate, DateTime endDate)
@@ -178,13 +191,9 @@ namespace UtilityManagerProjects.Pages.Environmental
             return Math.Round(totalUsage / people, 2);
         }
 
-        private static decimal CalculateEstimatedCarbon(decimal electricityKwh)
+        private decimal CalculateEstimatedCarbon(decimal electricityKwh)
         {
-            // Placeholder estimate until you add a carbon-factor table.
-            // You can later replace this with a value from your database.
-            const decimal defaultGridEmissionFactorKgCo2ePerKwh = 1.00m;
-
-            return Math.Round(electricityKwh * defaultGridEmissionFactorKgCo2ePerKwh, 2);
+            return CarbonEstimateAvailable ? Math.Round(electricityKwh*carbonFactor!.Value,2) : 0;
         }
 
         private static bool IsRecycling(WasteReadingDisplay item)
@@ -239,17 +248,17 @@ namespace UtilityManagerProjects.Pages.Environmental
                 });
             }
 
-            if (WaterPerPerson > WaterTargetPerPerson)
+            if (WaterPerPersonAvailable && WaterPerPerson > WaterTargetPerPerson)
             {
                 Alerts.Add(new EnvironmentalAlert
                 {
-                    Title = "Water target exceeded",
-                    Message = $"{WaterPerPerson:N2} L/person used. Target is {WaterTargetPerPerson:N2} L/person.",
+                    Title = "Water supply indicator above target",
+                    Message = $"{WaterPerPerson:N2} L supplied/person, not adjusted for stored-volume changes. Indicative target is {WaterTargetPerPerson:N2} L/person.",
                     Type = "danger"
                 });
             }
 
-            if (ElectricityPerPerson > ElectricityTargetPerPerson)
+            if (ElectricityPerPersonAvailable && ElectricityPerPerson > ElectricityTargetPerPerson)
             {
                 Alerts.Add(new EnvironmentalAlert
                 {
@@ -269,7 +278,7 @@ namespace UtilityManagerProjects.Pages.Environmental
                 });
             }
 
-            if (EstimatedCarbonPerPerson > CarbonTargetPerPerson && TotalPeople > 0)
+            if (CarbonPerPersonAvailable && EstimatedCarbonPerPerson > CarbonTargetPerPerson)
             {
                 Alerts.Add(new EnvironmentalAlert
                 {
@@ -279,6 +288,9 @@ namespace UtilityManagerProjects.Pages.Environmental
                 });
             }
 
+            if (!WaterPerPersonAvailable || !ElectricityPerPersonAvailable)
+                Alerts.Add(new EnvironmentalAlert { Title="Incomplete meter interval coverage", Message="Per-person comparisons are unavailable unless the entire period has bracketed readings and a people count. Daily meter estimates are not actual day-by-day measurements.", Type="warning" });
+            if (!carbonFactor.HasValue) Alerts.Add(new EnvironmentalAlert { Title="Carbon factor not configured", Message="Set an approved grid emissions factor to enable the carbon estimate. The old placeholder factor is no longer used.", Type="warning" });
             if (!Alerts.Any())
             {
                 Alerts.Add(new EnvironmentalAlert
@@ -320,20 +332,10 @@ namespace UtilityManagerProjects.Pages.Environmental
 
         private void BuildTrendChartData(List<MeterReading> meterReadings, List<WasteReadingDisplay> wasteReadings)
         {
-            var buckets = BuildTrendBuckets(CurrentStart, CurrentEnd);
-
-            TrendLabelsJson = JsonSerializer.Serialize(buckets.Select(x => x.Label));
-
-            WaterTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
-                meterReadings
-                    .Where(x => x.MeterType == MeterType.Water && IsInRange(x.ReadingDate, bucket.Start, bucket.End))
-                    .Sum(x => x.Usage)));
-
-            ElectricityTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
-                meterReadings
-                    .Where(x => x.MeterType == MeterType.Electricity && IsInRange(x.ReadingDate, bucket.Start, bucket.End))
-                    .Sum(x => x.Usage)));
-
+            var buckets = Enumerable.Range(0,(CurrentEnd-CurrentStart).Days+1).Select(i=>new TrendBucket { Start=CurrentStart.AddDays(i),End=CurrentStart.AddDays(i),Label=CurrentStart.AddDays(i).ToString("dd MMM yyyy") }).ToList();
+            TrendLabelsJson = JsonSerializer.Serialize(buckets.Select(x=>x.Label));
+            WaterTrendJson = JsonSerializer.Serialize(Consumption.Water.Series());
+            ElectricityTrendJson = JsonSerializer.Serialize(Consumption.Electricity.Series());
             RecyclingWasteTrendJson = JsonSerializer.Serialize(buckets.Select(bucket =>
                 wasteReadings
                     .Where(x => IsInRange(x.ReadingDate, bucket.Start, bucket.End) &&

@@ -49,6 +49,9 @@ public sealed class WaterNetwork
                 throw new InvalidDataException($"Invalid water connection: {edge?.From} -> {edge?.To}.");
         }
 
+        foreach (var node in Nodes.Where(n=>n.IsExternalSupply==true))
+            if(!node.CanLinkMeter || node.Kind is not ("source" or "storage") || Connections.Any(e=>e.To==node.Id && e.Kind!="backup"))
+                throw new InvalidDataException("An external supply must be a metered Source or Storage point with no normal upstream connection.");
         // A cycle would make this documented source-to-consumer network misleading.
         var visiting = new HashSet<string>();
         var visited = new HashSet<string>();
@@ -72,6 +75,7 @@ public sealed class WaterNetworkNode
     public string Kind { get; init; } = "";
     public bool CanLinkMeter { get; init; } = true;
     public int? MeterId { get; set; }
+    public bool? IsExternalSupply { get; set; }
     public string Note { get; init; } = "";
     public string FigmaNodeId { get; init; } = "";
     public double X { get; init; }

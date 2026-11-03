@@ -1,4 +1,4 @@
-﻿@page "{meterId:int}"
+@page "{meterId:int}"
 @model UtilityManagerProjects.Pages.MeterReadings.HistoryModel
 
 @{
@@ -59,7 +59,7 @@
                 <div class="stat-content">
                     <p>Total Usage</p>
                     <h2>@Model.TotalUsage.ToString("N2") <span>@unit</span></h2>
-                    <span>all readings combined</span>
+                    <span>positive counter intervals; first capture is a baseline</span>
                 </div>
             </div>
 

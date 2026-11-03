@@ -126,4 +126,5 @@
   <ItemGroup><Build Include="dbo\StoredProcedures\spMeters_UpdateDetails.sql" /></ItemGroup>
 <ItemGroup><Build Include="dbo\Tables\WaterNetworkLinks.sql" /><Build Include="dbo\StoredProcedures\spWaterNetworkLinks_All.sql" /><Build Include="dbo\StoredProcedures\spWaterNetworkLinks_Save.sql" /></ItemGroup>
 <ItemGroup><Build Include="dbo\Tables\WaterNetworkDocument.sql" /><Build Include="dbo\StoredProcedures\spWaterNetworkDocument_Get.sql" /><Build Include="dbo\StoredProcedures\spWaterNetworkDocument_Save.sql" /></ItemGroup>
+<ItemGroup><Build Include="dbo\Views\vwMeterReadingIntervals.sql" /></ItemGroup>
 </Project>

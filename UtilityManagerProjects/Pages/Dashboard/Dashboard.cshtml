@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.Dashboard.DashboardModel
 
 @{
@@ -6,10 +6,10 @@
     var waterLeader = Model.TopWaterAreas.FirstOrDefault();
     var electricityLeader = Model.TopElectricityAreas.FirstOrDefault();
     var waterLeaderShare = Model.WaterConsumption > 0 && waterLeader != null
-        ? waterLeader.TotalUsage * 100.0 / Model.WaterConsumption
+        ? waterLeader.TotalUsage * 100m / Model.WaterConsumption
         : 0;
     var electricityLeaderShare = Model.ElectricityConsumption > 0 && electricityLeader != null
-        ? electricityLeader.TotalUsage * 100.0 / Model.ElectricityConsumption
+        ? electricityLeader.TotalUsage * 100m / Model.ElectricityConsumption
         : 0;
 }
 
@@ -431,6 +431,7 @@
 </style>
 
 <div class="page-shell dashboard-page" id="dashboardExportSurface">
+    @if (ViewData["Consumption"] is UtilityManagerProjects.Models.ConsumptionPeriod consumption) { <partial name="_ConsumptionNotice" model="consumption" /> }
 
     <div class="page-header-row">
         <div class="page-title">
@@ -504,13 +505,13 @@
     <section class="top-kpi-grid dashboard-kpi-grid">
 
         <div class="figma-card kpi-card kpi-water">
-            <p>Water Consumption</p>
-            <h2>@Model.WaterConsumption.ToString("N0") <span>L</span></h2>
+            <p>Estimated Water Flow</p>
+            <h2>@(Model.Consumption.Water.CoveredDays>0 ? Model.WaterConsumption.ToString("N1") : "—") <span>L</span></h2>
 
             <div class="mini-trend">
                 <span class="@(Model.WaterWeeklyGrowthPercent <= 0 ? "trend-positive" : "trend-negative")">
                     @(Model.WaterWeeklyGrowthPercent >= 0 ? "" : "")
-                    @Math.Abs(Model.WaterWeeklyGrowthPercent).ToString("N1")%
+                    @(Model.WaterChangeAvailable ? Math.Abs(Model.WaterWeeklyGrowthPercent).ToString("N1")+"%" : "—")
                 </span>
                 <small>vs @Model.PreviousStart.ToString("dd MMM yyyy") - @Model.PreviousEnd.ToString("dd MMM yyyy")</small>
             </div>
@@ -524,12 +525,12 @@
 
         <div class="figma-card kpi-card kpi-electricity">
             <p>Electricity Consumption</p>
-            <h2>@Model.ElectricityConsumption.ToString("N0") <span>kWh</span></h2>
+            <h2>@(Model.Consumption.Electricity.CoveredDays>0 ? Model.ElectricityConsumption.ToString("N1") : "—") <span>kWh</span></h2>
 
             <div class="mini-trend">
                 <span class="@(Model.ElectricityWeeklyGrowthPercent <= 0 ? "trend-positive" : "trend-negative")">
                     @(Model.ElectricityWeeklyGrowthPercent >= 0 ? "" : "")
-                    @Math.Abs(Model.ElectricityWeeklyGrowthPercent).ToString("N1")%
+                    @(Model.ElectricityChangeAvailable ? Math.Abs(Model.ElectricityWeeklyGrowthPercent).ToString("N1")+"%" : "—")
                 </span>
                 <small>vs @Model.PreviousStart.ToString("dd MMM yyyy") - @Model.PreviousEnd.ToString("dd MMM yyyy")</small>
             </div>
@@ -549,7 +550,7 @@
                 <span class="@(Model.DataCoveragePercent >= 90 ? "trend-positive" : "trend-negative")">
                     @(Model.DataCoveragePercent >= 90 ? " Healthy" : " Attention")
                 </span>
-                <small>days with both utilities recorded</small>
+                <small>days covered by meter intervals</small>
             </div>
 
             <div class="coverage-meter" aria-label="Meter data coverage @Model.DataCoveragePercent.ToString("N1") percent">
@@ -608,7 +609,7 @@
             <div class="card-header">
                 <div>
                     <span class="dashboard-card-kicker">Water</span>
-                    <h3 class="dashboard-card-title">Water Consumption Trend</h3>
+                    <h3 class="dashboard-card-title">Estimated Daily Water Flow</h3>
                 </div>
                 <span>Litres (L)</span>
             </div>
@@ -645,8 +646,8 @@
         <div class="figma-card dashboard-analytic-card">
             <div class="card-header">
                 <div>
-                    <span class="dashboard-card-kicker">Water by Area</span>
-                    <h3 class="dashboard-card-title">Area Consumption &amp; Share</h3>
+                    <span class="dashboard-card-kicker">Selected Water Flow by Meter Area</span>
+                    <h3 class="dashboard-card-title">Selected Flow by Meter Area</h3>
                 </div>
                 @if (waterLeader != null)
                 {
@@ -668,7 +669,7 @@
             <div class="card-header">
                 <div>
                     <span class="dashboard-card-kicker electricity">Electricity by Area</span>
-                    <h3 class="dashboard-card-title">Area Consumption &amp; Share</h3>
+                    <h3 class="dashboard-card-title">Selected Flow by Meter Area</h3>
                 </div>
                 @if (electricityLeader != null)
                 {
@@ -728,7 +729,7 @@
                     <h3 class="dashboard-card-title">Current vs Previous Month</h3>
                 </div>
                 <span class="@(Model.WaterMonthlyGrowthPercent <= 0 ? "trend-positive" : "trend-negative")">
-                    @(Model.WaterMonthlyGrowthPercent >= 0 ? "+" : "")@Model.WaterMonthlyGrowthPercent.ToString("N1")%
+                    @(Model.WaterMonthlyGrowthPercent >= 0 ? "+" : "")@(Model.WaterMonthChangeAvailable ? Model.WaterMonthlyGrowthPercent.ToString("N1")+"%" : "—")
                 </span>
             </div>
             <div class="dashboard-chart-stage compact">
@@ -743,7 +744,7 @@
                     <h3 class="dashboard-card-title">Current vs Previous Month</h3>
                 </div>
                 <span class="@(Model.ElectricityMonthlyGrowthPercent <= 0 ? "trend-positive" : "trend-negative")">
-                    @(Model.ElectricityMonthlyGrowthPercent >= 0 ? "+" : "")@Model.ElectricityMonthlyGrowthPercent.ToString("N1")%
+                    @(Model.ElectricityMonthlyGrowthPercent >= 0 ? "+" : "")@(Model.ElectricityMonthChangeAvailable ? Model.ElectricityMonthlyGrowthPercent.ToString("N1")+"%" : "—")
                 </span>
             </div>
             <div class="dashboard-chart-stage compact">
@@ -779,12 +780,13 @@
         <span>Top five per utility</span>
     </div>
 
+    <p class="alert alert-info">@Model.MonthMethodology</p>
     <section class="grid-two">
 
         <div class="content-card">
             <div class="content-card-header">
                 <div>
-                    <h3>Top Water Areas</h3>
+                    <h3>Selected Water Flow by Meter Area</h3>
                     <p>Highest water consumption in the filtered date range.</p>
                 </div>
             </div>
@@ -805,7 +807,7 @@
                 }
                 else
                 {
-                    <div class="empty-state">No water area consumption found for this period.</div>
+                    <div class="empty-state">No covered water boundary flow found for this period.</div>
                 }
             </div>
         </div>
@@ -853,12 +855,12 @@
                 <div class="summary-card-row">
                     <div>
                         <strong>Water</strong>
-                        <span>@Model.PreviousMonthLabel: @Model.PreviousMonthWaterConsumption.ToString("N0") L</span>
+                        <span>@Model.PreviousMonthLabel: @(Model.PreviousMonthWaterAvailable?Model.PreviousMonthWaterConsumption.ToString("N1"):"—") L</span>
                     </div>
                     <div>
-                        <strong>@Model.CurrentMonthWaterConsumption.ToString("N0") L</strong>
+                        <strong>@(Model.CurrentMonthWaterAvailable?Model.CurrentMonthWaterConsumption.ToString("N1"):"—") L</strong>
                         <span class="@(Model.WaterMonthlyGrowthPercent <= 0 ? "trend-positive" : "trend-negative")">
-                            @(Model.WaterMonthlyGrowthPercent >= 0 ? "" : "") @Math.Abs(Model.WaterMonthlyGrowthPercent).ToString("N1")%
+                            @(Model.WaterMonthlyGrowthPercent >= 0 ? "" : "") @(Model.WaterMonthChangeAvailable ? Math.Abs(Model.WaterMonthlyGrowthPercent).ToString("N1")+"%" : "—")
                         </span>
                     </div>
                 </div>
@@ -866,12 +868,12 @@
                 <div class="summary-card-row">
                     <div>
                         <strong>Electricity</strong>
-                        <span>@Model.PreviousMonthLabel: @Model.PreviousMonthElectricityConsumption.ToString("N0") kWh</span>
+                        <span>@Model.PreviousMonthLabel: @(Model.PreviousMonthElectricityAvailable?Model.PreviousMonthElectricityConsumption.ToString("N1"):"—") kWh</span>
                     </div>
                     <div>
-                        <strong>@Model.CurrentMonthElectricityConsumption.ToString("N0") kWh</strong>
+                        <strong>@(Model.CurrentMonthElectricityAvailable?Model.CurrentMonthElectricityConsumption.ToString("N1"):"—") kWh</strong>
                         <span class="@(Model.ElectricityMonthlyGrowthPercent <= 0 ? "trend-positive" : "trend-negative")">
-                            @(Model.ElectricityMonthlyGrowthPercent >= 0 ? "" : "") @Math.Abs(Model.ElectricityMonthlyGrowthPercent).ToString("N1")%
+                            @(Model.ElectricityMonthlyGrowthPercent >= 0 ? "" : "") @(Model.ElectricityMonthChangeAvailable ? Math.Abs(Model.ElectricityMonthlyGrowthPercent).ToString("N1")+"%" : "—")
                         </span>
                     </div>
                 </div>
@@ -950,6 +952,8 @@
         const waterAreaData = @Html.Raw(Model.WaterAreaDataJson);
         const electricityAreaLabels = @Html.Raw(Model.ElectricityAreaLabelsJson);
         const electricityAreaData = @Html.Raw(Model.ElectricityAreaDataJson);
+        const waterMonthValues = @Html.Raw(Model.WaterMonthValuesJson);
+        const electricityMonthValues = @Html.Raw(Model.ElectricityMonthValuesJson);
         const monthComparisonLabels = @Html.Raw(Model.MonthComparisonLabelsJson);
 
         const chartPalette = [
@@ -990,7 +994,7 @@
         id: 'noData',
         afterDraw(chart, args, options) {
         const datasets = chart.data.datasets || [];
-        const hasData = datasets.some(dataset => (dataset.data || []).some(value => Number(value) > 0));
+        const hasData = datasets.some(dataset => (dataset.data || []).some(value => value !== null && value !== undefined && Number.isFinite(Number(value))));
         if (hasData) return;
 
         const { ctx, chartArea } = chart;
@@ -1016,7 +1020,7 @@
         data,
         borderColor: color,
         backgroundColor: color,
-        tension: 0.42,
+        tension: 0, spanGaps: false,
         pointRadius: 0,
         borderWidth: 2
         }]
@@ -1042,7 +1046,7 @@
         borderColor: color,
         backgroundColor: fillColor,
         fill: true,
-        tension: 0.38,
+        tension: 0, spanGaps: false,
         borderWidth: 3,
         pointRadius: data.length > 45 ? 0 : 2,
         pointHoverRadius: 5,
@@ -1223,8 +1227,8 @@
         createComparisonChart(
         'waterComparisonChart',
         monthComparisonLabels,
-        @Model.PreviousMonthWaterConsumption,
-        @Model.CurrentMonthWaterConsumption,
+        waterMonthValues[0],
+        waterMonthValues[1],
         'Water',
         'L',
         '#2aa8ff');
@@ -1232,8 +1236,8 @@
         createComparisonChart(
         'electricityComparisonChart',
         monthComparisonLabels,
-        @Model.PreviousMonthElectricityConsumption,
-        @Model.CurrentMonthElectricityConsumption,
+        electricityMonthValues[0],
+        electricityMonthValues[1],
         'Electricity',
         'kWh',
         '#f59e0b');

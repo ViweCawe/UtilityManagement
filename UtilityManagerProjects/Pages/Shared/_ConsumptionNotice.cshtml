@@ -1,0 +1,12 @@
+@model UtilityManagerProjects.Models.ConsumptionPeriod
+<div class="alert alert-info consumption-notice" role="note" style="background:#eff6ff;color:#152436;border-color:#93c5fd;line-height:1.6">
+    @if(ViewData["ConsumptionDateNotice"] is string notice) { <p><strong>@notice</strong></p> }
+    @if(ViewData["ConsumptionWarnings"] is IEnumerable<string> warnings) { <ul>@foreach(var warning in warnings) { <li>@warning</li> }</ul> }
+    <strong>Estimated daily flow from meter intervals.</strong>
+    Weekly captures are spread evenly over the days between them. The line changes when the next interval average changes; it does not measure actual daily variations.
+    <div>@Model.Water.Label · @Model.Water.CoveredDays / @Model.Water.Dates.Count days covered.</div>
+    <div>Totals and daily averages use covered days only. Uncovered days are unknown, not zero. Site supply totals exclude unmetered rainwater. Stored-volume changes are not measured here, so inlet flow is not exact end-use consumption.</div>
+    @if (Model.Water.Missing.Any()) { <ul>@foreach(var message in Model.Water.Missing) { <li>@message</li> }</ul> }
+    @if (Model.Electricity.MeterIds.Count>0) { <div>Electricity: @Model.Electricity.CoveredDays / @Model.Electricity.Dates.Count days covered.</div> }
+    <div>Per-meter and department flow can overlap along the same route. Compare them to understand distribution; do not add them to the site supply total.</div>
+</div>

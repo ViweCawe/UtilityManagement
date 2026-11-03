@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model UtilityManagerProjects.Pages.MeterReadings.ListModel
 
 @{
@@ -6,6 +6,7 @@
 }
 
 <div class="page-shell">
+    @if (ViewData["Consumption"] is UtilityManagerProjects.Models.ConsumptionPeriod consumption) { <partial name="_ConsumptionNotice" model="consumption" /> }
 
     <div class="page-header-row">
         <div class="page-title">
@@ -89,10 +90,10 @@
     </form>
 
     <section class="content-card">
-        <div class="content-card-header"><div><h3>Daily Average by Meter</h3><p>Average consumption per calendar day in the selected period, even when readings were captured intermittently.</p></div></div>
-        <div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter</th><th>Department</th><th>Type</th><th>Readings</th><th>Total Usage</th><th>Daily Average</th></tr></thead><tbody>
-        @foreach (var row in Model.DailyAverages) { <tr><td>@row.MeterName (#@row.MeterId)</td><td>@row.DepartmentName</td><td>@row.MeterType</td><td>@row.ReadingCount</td><td>@row.TotalUsage.ToString("N0") @row.Unit</td><td><strong>@row.DailyAverage.ToString("N1") @row.Unit/day</strong></td></tr> }
-        @if (!Model.DailyAverages.Any()) { <tr><td colspan="6" class="empty-state">No readings found for this filter.</td></tr> }
+        <div class="content-card-header"><div><h3>Daily Average by Meter</h3><p>Average flow per covered day, estimated from consecutive captures. Internal meter rows must not be added as site consumption.</p></div></div>
+        <div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter</th><th>Department</th><th>Type</th><th>Readings</th><th>Total Usage</th><th>Covered Days</th><th>Daily Average</th></tr></thead><tbody>
+        @foreach (var row in Model.DailyAverages) { <tr><td>@row.MeterName (#@row.MeterId)</td><td>@row.DepartmentName</td><td>@row.MeterType</td><td>@row.ReadingCount</td><td>@(row.CoveredDays>0?row.TotalUsage.ToString("N1"):"—") @row.Unit</td><td>@row.CoveredDays</td><td><strong>@(row.CoveredDays>0?row.DailyAverage.ToString("N1"):"—") @row.Unit/day</strong></td></tr> }
+        @if (!Model.DailyAverages.Any()) { <tr><td colspan="7" class="empty-state">No readings found for this filter.</td></tr> }
         </tbody></table></div>
     </section>
 
@@ -160,8 +161,8 @@
                 <i class="bi bi-water"></i>
             </div>
             <div class="stat-content">
-                <p>Water Usage</p>
-                <h2>@Model.WaterUsage.ToString("N0") <span>L</span></h2>
+                <p>Estimated Water Flow</p>
+                <h2>@(Model.Consumption.Water.CoveredDays>0 ? Model.WaterUsage.ToString("N1") : "—") <span>L</span></h2>
                 <span>selected period</span>
             </div>
         </div>
@@ -172,7 +173,7 @@
             </div>
             <div class="stat-content">
                 <p>Electricity Usage</p>
-                <h2>@Model.ElectricityUsage.ToString("N0") <span>kWh</span></h2>
+                <h2>@(Model.Consumption.Electricity.CoveredDays>0 ? Model.ElectricityUsage.ToString("N1") : "—") <span>kWh</span></h2>
                 <span>selected period</span>
             </div>
         </div>
@@ -182,9 +183,9 @@
                 <i class="bi bi-bar-chart-fill"></i>
             </div>
             <div class="stat-content">
-                <p>Total Usage</p>
-                <h2>@Model.TotalUsage.ToString("N0")</h2>
-                <span>water + electricity usage</span>
+                <p>Interval Coverage</p>
+                <h2>@Model.Consumption.CoveragePercent.ToString("N1")%</h2>
+                <span>days covered by valid meter intervals</span>
             </div>
         </div>
 

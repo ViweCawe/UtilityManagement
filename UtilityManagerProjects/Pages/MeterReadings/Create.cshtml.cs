@@ -52,7 +52,7 @@ public class CreateModel : PageModel
         [Required(ErrorMessage = "Reading date is required.")]
         public DateTime? ReadingDate { get; set; }
 
-        [StringLength(1000, ErrorMessage = "Notes cannot exceed 1000 characters.")]
+        [StringLength(255, ErrorMessage = "Notes cannot exceed 255 characters.")]
         public string? Notes { get; set; }
     }
 
@@ -117,21 +117,16 @@ public class CreateModel : PageModel
             return Page();
         }
         var meterId = Input.MeterId!.Value;
-        var lastReading =
-            await meterReadingData.GetLatestReadingByMeterId(meter.Id);
-
-        if (lastReading != null &&
-            Input.CurrentReading!.Value < lastReading.CurrentReading)
+        var captures = (await meterReadingData.GetMeterReadingsByMeterId(meter.Id)).Where(r=>!r.IsDeleted).ToList();
+        var date=Input.ReadingDate!.Value;
+        var lastReading=captures.Where(r=>r.ReadingDate<date).OrderByDescending(r=>r.ReadingDate).ThenByDescending(r=>r.Id).FirstOrDefault();
+        var nextReading=captures.Where(r=>r.ReadingDate>date).OrderBy(r=>r.ReadingDate).ThenBy(r=>r.Id).FirstOrDefault();
+        if (captures.Any(r=>r.ReadingDate==date) || (lastReading is not null && Input.CurrentReading<lastReading.CurrentReading) || (nextReading is not null && Input.CurrentReading>nextReading.CurrentReading))
         {
-            ModelState.AddModelError(
-                "Input.CurrentReading",
-                $"The reading cannot be less than the previous reading " +
-                $"({lastReading.CurrentReading:N2}).");
-
+            ModelState.AddModelError("Input.CurrentReading", "Use a unique capture time and a counter between the captures immediately before and after this date.");
             return Page();
         }
-
-        var previousReading = lastReading?.CurrentReading ?? 0m;
+        var previousReading=lastReading?.CurrentReading ?? Input.CurrentReading!.Value;
 
         var reading = new MeterReading
         {

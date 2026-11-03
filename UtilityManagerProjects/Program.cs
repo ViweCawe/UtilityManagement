@@ -34,6 +34,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
        .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddScoped<UtilityManagerProjects.Services.WaterNetworkStore>();
+builder.Services.AddScoped<UtilityManagerProjects.Services.ConsumptionService>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();

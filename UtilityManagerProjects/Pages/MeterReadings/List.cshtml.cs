@@ -1,3 +1,5 @@
+using UtilityManagerProjects.Models;
+using UtilityManagerProjects.Services;
 using DataLibrary.Data;
 using DataLibrary.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -10,10 +12,13 @@ namespace UtilityManagerProjects.Pages.MeterReadings
     public class ListModel : PageModel
     {
         private readonly IMeterReadingData meterReading;
+        private readonly ConsumptionService calculations;
+        public ConsumptionPeriod Consumption { get; private set; } = new();
 
-        public ListModel(IMeterReadingData meterReading)
+        public ListModel(IMeterReadingData meterReading, ConsumptionService calculations)
         {
             this.meterReading = meterReading;
+            this.calculations = calculations;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -47,9 +52,8 @@ namespace UtilityManagerProjects.Pages.MeterReadings
 
         public int TotalMeters { get; set; }
 
-        public int WaterUsage { get; set; }
-        public int ElectricityUsage { get; set; }
-        public int TotalUsage { get; set; }
+        public decimal WaterUsage { get; set; }
+        public decimal ElectricityUsage { get; set; }
 
         public double WaterPercent { get; set; }
         public double ElectricityPercent { get; set; }
@@ -62,16 +66,18 @@ namespace UtilityManagerProjects.Pages.MeterReadings
 
             ResolveDateRange();
 
-            var allMeterReadings = (await meterReading.GetAllMeterReading())
-                .Where(x => x.MeterType == MeterType.Water || x.MeterType == MeterType.Electricity)
-                .ToList();
+            await calculations.LoadAsync();
+            var allMeterReadings = calculations.History;
+            Consumption = calculations.ForPeriod(CurrentStart,CurrentEnd,MeterId,Department);
+            ViewData["Consumption"] = Consumption;
+            ViewData["ConsumptionWarnings"] = calculations.Warnings;
 
             var currentReadings = allMeterReadings
                 .Where(x => IsInRange(x.ReadingDate, CurrentStart, CurrentEnd))
                 .ToList();
 
-            MeterOptions = currentReadings.GroupBy(x => x.MeterId).Select(x => x.First()).OrderBy(x => x.MeterName).ToList();
-            DepartmentOptions = currentReadings.Select(x => x.DepartmentName).Where(x => !string.IsNullOrWhiteSpace(x))
+            MeterOptions = allMeterReadings.GroupBy(x => x.MeterId).Select(x => x.First()).OrderBy(x => x.MeterName).ToList();
+            DepartmentOptions = allMeterReadings.Select(x => x.DepartmentName).Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
             currentReadings = ApplyMeterFilters(currentReadings).ToList();
 
@@ -87,15 +93,8 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             ElectricityCount = currentReadings.Count(x => x.MeterType == MeterType.Electricity);
             TotalReadings = WaterCount + ElectricityCount;
 
-            WaterUsage = currentReadings
-                .Where(x => x.MeterType == MeterType.Water)
-                .Sum(x => x.Usage);
-
-            ElectricityUsage = currentReadings
-                .Where(x => x.MeterType == MeterType.Electricity)
-                .Sum(x => x.Usage);
-
-            TotalUsage = WaterUsage + ElectricityUsage;
+            WaterUsage = Consumption.Water.Total;
+            ElectricityUsage = Consumption.Electricity.Total;
 
             var previousWaterCount = previousReadings.Count(x => x.MeterType == MeterType.Water);
             var previousElectricityCount = previousReadings.Count(x => x.MeterType == MeterType.Electricity);
@@ -135,14 +134,13 @@ namespace UtilityManagerProjects.Pages.MeterReadings
 
             TotalMeters = LatestReadings.Count;
 
-            var selectedDays = Math.Max(1, (CurrentEnd.Date - CurrentStart.Date).Days + 1);
-            DailyAverages = currentReadings.GroupBy(x => new { x.MeterId, x.MeterName, x.MeterType, x.DepartmentName })
-                .Select(g => new MeterDailyAverageRow
-                {
-                    MeterId = g.Key.MeterId, MeterName = g.Key.MeterName, MeterType = g.Key.MeterType,
-                    DepartmentName = g.Key.DepartmentName, ReadingCount = g.Count(), TotalUsage = g.Sum(x => x.Usage),
-                    DailyAverage = Math.Round(g.Sum(x => x.Usage) * 1.0 / selectedDays, 1)
-                }).OrderBy(x => x.DepartmentName).ThenBy(x => x.MeterName).ToList();
+            DailyAverages = calculations.Meters
+                .Where(m => (!MeterId.HasValue || m.Id==MeterId) && (string.IsNullOrWhiteSpace(Department) || string.Equals(m.DepartmentName,Department,StringComparison.OrdinalIgnoreCase)))
+                .Select(m=> {
+                    var days=Consumption.AllDaily.Where(d=>d.MeterId==m.Id).ToList();
+                    return new MeterDailyAverageRow { MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
+                        ReadingCount=currentReadings.Count(r=>r.MeterId==m.Id),CoveredDays=days.Count,TotalUsage=days.Sum(d=>d.Usage),DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count };
+                }).OrderBy(x=>x.DepartmentName).ThenBy(x=>x.MeterName).ToList();
         }
 
         private IEnumerable<MeterReading> ApplyMeterFilters(IEnumerable<MeterReading> readings)
@@ -159,8 +157,9 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             public MeterType MeterType { get; set; }
             public string DepartmentName { get; set; } = string.Empty;
             public int ReadingCount { get; set; }
-            public int TotalUsage { get; set; }
-            public double DailyAverage { get; set; }
+            public decimal TotalUsage { get; set; }
+            public decimal DailyAverage { get; set; }
+            public int CoveredDays { get; set; }
             public string Unit => MeterType == MeterType.Water ? "L" : "kWh";
         }
 
@@ -194,6 +193,10 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             {
                 (CurrentStart, CurrentEnd) = (CurrentEnd, CurrentStart);
             }
+            var range=ConsumptionService.ReportingRange(CurrentStart,CurrentEnd);
+            CurrentStart=range.Start; CurrentEnd=range.End;
+            ViewData["ConsumptionDateNotice"]=range.Notice;
+
 
             var days = (CurrentEnd - CurrentStart).Days + 1;
 
@@ -216,7 +219,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
         {
             if (previousValue == 0)
             {
-                return currentValue > 0 ? 100 : 0;
+                return 0;
             }
 
             return Math.Round(((currentValue - previousValue) * 100.0) / previousValue, 1);

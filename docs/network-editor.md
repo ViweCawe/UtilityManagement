@@ -6,7 +6,8 @@
 2. Open **Water Network → Edit network** as an Admin.
 3. Choose **Add point**, enter its name and station, choose its role and select its actual meter. Leave it unassigned while setting it up, or turn off **Has a meter** for an unmetered outlet.
 4. Choose **Add connection**. Select the supplying point under **From** and the receiving point under **To**. For a conditional supply, enter when it operates.
-5. Choose **Save network**. The app arranges the diagram and returns to the viewing page, including the assigned meters' saved readings.
+5. For a Source or metered Storage point where water first enters the site, enable **External supply: include in site water total**. Keep this off for downstream tanks, distribution meters and outlets: counting these again would duplicate supply. Main Meter, Fire Hydrant and Borehole Incoming are the supplied map’s external boundaries. An external boundary cannot have a normal upstream connection.
+6. Choose **Save network**. The app arranges the diagram and returns to the viewing page, including the assigned meters' saved readings.
 
 Existing names, roles, descriptions, meter assignments and connections are editable. Remove a connection with its own button. Removing a point also removes its incoming and outgoing diagram connections. Meter records and reading history are preserved. Cancel discards unsaved edits; **Reload saved map** opens the latest saved revision. Adding a point does not itself create a physical meter record.
 
