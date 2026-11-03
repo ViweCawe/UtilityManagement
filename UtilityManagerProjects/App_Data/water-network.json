@@ -40,7 +40,7 @@
       "figmaNodeId": "9:866",
       "x": 470,
       "y": 280,
-      "note": "Parent distribution meter supplied from Main Meter. Distributes water to downstream areas. Its reading represents water already included upstream."
+      "note": "Parent distribution meter supplied by Main Meter. Garage Roof feeds its downstream areas; those flows are already included in the upstream Main Meter reading."
     },
     {
       "id": "workshop",
@@ -140,7 +140,7 @@
       "figmaNodeId": "11:1045",
       "x": 1090,
       "y": 460,
-      "note": "Borehole supplies toilet flushing. Garage Roof provides the confirmed backup when borehole supply is closed. Basins use main water."
+      "note": "Level 1 Visitor Toilets: borehole water normally supplies flushing. Main Meter water supplies flushing only when the borehole runs out. Basins use main water."
     },
     {
       "id": "vida-cafe",
@@ -405,10 +405,10 @@
     },
     {
       "to": "staff-toilets-lower",
-      "figmaConnectorId": "11:1204",
+      "figmaConnectorId": "User clarification 2026-11-02 (replaces 11:1204 origin)",
       "kind": "backup",
-      "condition": "Borehole supply is closed",
-      "from": "garage-roof"
+      "condition": "Borehole water has run out; flushing only",
+      "from": "main-tank"
     },
     {
       "to": "borehole-out",
@@ -565,9 +565,5 @@
       "figmaConnectorId": "12:1534"
     }
   ],
-  "openQuestions": [
-    "Confirm which meter measures each inlet/outlet where a tank has multiple meters.",
-    "Record actual meter units and any conversion factors before comparing flow volumes.",
-    "Confirm fallback details at Workshop: the new board mentions switching to main for sinks when borehole runs out, while basins normally use main water. The confirmed Garage Roof backup to Level 1 toilets remains shown."
-  ]
+  "openQuestions": []
 }

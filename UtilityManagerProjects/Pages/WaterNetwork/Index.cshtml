@@ -26,13 +26,15 @@
             </form>
         </section>
     }
+    @if (TempData["NetworkSaved"] is string savedMessage) { <p class="alert alert-success" role="status">@savedMessage</p> }
+    @if (User.IsInRole("Admin")) { <p><a class="utility-btn-primary" asp-page="./Edit">Edit network: add points and connections</a></p> }
     <div class="wn-summary">
-        <section><span>01 / SUPPLY</span><h2>Main Meter · Source</h2><p>Main Meter feeds both stations. Fire Hydrant has a separate municipal meter outside the Main Meter total.</p></section>
-        <section><span>02 / STORAGE</span><h2>Docking bay → reservoir</h2><p>Water travels by cable car to Top Station. Rainwater also enters the reservoir.</p></section>
-        <section><span>03 / DISTRIBUTION</span><h2>Dosing → header tank</h2><p>The header tank supplies Top Station outlets. Storage volume is different from flow-meter usage.</p></section>
+        <section><span>01 / NETWORK</span><h2>@Model.Network.Nodes.Count points</h2><p>Meters, metered tanks and outlets in your saved network.</p></section>
+        <section><span>02 / METERS</span><h2>@Model.LinkedMeters.Count assigned meters</h2><p>Linked points show their latest saved counter readings and capture dates.</p></section>
+        <section><span>03 / SUPPLY</span><h2>@Model.Network.Connections.Count connections</h2><p>Normal supplies, transfers and conditional routes between points.</p></section>
     </div>
 
-    <div class="wn-notice" role="note"><strong>Start at the Main Meter:</strong> follow the arrows to see where the water goes. Select a point to see what supplies it and what it supplies next. Flow readings taken along the same route should not be added together as extra consumption.</div>
+    <div class="wn-notice" role="note"><strong>Follow the supply:</strong> follow the arrows to see where the water goes. Select a point to see what supplies it and what it supplies next. Flow readings taken along the same route should not be added together as extra consumption.</div>
 
     <section class="content-card wn-explorer" aria-labelledby="network-heading">
         <div class="content-card-header">
@@ -40,12 +42,12 @@
             <div class="wn-controls" hidden id="network-controls">
                 <label for="network-station">Station <select id="network-station"><option value="Lower">Lower Station</option><option value="Top">Top Station</option></select></label>
                 <label for="network-point">Show point <select id="network-point"></select></label>
-                <label class="wn-checkbox"><input id="network-backup" type="checkbox" /> Highlight toilet backup supply</label>
+                <label class="wn-checkbox"><input id="network-backup" type="checkbox" /> Highlight conditional supply routes</label>
             </div>
         </div>
         <div class="wn-explore-layout" id="network-explorer" hidden>
             <div>
-                <div class="wn-legend"><span><i class="wn-key supply"></i> Water supply</span><span><i class="wn-key backup"></i> Backup: borehole closed</span><span><i class="wn-key unknown"></i> Supply needs confirmation</span><button type="button" id="network-reset">Back to Main Meter</button></div>
+                <div class="wn-legend"><span><i class="wn-key supply"></i> Water supply</span><span><i class="wn-key backup"></i> Conditional supply</span><span><i class="wn-key unknown"></i> Supply needs confirmation</span><button type="button" id="network-reset">Start of network</button></div>
                 <div class="wn-canvas" tabindex="0" aria-label="Water network diagram, scroll horizontally to explore">
                     <svg id="network-diagram" role="group" aria-label="Interactive water network"></svg>
                 </div>
@@ -77,9 +79,9 @@
                     <th scope="row">@node.Label<small>@node.Note</small></th>
                     <td>@node.Station / @Model.RoleLabel(node.Kind)</td>
                     <td>@if (incoming.Count == 0) { <span>@(node.Kind == "source" ? "Source" : "Feed to confirm")</span> }
-                        @foreach (var edge in incoming) { <div><span>@names[edge.From]</span>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
+                        @foreach (var edge in incoming) { <div><span>@names[edge.From]</span>@if (edge.Kind == "backup") { <small>When: @edge.Condition</small> }</div> }</td>
                     <td>@if (outgoing.Count == 0) { <span>@(node.Kind == "unresolved" ? "To confirm" : "No downstream point shown")</span> }
-                        @foreach (var edge in outgoing) { <div><span>@names[edge.To]</span>@if (edge.Kind == "backup") { <small>Backup: @edge.Condition</small> }</div> }</td>
+                        @foreach (var edge in outgoing) { <div><span>@names[edge.To]</span>@if (edge.Kind == "backup") { <small>When: @edge.Condition</small> }</div> }</td>
                     <td>@if (Model.LinkedMeters.TryGetValue(node.Id, out var meter))
                         { <a asp-page="/MeterReadings/History" asp-route-meterId="@meter.Id">View readings: @meter.MeterName</a><small>@(meter.IsActive ? "Active" : "Disabled")</small> }
                         else { <span>@(node.CanLinkMeter ? "Meter not assigned" : "No separate meter")</span> }</td>
@@ -88,11 +90,7 @@
             </tbody>
         </table></div>
     </details>
-    <section class="wn-open-questions" aria-labelledby="questions-heading">
-        <h2 id="questions-heading">Connections to confirm</h2>
-        <ul>@foreach (var question in Model.Network.OpenQuestions) { <li>@question</li> }</ul>
-        <p>Map reviewed @Model.Network.ReviewedOn. Municipal period usage = Main Meter usage + Fire Hydrant usage over matching dates. Counter values are not period usage.</p>
-    </section>
+
 </div>
 @section Scripts {
     <script id="water-network-readings" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Latest))</script>

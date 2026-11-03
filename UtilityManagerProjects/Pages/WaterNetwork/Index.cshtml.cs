@@ -9,8 +9,8 @@ using UtilityManagerProjects.Models;
 namespace UtilityManagerProjects.Pages.WaterNetwork;
 
 [Authorize]
-public class IndexModel(IWebHostEnvironment environment, IConfiguration configuration,
-    IMeterData meterData, IMeterReadingData readingData, IDataAccess dataAccess, ConnectionStringData connection) : PageModel
+public class IndexModel(IConfiguration configuration,
+    IMeterData meterData, IMeterReadingData readingData, IDataAccess dataAccess, ConnectionStringData connection, UtilityManagerProjects.Services.WaterNetworkStore networkStore) : PageModel
 {
     public Models.WaterNetwork Network { get; private set; } = new();
     public Dictionary<string, Meter> LinkedMeters { get; } = new(StringComparer.Ordinal);
@@ -40,9 +40,7 @@ public class IndexModel(IWebHostEnvironment environment, IConfiguration configur
 
     public async Task OnGetAsync()
     {
-        using var stream = environment.ContentRootFileProvider
-            .GetFileInfo("App_Data/water-network.json").CreateReadStream();
-        Network = Models.WaterNetwork.Load(stream);
+        Network = (await networkStore.LoadAsync()).Network;
 
         // Meter IDs must be explicitly configured after on-site verification.
         // Names, tanks and diagram coordinates are never treated as meter identities.
