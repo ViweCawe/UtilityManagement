@@ -57,6 +57,7 @@ public sealed class ConsumptionScope
     public DateTime End { get; init; }
     public HashSet<int> MeterIds { get; init; } = [];
     public List<string> Missing { get; init; } = [];
+    public List<string> CoverageIssues { get; set; } = [];
     public List<DailyUsage> Allocated { get; init; } = [];
     public List<DateTime> Dates => Enumerable.Range(0, (End.Date - Start.Date).Days + 1).Select(i => Start.Date.AddDays(i)).ToList();
     public List<DailyUsage> CompleteRows
@@ -82,6 +83,8 @@ public sealed class ConsumptionScope
 
 public sealed class ConsumptionPeriod
 {
+    public int CapturesInPeriod { get; init; }
+    public int StartingOnlyMeterCount { get; init; }
     public List<DailyUsage> AllDaily { get; init; } = [];
     public ConsumptionScope Water { get; init; } = new();
     public ConsumptionScope Electricity { get; init; } = new();
