@@ -36,7 +36,8 @@ Reject("cycle", d => d["connections"]!.AsArray().Add(new JsonObject
 }));
 Reject("backup without condition", d =>
 {
-    var backup = d["connections"]!.AsArray().First(e => e!["kind"]!.GetValue<string>() == "backup")!;
+    var backup = d["connections"]!.AsArray()[0]!;
+    backup["kind"] = "backup";
     backup["condition"] = "";
 });
 Reject("invalid station", d => d["nodes"]![0]!["station"] = "Unknown");
@@ -55,3 +56,13 @@ Reject("unmetered point with assignment", d => { d["nodes"]![0]!["canLinkMeter"]
 var editable = new WaterNetwork { Nodes = [ new WaterNetworkNode { Id="new-source", Label="New source", Station="Lower", Kind="source", MeterId=4 } ] };
 editable.Validate();
 Console.WriteLine("PASS: editable points need no Figma ID; invalid assignments and null points rejected.");
+
+var legacy=JsonNode.Parse(json)!.AsObject();legacy["circuitDefinitionsVersion"]=0;
+var level1=legacy["connections"]!.AsArray().First(e=>e!["from"]!.GetValue<string>()=="main-tank"&&e["to"]!.GetValue<string>()=="staff-toilets-lower")!;
+level1["kind"]="backup";level1.AsObject().Remove("purpose");level1.AsObject().Remove("sourceFilter");
+using(var stream=new MemoryStream(Encoding.UTF8.GetBytes(legacy.ToJsonString()))) {
+    var migrated=WaterNetwork.Load(stream);
+    var route=migrated.Connections.Single(e=>e.From=="main-tank"&&e.To=="staff-toilets-lower");
+    if(route.Kind!="supply"||!route.Purpose.Contains("Basins")||migrated.CircuitDefinitionsVersion!=1)throw new Exception("Legacy circuit clarification failed");
+}
+Console.WriteLine("PASS: legacy maps acquire normal municipal basins and borehole flushing circuit definitions.");

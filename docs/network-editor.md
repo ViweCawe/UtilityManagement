@@ -1,28 +1,46 @@
-# Edit the water network without code
+# Edit the network by following the water
 
-## Use the editor
+The editor has separate tasks for adding a point, rearranging an existing point and reviewing the flow. Admin access is required. No code or Figma links are needed to edit it.
 
-1. Create a new water meter or metered tank using **Meters → Add Meter or Tank** if it does not exist yet.
-2. Open **Water Network → Edit network** as an Admin.
-3. Choose **Add point**, enter its name and station, choose its role and select its actual meter. Leave it unassigned while setting it up, or turn off **Has a meter** for an unmetered outlet.
-4. Choose **Add connection**. Select the supplying point under **From** and the receiving point under **To**. For a conditional supply, enter when it operates.
-5. For a Source or metered Storage point where water first enters the site, enable **External supply: include in site water total**. Keep this off for downstream tanks, distribution meters and outlets: counting these again would duplicate supply. Main Meter, Fire Hydrant and Borehole Incoming are the supplied map’s external boundaries. An external boundary cannot have a normal upstream connection.
-6. Choose **Save network**. The app arranges the diagram and returns to the viewing page, including the assigned meters' saved readings.
+## Connect a new meter or outlet
 
-Existing names, roles, descriptions, meter assignments and connections are editable. Remove a connection with its own button. Removing a point also removes its incoming and outgoing diagram connections. Meter records and reading history are preserved. Cancel discards unsaved edits; **Reload saved map** opens the latest saved revision. Adding a point does not itself create a physical meter record.
+1. Create the actual water meter or metered tank in **Meters → Add Meter or Tank** first if it does not exist.
+2. Open **Water Network → Edit network** and choose **Connect a new meter or outlet**.
+3. Select an unused meter (or Unmetered outlet), enter its name/role, choose the upstream supplying point, and optionally enter the usage area and purpose.
+4. Choose **Connect this new point**. Review it in the flow section. The parent determines its initial station; its details allow a station change.
+5. Choose **Save reviewed network** after checking the full map.
 
-There must be at least one point. Each meter can be assigned once. Cycles, duplicate connections, missing endpoints, and conditional connections without conditions are rejected. Lower and Top remain the supported stations. Diagram positions are arranged automatically rather than entered as coordinates. Editing requires JavaScript; viewing retains the connection register for use without JavaScript.
+Only external source/storage inlets should have no upstream supplier. Adding a point does not create a meter record, and adding an unmetered outlet does not create a reading. Each actual meter can be linked once. A point can later gain or lose its meter assignment using **Record a meter at this point**; meter records and history remain intact.
 
-## Deployment and storage
+## Rearrange an existing point
 
-Apply `UpgradeMeterAssets.sql`, then `UpgradeWaterNetworkLinks.sql` if needed, then **`UtilityManagementApp/Scripts/UpgradeWaterNetworkEditor.sql`** before deploying the new page/service. The SQL project includes the table/procedure definitions for fresh deployments as well. The editor migration is rerunnable and preserves saved maps, meter records and readings. It has not been executed against the live database here.
+Choose **Change suppliers for an existing point**, select that point and edit its current supplier routes. **Add another supplier** records a genuine second source. Each route identifies its supplier, normal/conditional operation, use (basins/flushing/etc.), source restriction and operating note. Removing a route changes the map only. The meter identity and reading history stay with the point.
 
-`WaterNetworkDocument` stores one JSON map with a revision, last update time and editing user. Before the first map save, the application uses the shipped JSON map as a seed. Saved maps take precedence after deployment. `WaterNetworkLinks` remains the assignment source for viewing and historical meter links. The editor loads existing assignments, including legacy configuration; a save writes a complete assignment snapshot and map in one SQL transaction. Removed points lose their assignments, without deleting the meter or its readings.
+A normal connection may also describe a limited backup use: Main Meter normally supplies Level 1 basins, with flushing only when the borehole runs out. It must not be hidden entirely as a backup route because basins use it normally. Workshop basins/fountains use a municipal-only circuit restriction; borehole supply serves flushing. The trace respects these restrictions.
 
-Both full-map saves and independent meter-link edits lock the same document row and increment its revision. An editor opened before a later save/link change is rejected on save, allowing the user to reload the latest version rather than overwrite it. A unique filtered index protects one-meter-per-point assignment, and SQL checks active water meters again inside the save. Razor authorization restricts editing to Admin; form POSTs use antiforgery protection. The server revalidates client input and layout bounds; the UI never exposes raw JSON editing.
+## Review sources, branches and shared areas
+
+The flow review groups municipal, borehole, separate hydrant, shared downstream and other points. Suppliers precede their descendants inside the sections. Shared-source parents and their downstream circuits stay together; each point shows its supplying names and source description. Open a point to edit name, station, role, linked meter, usage area or notes.
+
+**Reporting boundary** controls the source rows: Main Meter municipal total, Borehole Out supplied water, Borehole Incoming storage inflow, and separate Fire Hydrant flow. Each role is unique. For replacement of a reporting point, clear its old role before assigning a new one. An inlet role cannot have a normal upstream supplier. Reporting roles and circuit restrictions are checked in both JavaScript and C#.
+
+The default municipal KPI is Main Meter only. It is not a sum of Main Meter, Garage Roof, tanks and outlets, or a sum with borehole storage inflow. Source rows are independent and must not be added indiscriminately. See consumption-calculations.md for the metric definitions.
+
+Workshop and Level 1 have combined-source counters. Their source split is shown as not separately measured. If real separate inlet counters are installed, connect those meters to the corresponding source and give them the same **Usage area**. The reporting code then uses exclusive inlet counters over matching covered dates. Source restrictions describe the actual pipe circuit; they are not a way to assign a percentage of a mixed counter.
+
+## Save and persistence
+
+The map and its complete meter-assignment snapshot still save atomically to WaterNetworkDocument/WaterNetworkLinks. Revision conflicts reject stale editors; reload the saved map before retrying. Cycles, invalid/missing route endpoints, duplicate assignments/routes, missing conditional notes, duplicate reporting roles and incompatible source restrictions are rejected. Current Lower/Top station layouts remain supported.
+
+Circuit metadata uses the existing JSON document. Legacy documents are clarified once on load for the confirmed Main/borehole basin/flushing arrangement and acquire CircuitDefinitionsVersion 1; subsequent saves retain user edits. No SQL migration is needed specifically for these new fields. Existing asset/network/editor/interval/admin migrations are still required for their respective features.
+
+Changing suppliers, reporting roles, meter links or usage areas affects how existing readings are grouped: this is the current map, not an effective-dated historical map. Keep reconciled exports when the physical layout changes. Removing a point removes its routes/assignment but preserves meter records/readings. Cancel/reload discards unsaved work. Save arranges diagram coordinates automatically.
 
 ## Verification
 
-15 Node tests cover route tracing, source changes, user-created points without Figma identifiers, loops, duplicate assignments/routes, conditional routes, automatic station layout and removal/cascade behaviour. C# validation also rejects null points, invalid assignments and invalid topology. An isolated ASP.NET Core 10 host compiles the changed Razor pages, store and page models against the repository's actual data contracts. A DOM interaction check covers adding a metered point, creating a route, form serialization/reload, automatic layout, rejecting invalid routes and removing a point with its connections.
+- Consumption validation checks the Main control total, independent storage inlet/outlet/hydrant quantities, unmeasured combined-source splits, dedicated inlet measurements and aligned coverage/exports.
+- Node tests check source-aware tracing, impossible restrictions, reporting roles and source-ordered editor groups.
+- C# network validation checks topology, assignments and legacy circuit upgrade.
+- `tests/network-editor-browser.test.cjs` uses the synthetic Admin.Validation host to connect an unused actual meter, change its supplier, add a second source, validate/serialize the reviewed map and check the mobile layout. Its POST is intercepted; it does not persist anything in a live SQL database.
 
-Full solution build, real SQL migration/transaction/concurrency execution, authenticated end-to-end database interaction and browser visual layout remain unverified. The isolated compile/DOM checks do not establish those results. Run the migration and exercise save/reload, restart persistence, and two-editor conflict handling in the target test database before production deployment.
+Production SQL save/concurrency and the physical meter boundaries still require verification in the target environment. This work did not modify the live database.

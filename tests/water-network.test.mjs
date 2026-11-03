@@ -26,7 +26,7 @@ test('municipal route reaches both stations without absorbing borehole or rainwa
     assert.deepEqual([...trace.upstream], []);
     for (const id of ['garage-roof', 'cable-car-transfer', 'docking-bay', 'reservoir', 'dosing', 'header', 'male-female-toilets', 'vida-cafe'])
         assert.ok(trace.downstream.has(id), id);
-    for (const id of ['rainwater', 'borehole-in', 'fire-hydrant', 'staff-toilets-lower'])
+    for (const id of ['rainwater', 'borehole-in', 'fire-hydrant'])
         assert.ok(!trace.downstream.has(id), id);
 });
 
@@ -35,17 +35,12 @@ test('reservoir recognises municipal transfer and additional rainwater input', (
     for (const id of ['rainwater', 'docking-bay', 'cable-car-transfer', 'main-tank']) assert.ok(upstream.has(id));
 });
 
-test('staff-toilet fallback is included only when explicitly requested', () => {
-    const regular = traceNetwork(network, 'staff-toilets-lower');
-    assert.deepEqual(new Set(regular.upstream), new Set(['borehole-in', 'borehole-out']));
-    const alternative = traceNetwork(network, 'staff-toilets-lower', true);
-    for (const id of ['main-tank', 'borehole-in', 'borehole-out']) assert.ok(alternative.upstream.has(id));
-    const backup = network.connections.find(e => e.kind === 'backup');
-    assert.equal(backup.from, 'main-tank');
-    assert.equal(backup.condition, 'Borehole water has run out; flushing only');
-    assert.ok(!alternative.upstream.has('garage-roof'));
-    assert.equal(traceEdge(backup, 'staff-toilets-lower', regular), false);
-    assert.equal(traceEdge(backup, 'staff-toilets-lower', alternative, true), true);
+test('Level 1 toilets have normal municipal basins and borehole flushing, with municipal backup noted',()=>{
+ const regular=traceNetwork(network,'staff-toilets-lower');
+ for(const id of ['main-tank','borehole-in','borehole-out']) assert.ok(regular.upstream.has(id));
+ const main=network.connections.find(e=>e.from==='main-tank'&&e.to==='staff-toilets-lower');
+ assert.equal(main.kind,'supply');assert.match(main.purpose,/Basins/);assert.match(main.condition,/flushing only when borehole/);
+ assert.ok(!regular.upstream.has('garage-roof'));
 });
 
 test('unresolved points never acquire inferred physical feeds', () => {
@@ -77,4 +72,10 @@ test('updated workshop records separate unmetered outlets and flushing-only bore
     assert.equal(network.connections.find(e => e.from === 'borehole-out' && e.to === 'workshop').condition, 'Toilet flushing only');
     assert.equal(network.nodes.find(n => n.id === 'fire-hydrant').kind, 'source');
     assert.ok(!network.connections.some(e => e.from === 'main-tank' && e.to === 'fire-hydrant'));
+});
+
+test('borehole flushing does not reach municipal-only workshop basins or fountains',()=>{
+ const bore=traceNetwork(network,'borehole-out');assert.ok(bore.downstream.has('workshop'));
+ for(const id of ['workshop-basins','workshop-fountains']) assert.ok(!bore.downstream.has(id));
+ const basins=traceNetwork(network,'workshop-basins');assert.ok(basins.upstream.has('main-tank'));assert.ok(!basins.upstream.has('borehole-out'));
 });

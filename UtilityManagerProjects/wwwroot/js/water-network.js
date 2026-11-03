@@ -1,3 +1,4 @@
+import { reportingRole } from './water-network-accounting.mjs';
 import { traceNetwork, traceEdge } from './water-network-graph.mjs';
 
 const payload = document.getElementById('water-network-data');
@@ -13,7 +14,7 @@ if (payload) {
     const details = document.getElementById('selected-point-routes');
     const namespace = 'http://www.w3.org/2000/svg';
     const roleLabels = { source: 'Source', storage: 'Storage tank', distribution: 'Distribution', usage: 'Water use', transfer: 'Transfer', unresolved: 'To confirm' };
-    let selectedId = (network.nodes.find(n => n.id === 'main-tank') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id;
+    let selectedId = (network.nodes.find(n => reportingRole(n) === 'main') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id;
 
     function svg(type, attributes = {}, text) {
         const element = document.createElementNS(namespace, type);
@@ -101,7 +102,7 @@ if (payload) {
             const path = svg('path', { d, fill: 'none', stroke: highlighted ? '#2563eb' : '#94a3b8',
                 'stroke-width': highlighted ? 3 : 2, 'marker-end': `url(#${highlighted ? 'active-arrow' : 'flow-arrow'})`,
                 ...(edge.kind === 'backup' ? { 'stroke-dasharray': '8 6' } : {}) });
-            path.append(svg('title', {}, `${from.label} → ${to.label}${edge.condition ? ': ' + edge.condition : ''}`));
+            path.append(svg('title', {}, `${from.label} → ${to.label}${edge.purpose ? ' · ' + edge.purpose : ''}${edge.condition ? ': ' + edge.condition : ''}`));
             diagram.append(path);
         }
         for (const node of visible) {
@@ -143,8 +144,11 @@ if (payload) {
         }
         const supplies = network.connections.filter(e => e.to === selectedId && e.kind !== 'backup');
         const destinations = network.connections.filter(e => e.from === selectedId && e.kind !== 'backup');
-        routeList('Water comes from', supplies.map(e => e.from), selected.kind === 'source' ? 'Source point.' : undefined);
+        routeList('Water comes from', supplies.map(e => e.from), (selected.kind === 'source' || selected.isExternalSupply || ['main','borehole-inlet','hydrant'].includes(reportingRole(selected))) ? 'External source / inlet.' : undefined);
         routeList('Water goes to', destinations.map(e => e.to));
+        for(const edge of [...supplies,...destinations].filter(e=>e.purpose||e.condition)) {
+            const p=document.createElement('p');p.textContent=`${nodes.get(edge.from).label} → ${nodes.get(edge.to).label}: ${edge.purpose||''}${edge.condition?' · '+edge.condition:''}`;details.append(p);
+        }
         for (const edge of network.connections.filter(e => e.kind === 'backup' && (e.to === selectedId || e.from === selectedId))) {
             routeList(`Conditional supply: ${edge.condition}`, [edge.to === selectedId ? edge.from : edge.to]);
         }
@@ -154,7 +158,7 @@ if (payload) {
         details.append(explanation);
     }
 
-    document.getElementById('network-reset').addEventListener('click', () => select((network.nodes.find(n => n.id === 'main-tank') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id));
+    document.getElementById('network-reset').addEventListener('click', () => select((network.nodes.find(n => reportingRole(n) === 'main') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id));
     station.addEventListener('change', () => {
         fillPoints();
         select(network.nodes.find(n => n.station === station.value && n.kind === 'source')?.id || network.nodes.find(n => n.station === station.value).id);

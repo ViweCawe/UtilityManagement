@@ -38,7 +38,10 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
             var captures=History.Where(r=>r.MeterId==m.Id).ToList();
             var latest=captures.Where(r=>r.ReadingDate.Date<=period.Water.End).OrderByDescending(r=>r.ReadingDate).ThenByDescending(r=>r.Id).FirstOrDefault();
             var status=days.Count>0?"Usage calculated":latest is null?"No saved counter by end date":captures.Select(r=>r.ReadingDate.Date).Distinct().Count()<2?"Starting counter saved — capture another reading on a later date":"No comparable interval for selected dates";
-            return new MeterDailyAverageRow {LatestCounter=latest?.CurrentReading,LatestCounterDate=latest?.ReadingDate,CalculationStatus=status,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
+            var points=network.Nodes.Where(n=>links.GetValueOrDefault(n.Id)==m.Id).ToList();
+            var meterOrigins=points.SelectMany(n=>WaterAccounting.Origins(network,n.Id)).Distinct().ToList();
+            var supply=m.MeterType!=MeterType.Water?"Electricity":meterOrigins.Count>1?"Combined sources · split not separately measured":meterOrigins.SingleOrDefault() switch {"municipal"=>"Municipal supply","borehole"=>"Borehole supply","rain"=>"Rainwater",_=>"Water source not confirmed on map"};
+            return new MeterDailyAverageRow {SupplyDescription=supply,LatestCounter=latest?.CurrentReading,LatestCounterDate=latest?.ReadingDate,CalculationStatus=status,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
                 ReadingCount=History.Count(r=>r.MeterId==m.Id&&r.ReadingDate.Date>=period.Water.Start&&r.ReadingDate.Date<=period.Water.End),
                 CoveredDays=days.Count,TotalUsage=days.Sum(d=>d.Usage),DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count};
         }).OrderBy(r=>r.DepartmentName).ThenBy(r=>r.MeterName).ToList();
@@ -84,32 +87,69 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
             }
             return false;
         }
-        var label = "Estimated incoming water flow (external supply boundary)";
+        bool HasMunicipalAncestor(string node,bool selectedOnly)
+        {
+            var queue=new Queue<string>(allEdges.Where(e=>e.To==node&&e.SourceFilter is not ("borehole" or "rain" or "other")).Select(e=>e.From));var seen=new HashSet<string>();
+            while(queue.TryDequeue(out var id)) {
+                if(!seen.Add(id)) continue;
+                var point=network.Nodes.Single(n=>n.Id==id);
+                if(selectedOnly?validLinks.ContainsKey(id)&&WaterAccounting.Origins(network,id).SetEquals(new[]{"municipal"}):WaterAccounting.Role(point)=="main") return true;
+                foreach(var edge in allEdges.Where(e=>e.To==id&&e.SourceFilter is not ("borehole" or "rain" or "other"))) queue.Enqueue(edge.From);
+            }
+            return false;
+        }
+        var label = "Main Meter — municipal supply";
         if (meterId.HasValue) { expected = water; label = "Estimated flow through the selected meter"; }
         else if (!string.IsNullOrWhiteSpace(department))
         {
             label = "Estimated department flow (topmost linked meters; department totals may overlap)";
-            foreach (var link in validLinks.Where(p => !HasSelectedAncestor(p.Key))) expected.Add(link.Value);
+            foreach (var link in validLinks.Where(p => !HasSelectedAncestor(p.Key) && (WaterAccounting.Role(network.Nodes.Single(n=>n.Id==p.Key))=="main" || HasMunicipalAncestor(p.Key,false)) && WaterAccounting.Origins(network,p.Key).SetEquals(new[]{"municipal"}))) expected.Add(link.Value);
+            label="Main branch municipal flow for selected department";
+            foreach(var link in validLinks.Where(p=>WaterAccounting.Origins(network,p.Key).Count>1 && !HasMunicipalAncestor(p.Key,true))) missing.Add($"{network.Nodes.Single(n=>n.Id==link.Key).Label}: combined-source meter; municipal department flow cannot be separated.");
             foreach (var id in water.Except(validLinks.Values)) missing.Add($"Unmapped meter #{id}");
         }
         else
         {
-            var roots = network.Nodes.Where(n => n.CanLinkMeter && (n.IsExternalSupply ?? (n.Id is "main-tank" or "fire-hydrant" or "borehole-in"))).ToList();
-            foreach(var meter in selected.Where(m=>m.MeterType==MeterType.Water && m.NetworkRole==WaterNetworkRole.Source))
-                if(!validLinks.Values.Contains(meter.Id)) missing.Add($"Source meter {meter.MeterName} is not linked to the network. Assign it and confirm whether it is external supply.");
-            if (roots.Count == 0) missing.Add("No external supply boundary is configured in the network.");
-            foreach (var node in roots)
-            {
-                if(network.Connections.Any(e=>e.To==node.Id&&e.Kind!="backup")) { missing.Add($"External supply {node.Label} has a normal upstream connection. Correct the reporting boundary."); continue; }
-                if (validLinks.TryGetValue(node.Id, out var id)) expected.Add(id);
-                else missing.Add($"Assign the source meter: {node.Label}");
+            var mains=network.Nodes.Where(n=>WaterAccounting.Role(n)=="main").ToList();
+            if(mains.Count!=1) missing.Add("Choose one Main Meter reporting boundary in the network editor.");
+            foreach(var node in mains) {
+                if(validLinks.TryGetValue(node.Id,out var id)) expected.Add(id);
+                else missing.Add($"Assign the actual Main Meter: {node.Label}");
             }
         }
         var electricIds = selected.Where(m => m.MeterType == MeterType.Electricity).Select(m => m.Id).ToHashSet();
+        ConsumptionScope MeterScope(IEnumerable<WaterNetworkNode> nodes,string scopeLabel,bool frontier=false,HashSet<DateTime>? coveredDates=null)
+        {
+            var candidates=nodes.Where(n=>n.CanLinkMeter).ToList();
+            if(frontier) candidates=candidates.Where(n=>!HasAncestorIn(n.Id,candidates.Select(c=>c.Id).ToHashSet())).ToList();
+            var ids=new HashSet<int>();var gaps=new List<string>();
+            foreach(var node in candidates) { if(validLinks.TryGetValue(node.Id,out var id)) ids.Add(id);else gaps.Add($"Assign the meter: {node.Label}"); }
+            return new(){Start=start,End=end,MeterIds=ids,Missing=gaps,Allocated=coveredDates is null?daily:daily.Where(d=>coveredDates.Contains(d.ReadingDate)).ToList(),Label=scopeLabel};
+        }
+        bool HasAncestorIn(string id,HashSet<string> candidates)
+        {
+            var queue=new Queue<string>(allEdges.Where(e=>e.To==id).Select(e=>e.From));var seen=new HashSet<string>();
+            while(queue.TryDequeue(out var parent)) { if(!seen.Add(parent)) continue;if(candidates.Contains(parent)) return true;foreach(var e in allEdges.Where(e=>e.To==parent)) queue.Enqueue(e.From); }
+            return false;
+        }
+        var reportLabels=new Dictionary<string,string>{{"main","Main Meter · municipal supply"},{"borehole-outlet","Borehole Out · water leaving storage"},{"borehole-inlet","Borehole Incoming · water entering storage"},{"hydrant","Fire Hydrant · separate municipal branch"}};
+        var supplies=network.Nodes.Where(n=>WaterAccounting.Role(n).Length>0 && (!meterId.HasValue&&!string.IsNullOrWhiteSpace(department)?validLinks.ContainsKey(n.Id):!meterId.HasValue||validLinks.ContainsKey(n.Id)))
+            .Select(n=>new WaterSupplyRow{Role=WaterAccounting.Role(n),Label=reportLabels[WaterAccounting.Role(n)],Flow=MeterScope(new[]{n},n.Label)}).OrderBy(n=>n.Role=="main"?0:n.Role=="borehole-outlet"?1:n.Role=="hydrant"?2:3).ToList();
+        var areaNodes=network.Nodes.Where(n=>WaterAccounting.Area(n).Length>0 && (meterId.HasValue||!string.IsNullOrWhiteSpace(department)?validLinks.ContainsKey(n.Id):true)).ToList();
+        var areas=areaNodes.GroupBy(WaterAccounting.Area,StringComparer.OrdinalIgnoreCase).Select(group=> {
+            var combined=MeterScope(group,group.Key,true);
+            var covered=combined.CompleteRows.Select(d=>d.ReadingDate).ToHashSet();
+            return new WaterAreaRow {
+                Area=group.Key,HasMunicipalSupply=group.Any(n=>WaterAccounting.Origins(network,n.Id).Contains("municipal")),HasBoreholeSupply=group.Any(n=>WaterAccounting.Origins(network,n.Id).Contains("borehole")),
+                HasCombinedMeter=group.Any(n=>n.CanLinkMeter&&WaterAccounting.Origins(network,n.Id).Count>1),Combined=combined,
+                Municipal=MeterScope(group.Where(n=>WaterAccounting.Origins(network,n.Id).SetEquals(new[]{"municipal"})),group.Key+" municipal",true,covered),
+                Borehole=MeterScope(group.Where(n=>WaterAccounting.Origins(network,n.Id).SetEquals(new[]{"borehole"})),group.Key+" borehole",true,covered)
+            };
+        }).ToList();
         var captured=History.Where(r=>selectedIds.Contains(r.MeterId)&&r.ReadingDate.Date>=start&&r.ReadingDate.Date<=end).ToList();
         var capturedIds=captured.Select(r=>r.MeterId).ToHashSet();
         var startingOnly=capturedIds.Count(id=>History.Where(r=>r.MeterId==id).Select(r=>r.ReadingDate.Date).Distinct().Count()<2);
-        var result = new ConsumptionPeriod { AllDaily = daily,CapturesInPeriod=captured.Count,StartingOnlyMeterCount=startingOnly,
+        var result = new ConsumptionPeriod { WaterSupplies=supplies,WaterAreas=areas,AllDaily = daily,CapturesInPeriod=captured.Count,StartingOnlyMeterCount=startingOnly,
             Water = new ConsumptionScope { Start = start, End = end, MeterIds = expected, Missing = missing, Allocated = daily, Label = label },
             Electricity = new ConsumptionScope { Start = start, End = end, MeterIds = electricIds, Allocated = daily, Label = "Estimated electricity flow through selected meters" } };
         foreach(var scope in new[]{result.Water,result.Electricity})

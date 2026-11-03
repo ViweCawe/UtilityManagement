@@ -1,78 +1,75 @@
-import { arrangeNetwork, removePoint } from './network-editor-model.mjs';
-
-const form = document.getElementById('network-edit-form');
-const hidden = document.getElementById('NetworkJson');
-const error = document.getElementById('network-editor-error');
+import { arrangeNetwork, removePoint, validateNetwork } from './network-editor-model.mjs';
+import { flowSections, reportingRole, reportingRoles, origins, nodeOrigins, usageArea, rootOrigin } from './water-network-accounting.mjs';
+const form=document.getElementById('network-edit-form'),hidden=document.getElementById('NetworkJson'),error=document.getElementById('network-editor-error');
+function el(tag,text,cls){const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;}
+function button(text,fn){const n=el('button',text);n.type='button';n.addEventListener('click',fn);return n;}
+let fieldSequence=0;
+function field(title,control){const wrapper=el('div','', 'ne-field'),label=el('label',title);control.id ||= `network-field-${++fieldSequence}`;label.htmlFor=control.id;wrapper.append(label,control);return wrapper;}
+function input(value,change,max=100){const n=el('input');n.value=value||'';n.maxLength=max;n.addEventListener('input',()=>change(n.value));return n;}
+function select(options,value,change){const n=el('select');for(const [v,text] of options){const o=el('option',text);o.value=v;n.append(o);}if(value&&!options.some(o=>String(o[0])===String(value))){const o=el('option',`Unavailable assignment #${value}`);o.value=value;n.append(o);}n.value=value??'';n.addEventListener('change',()=>change(n.value));return n;}
+function showError(message){error.textContent=message;error.hidden=false;error.scrollIntoView({block:'center'});}
 try {
-    const map = JSON.parse(hidden.value);
-    const meters = JSON.parse(document.getElementById('network-editor-meters').textContent);
-    const roles = { source: 'Source', storage: 'Storage tank', distribution: 'Distribution', usage: 'Water use', transfer: 'Transfer', unresolved: 'Needs confirmation' };
-    const routeKinds = { supply: 'Normal supply', transfer: 'Transfer', rain: 'Rainwater', backup: 'Conditional supply' };
-    function el(tag, text, className) {
-        const n = document.createElement(tag); if (text) n.textContent = text; if (className) n.className = className; return n;
+ const map=JSON.parse(hidden.value),meters=JSON.parse(document.getElementById('network-editor-meters').textContent),roles={source:'Source',storage:'Metered tank',distribution:'Distribution',usage:'Water use',transfer:'Transfer',unresolved:'Needs confirmation'};
+ const task=document.getElementById('network-editor-task');let selected=map.nodes.find(n=>n.id==='workshop')?.id||map.nodes[0].id;
+ const pointOptions=()=>flowSections(map).flatMap(g=>g.nodes.map(({node})=>[node.id,`${node.label} (${node.station}) · ${nodeOrigins(map,node.id).size>1?'shared supply':origins[[...nodeOrigins(map,node.id)][0]]||'unconfirmed'}`]));
+ function renameLinks(){renderFlow();renderReview();}
+ function routeRow(route){const row=el('div','', 'ne-route-card');row.append(field('Supplied by',select([['','Choose supplier'],...pointOptions().filter(p=>p[0]!==route.to)],route.from,v=>{route.from=v;renameLinks();})),field('Route operation',select([['supply','Normal supply'],['transfer','Tank transfer'],['backup','Conditional / backup'],['rain','Rainwater']],route.kind,v=>{route.kind=v;renameLinks();})),field('Used for',input(route.purpose,v=>route.purpose=v,120)),field('Carries water from',select([['','All sources on this route'],...Object.entries(origins)],route.sourceFilter||'',v=>{route.sourceFilter=v;renameLinks();})),field('When / operating note',input(route.condition,v=>route.condition=v,200)),button('Remove this supply route',()=>{map.connections.splice(map.connections.indexOf(route),1);renderAll();}));return row;}
+ function renderTask(){const root=document.getElementById('network-editor-workspace');root.replaceChildren();
+  if(task.value==='review'){root.append(el('p','Open the flow sections below. Source totals and usage-area names are edited inside each point.'));return;}
+  if(task.value==='move'){
+   root.append(field('Existing point to rearrange',select(pointOptions(),selected,v=>{selected=v;renderTask();})));
+   const node=map.nodes.find(n=>n.id===selected);root.append(el('p',`${node.label} keeps the same meter and readings. Only change the suppliers or route notes below.`));
+   for(const route of map.connections.filter(e=>e.to===selected))root.append(routeRow(route));
+   if(!map.connections.some(e=>e.to===selected))root.append(el('p','This point currently has no upstream supplier. Keep it that way only if it is an external source.'));
+   root.append(button('Add another supplier to this point',()=>{map.connections.push({from:'',to:selected,kind:'supply',purpose:'',condition:'',sourceFilter:''});renderTask();renderReview();}));return;
+  }
+  root.append(el('p','Create the meter record first if it does not exist, then attach that meter to its physical supplier.'));
+  const create=el('a','Create a meter or tank first');create.href=form.dataset.createMeterUrl;root.append(create);
+  const draft={meterId:'',label:'',parent:'',area:'',kind:'usage',purpose:''};
+  const available=meters.filter(m=>!map.nodes.some(n=>n.meterId===m.id));
+  const name=input('',v=>draft.label=v);const kind=select(Object.entries(roles),'usage',v=>draft.kind=v);
+  root.append(field('Actual meter',select([['','Choose an unused meter'],['unmetered','Unmetered outlet (no counter)'],...available.map(m=>[String(m.id),m.name])],'',v=>{draft.meterId=v;const m=meters.find(m=>String(m.id)===v);if(m){draft.label=m.name;name.value=m.name;draft.kind=({1:'source',2:'transfer',3:'distribution',4:'usage',5:'storage'})[m.role]||'usage';kind.value=draft.kind;}})),field('Point name',name),field('Point role',kind),field('Supplied by',select([['','External inlet / no upstream supplier'],...pointOptions()],'',v=>draft.parent=v)),field('Usage area (optional)',input('',v=>draft.area=v)),field('Used for (optional)',input('',v=>draft.purpose=v,120)));
+  root.append(button('Connect this new point',()=>{
+   if(!draft.meterId||!draft.label.trim())return showError('Choose an unused meter or unmetered outlet, and enter its name.');
+   if(!draft.parent&&!['source','storage'].includes(draft.kind))return showError('Choose its upstream supplier. Only an external source or storage inlet may start without a supplier.');
+   const node={id:`point-${Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('')}`,label:draft.label.trim(),station:map.nodes.find(n=>n.id===draft.parent)?.station||'Lower',kind:draft.kind,canLinkMeter:draft.meterId!=='unmetered',meterId:draft.meterId==='unmetered'?null:Number(draft.meterId),usageArea:draft.area.trim(),reportingRole:'',isExternalSupply:!draft.parent&&draft.meterId!=='unmetered',supplyOrigin:'other',note:'',x:0,y:0};map.nodes.push(node);
+   if(draft.parent)map.connections.push({from:draft.parent,to:node.id,kind:'supply',purpose:draft.purpose,condition:'',sourceFilter:''});
+   selected=node.id;task.value='review';renderAll();const card=document.querySelector(`[data-point-id="${node.id}"]`);card.open=true;card.scrollIntoView({block:'center'});
+  }));
+ }
+ function renderFlow(){const root=document.getElementById('network-editor-points');const opened=new Set([...root.querySelectorAll('details[open]')].map(e=>e.dataset.pointId));root.replaceChildren();
+  for(const section of flowSections(map)){
+   const group=el('section','', 'ne-flow-section');group.append(el('h3',section.label));
+   for(const {node,depth} of section.nodes){const card=el('details','', 'ne-flow-point');card.dataset.pointId=node.id;card.open=opened.has(node.id);card.style.setProperty('--flow-depth',Math.min(depth,3));
+    const parents=map.connections.filter(e=>e.to===node.id),sourceNames=[...nodeOrigins(map,node.id)].map(s=>origins[s]||s);
+    const summary=el('summary',`${node.label} · ${node.station} Station · ${sourceNames.join(' + ')}${node.canLinkMeter!==false&&!node.meterId?' · meter not linked':''}`);card.append(summary);
+    const description=el('p',parents.length?`Supplied by: ${parents.map(e=>map.nodes.find(n=>n.id===e.from)?.label||'Choose supplier').join(' + ')}`:'External inlet / no mapped supplier');card.append(description);
+    if(sourceNames.length>1&&node.canLinkMeter!==false)card.append(el('p','Combined meter: its source volumes cannot be separated from one counter. Keep source paths distinct; link separate inlet meters only when they physically exist.','ne-combined-note'));
+    const fields=el('div','', 'ne-point');const name=input(node.label,v=>node.label=v);name.addEventListener('change',()=>{renderFlow();renderTask();});
+    fields.append(field('Name',name),field('Station',select([['Lower','Lower Station'],['Top','Top Station']],node.station,v=>node.station=v)),field('Role',select(Object.entries(roles),node.kind,v=>{node.kind=v;renderReview();})),field('Usage area',input(usageArea(node),v=>{node.usageArea=v;renderReview();})));
+    const metered=el('input');metered.type='checkbox';metered.checked=node.canLinkMeter!==false;
+    metered.addEventListener('change',()=>{node.canLinkMeter=metered.checked;if(!metered.checked){node.meterId=null;node.reportingRole='';node.isExternalSupply=false;}renderFlow();renderReview();});
+    fields.append(field('Record a meter at this point',metered));
+    if(node.canLinkMeter!==false){fields.append(field('Actual meter',select([['','Not assigned'],...meters.filter(m=>m.id===node.meterId||!map.nodes.some(n=>n.meterId===m.id)).map(m=>[String(m.id),m.name])],node.meterId,v=>{node.meterId=v?Number(v):null;renderReview();})),field('Reporting boundary',select(Object.entries(reportingRoles),reportingRole(node),v=>{node.reportingRole=v;if(['main','hydrant','borehole-inlet'].includes(v)){node.isExternalSupply=true;node.supplyOrigin=v==='borehole-inlet'?'borehole':'municipal';}renderReview();})));
     }
-    function button(text, callback) { const b = el('button', text); b.type = 'button'; b.addEventListener('click', callback); return b; }
-    function field(title, control) { const label = el('label', title); label.append(control); return label; }
-    function input(value, change, max = 100) {
-        const n = document.createElement('input'); n.value = value || ''; n.maxLength = max;
-        n.addEventListener('input', () => change(n.value)); return n;
+    if(node.canLinkMeter!==false&&(['source','storage'].includes(node.kind)||node.isExternalSupply)) {
+     const external=el('input');external.type='checkbox';external.checked=node.isExternalSupply===true;
+     external.addEventListener('change',()=>{node.isExternalSupply=external.checked;renderReview();});fields.append(field('External water inlet (not a downstream meter)',external));
     }
-    function select(options, value, change) {
-        const n = document.createElement('select');
-        for (const [v, text] of options) { const o = el('option', text); o.value = v; n.append(o); }
-        if (value && ![...n.options].some(o => o.value === String(value))) { const o = el('option', `Unavailable meter #${value} — choose another or unlink`); o.value = value; n.append(o); }
-        n.value = value == null ? '' : String(value); n.addEventListener('change', () => change(n.value)); return n;
-    }
-    function showError(message) { error.textContent = message; error.hidden = false; error.scrollIntoView({ block: 'center' }); }
-    function renderRoutes() {
-        const root = document.getElementById('network-editor-routes'); root.replaceChildren();
-        const points = [['', 'Choose a point'], ...map.nodes.map(n => [n.id, `${n.label} (${n.station})`])];
-        map.connections.forEach((route, i) => {
-            const row = el('div', '', 'ne-row');
-            row.append(field('From', select(points, route.from, value => route.from = value)), field('To', select(points, route.to, value => route.to = value)),
-                field('Supply type', select(Object.entries(routeKinds), route.kind, value => route.kind = value)),
-                field('Condition / note', input(route.condition, value => route.condition = value, 200)),
-                button('Remove connection', () => { map.connections.splice(i, 1); renderRoutes(); }));
-            root.append(row);
-        });
-        if (!map.connections.length) root.append(el('p', 'No connections yet. Add a connection to show what supplies what.'));
-    }
-    function renderPoints() {
-        const root = document.getElementById('network-editor-points'); root.replaceChildren();
-        for (const node of map.nodes) {
-            const row = el('div', '', 'ne-point');
-            const name = input(node.label, value => node.label = value); name.required = true;
-            name.addEventListener('change', renderRoutes);
-            row.append(field('Point name', name), field('Station', select([['Lower', 'Lower Station'], ['Top', 'Top Station']], node.station, value => { node.station = value; renderRoutes(); })),
-                field('Role', select(Object.entries(roles), node.kind, value => node.kind = value)));
-            const metered = document.createElement('input'); metered.type = 'checkbox'; metered.checked = node.canLinkMeter !== false;
-            metered.addEventListener('change', () => { node.canLinkMeter = metered.checked; if (!metered.checked) { node.meterId = null; node.isExternalSupply = false; } renderPoints(); });
-            row.append(field('Has a meter', metered));
-            if (node.canLinkMeter !== false) row.append(field('Actual meter', select([['', 'Not assigned yet'], ...meters.map(m => [String(m.id), `${m.name} (#${m.id})`])], node.meterId, value => {
-                node.meterId = value ? Number(value) : null;
-                if (node.label === 'New point' && node.meterId) { const meter = meters.find(m => m.id === node.meterId); node.label = meter.name; node.kind = ({ 1: 'source', 2: 'transfer', 3: 'distribution', 4: 'usage', 5: 'storage' })[meter.role] || node.kind; renderPoints(); renderRoutes(); }
-            })));
-            if (node.canLinkMeter !== false) {
-                const external=document.createElement('input'); external.type='checkbox'; external.checked=node.isExternalSupply===true;
-                external.addEventListener('change',()=>node.isExternalSupply=external.checked);
-                row.append(field('External supply: include in site water total',external));
-            }
-            row.append(field('Description', input(node.note, value => node.note = value, 1000)), button('Remove point', () => {
-                if (window.confirm(`Remove ${node.label} and its diagram connections? The meter and readings will be kept.`)) { removePoint(map, node.id); renderPoints(); renderRoutes(); }
-            })); root.append(row);
-        }
-    }
-    document.getElementById('add-network-point').addEventListener('click', () => {
-        map.nodes.push({ id: `point-${Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('')}`, label: 'New point', station: 'Lower', kind: 'usage', canLinkMeter: true, meterId: null, note: '', x: 0, y: 0 }); renderPoints(); renderRoutes();
-        document.getElementById('network-editor-points').lastElementChild.scrollIntoView({ block: 'center' });
-    });
-    document.getElementById('add-network-route').addEventListener('click', () => {
-        map.connections.push({ from: '', to: '', kind: 'supply', condition: '' }); renderRoutes();
-        document.getElementById('network-editor-routes').lastElementChild.scrollIntoView({ block: 'center' });
-    });
-    form.addEventListener('submit', event => {
-        try { map.nodes.forEach(n => n.label = n.label.trim()); arrangeNetwork(map); hidden.value = JSON.stringify(map); }
-        catch (e) { event.preventDefault(); showError(e.message); }
-    });
-    renderPoints(); renderRoutes(); document.getElementById('network-editor-controls').hidden = false;
-} catch { error.textContent = 'The editor could not open this map. Reload the page to load the saved version.'; error.hidden = false; }
+    if(!parents.length)fields.append(field('Source water type',select(Object.entries(origins),rootOrigin(node),v=>{node.supplyOrigin=v;renderFlow();renderReview();})));
+    fields.append(field('Description',input(node.note,v=>node.note=v,1000)));card.append(fields);
+    card.append(button('Change supply connections',()=>{selected=node.id;task.value='move';renderTask();document.getElementById('network-editor-workspace').scrollIntoView({block:'center'});}),button('Remove point from map',()=>{if(confirm(`Remove ${node.label} and its routes from the map? Its meter and reading history are kept.`)){removePoint(map,node.id);selected=map.nodes[0]?.id;renderAll();}}));group.append(card);
+   }root.append(group);
+  }
+ }
+ function renderReview(){error.hidden=true;const root=document.getElementById('network-editor-review');root.replaceChildren();
+  root.append(el('p',`${map.nodes.length} points · ${map.connections.length} routes. Changes affect the map after Save.`));
+  const mains=map.nodes.filter(n=>reportingRole(n)==='main');root.append(el('p',mains.length===1?`Municipal control total: ${mains[0].label}${mains[0].meterId?'':' (link its meter)'}`:'Choose exactly one Main Meter reporting boundary.'));
+  for(const n of map.nodes.filter(n=>nodeOrigins(map,n.id).size>1&&n.canLinkMeter!==false))root.append(el('p',`${n.label}: combined-source meter; source split not separately measured.`));
+  try{validateNetwork(map);root.append(el('p','Routes checked. Review meter assignments, then save.'));}catch(e){root.append(el('p','Needs attention: '+e.message,'ne-combined-note'));}
+ }
+ function renderAll(){renderTask();renderFlow();renderReview();}
+ task.addEventListener('change',renderTask);
+ form.addEventListener('submit',event=>{try{map.nodes.forEach(n=>n.label=n.label.trim());arrangeNetwork(map);hidden.value=JSON.stringify(map);}catch(e){event.preventDefault();showError(e.message);}});
+ renderAll();document.getElementById('network-editor-controls').hidden=false;
+} catch(e){showError('The editor could not open this map. Reload the saved version. '+e.message);}

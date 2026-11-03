@@ -20,16 +20,30 @@ The last capture on each calendar day defines that day’s counter for this dail
 
 ## Reporting boundaries
 
-| Point | Site total treatment |
+The default water KPI and graph use **Main Meter municipal flow only**. Filtering by Main Meter gives the same control total. Downstream distribution/tank/outlet counters are not additional water and must not be added to it. The default is no longer the previous sum of Main Meter, Fire Hydrant and borehole storage inflow. This definition applies consistently to Dashboard, Reports, Environmental, Usage, Analytics, Readings summaries and the export summary.
+
+| Reporting role | What its reading measures |
 | --- | --- |
-| Main Meter | External municipal inflow |
-| Fire Hydrant | Separate metered municipal inflow, outside Main Meter |
-| Borehole Incoming | Metered drilled-water inlet to storage |
-| Garage Roof, Borehole Out, downstream tanks and outlets | Meter-level detail; no additional site supply |
+| Main Meter | Controlling municipal supply flow |
+| Borehole Out | Water leaving borehole storage for supply/use |
+| Borehole Incoming | Water entering storage; not its remaining level |
+| Fire Hydrant | Separate municipal branch outside Main Meter |
 
-Use the network editor’s **External supply** checkbox for future external Source or Storage points, and assign each boundary its actual active water meter. Existing saved maps without this field retain the three known boundary identities until edited. A disconnected tank is not automatically a new supply. Missing source assignments or duplicate mappings make the site aggregate unavailable. Only days covered by every expected boundary meter contribute to a site total and daily average; the page shows coverage. Empty coverage displays an unavailable value rather than a measured zero.
+These independent boundaries appear separately with their own date coverage. Do not add borehole inlet and outlet as additional consumption. Storage changes, rainwater and unmetered branches mean child measurements need not sum exactly to Main Meter, even over matching dates. No leakage or stored-volume claim is inferred.
 
-A specific-meter filter shows that meter’s flow. A department filter selects its topmost linked meters, excluding selected descendants even on conditional routes. Department totals can overlap and are not additive site totals. Different circuits serving the same fixtures do not establish how much each fixture consumed. Tank inlet/outlet counters measure movement, not stored volume or tank level. Unmetered rainwater, storage changes and unmetered outlets prevent a complete site water balance; no leakage, storage level or exact end-use claim is derived.
+The editor's **Reporting boundary** setting identifies these roles. One metered point may hold each role. Legacy point identities supply defaults; users can move a role to another verified point by clearing the old role and setting the new one. A combined-source counter cannot represent the exclusively municipal or borehole boundary. Missing borehole/hydrant assignments do not suppress Main Meter flow. Missing Main Meter assignment or interval data does.
+
+A meter filter shows its own recorded flow, including combined-source flow when applicable. A department filter uses the topmost exclusive municipal meters on the Main Meter branch. It excludes borehole and hydrant flow and rejects an unknown municipal contribution from a combined counter unless an included municipal parent already covers it. Department figures are not additive site totals.
+
+### Shared usage areas and circuits
+
+Workshop and Level 1 Visitor Toilets have combined meters. Municipal water supplies basins; borehole water normally supplies flushing. Municipal backup flushing operates when the borehole runs out. The map records normal municipal basin supply and describes the backup flushing condition. Circuit restrictions prevent the borehole trace from flowing into municipal-only Workshop basins/fountains.
+
+The **Usage area** field groups points for reporting. With one combined meter the recorded total remains visible, while municipal and borehole portions are **not separately measured**. Parent readings and arbitrary percentages cannot identify simultaneous source contributions. Exact separation requires real dedicated inlet counters or equivalent source-specific measurements. The app creates no synthetic readings or assumed proportions.
+
+If separate inlet meters are installed, add/connect the actual meters to their suppliers, assign the same usage area and set each route's water-source restriction correctly. Source amounts are calculated only from exclusive, mapped counters, with parent/child overlap removed. Area columns use the same commonly covered dates; independent inlet columns therefore reconcile over that common coverage. Flow measured by a combined parent does not become a separately measured source value.
+
+Circuit purpose and source restrictions, reporting roles and usage areas are stored in the existing revisioned network JSON. Legacy documents receive the known circuit clarification once through `CircuitDefinitionsVersion=1`, including normal Main Meter supply for Level 1 basins and borehole flushing. The viewing page receives the clarification too. A subsequent save persists it, and versioned user edits are not repeatedly overwritten. This does not delete points, meter links or reading records, and requires no new SQL schema migration.
 
 Electricity has no topology in this app: selected electricity meters are summed. If electricity submeters overlap, configure a separate electricity boundary before interpreting that sum as site electricity.
 
@@ -39,7 +53,7 @@ Totals include complete covered days; averages divide by those covered days. Com
 
 Excel separates the summary, raw captures, waste events, estimated daily flow and supporting interval evidence. Raw capture differences are full intervals and must not be added as filtered-period usage. Daily rows mark whether they contribute to the summary. Waste remains recorded events and is not interpolated.
 
-Per-person indicators require full period coverage and a positive recorded people count. The water indicator is supplied water per recorded person, not proven personal consumption. Electricity carbon estimates also require a positive configured `Environmental:GridEmissionFactorKgCo2ePerKwh`; no placeholder factor is used.
+Per-person indicators require full period coverage and a positive recorded people count. The default water indicator is Main Meter municipal flow per person; borehole outlet flow is displayed separately. The water indicator is supplied water per recorded person, not proven personal consumption. Electricity carbon estimates also require a positive configured `Environmental:GridEmissionFactorKgCo2ePerKwh`; no placeholder factor is used.
 
 ## Units and historical limitations
 

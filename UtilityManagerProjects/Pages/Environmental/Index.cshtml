@@ -185,7 +185,7 @@
                 <i class="bi bi-droplet-fill"></i>
             </div>
             <div class="stat-content">
-                <p>Water Use</p>
+                <p>@Model.Consumption.Water.Label</p>
                 <h2>@(Model.Consumption.Water.CoveredDays>0 ? Model.WaterUsage.ToString("N1") : "—") <span>L</span></h2>
                 <span class="@(Model.WaterPerPerson <= Model.WaterTarget ? "trend-positive" : "trend-negative")">
                     @(Model.WaterPerPersonAvailable ? Model.WaterPerPerson.ToString("N2") : "—") L supplied/person · Indicative target @Model.WaterTarget.ToString("N2")
@@ -282,6 +282,7 @@
 
     </section>
 
+    <partial name="_WaterSupplyBreakdown" model="Model.Consumption" />
     <section class="management-chart-grid">
 
         <div class="figma-card meter-trend-card">

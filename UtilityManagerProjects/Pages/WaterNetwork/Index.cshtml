@@ -79,9 +79,9 @@
                     <th scope="row">@node.Label<small>@node.Note</small></th>
                     <td>@node.Station / @Model.RoleLabel(node.Kind)</td>
                     <td>@if (incoming.Count == 0) { <span>@(node.Kind == "source" ? "Source" : "Feed to confirm")</span> }
-                        @foreach (var edge in incoming) { <div><span>@names[edge.From]</span>@if (edge.Kind == "backup") { <small>When: @edge.Condition</small> }</div> }</td>
+                        @foreach (var edge in incoming) { <div><span>@names[edge.From]</span>@if (edge.Kind == "backup") { <small>When: @edge.Purpose @edge.Condition</small> }</div> }</td>
                     <td>@if (outgoing.Count == 0) { <span>@(node.Kind == "unresolved" ? "To confirm" : "No downstream point shown")</span> }
-                        @foreach (var edge in outgoing) { <div><span>@names[edge.To]</span>@if (edge.Kind == "backup") { <small>When: @edge.Condition</small> }</div> }</td>
+                        @foreach (var edge in outgoing) { <div><span>@names[edge.To]</span>@if (edge.Kind == "backup") { <small>When: @edge.Purpose @edge.Condition</small> }</div> }</td>
                     <td>@if (Model.LinkedMeters.TryGetValue(node.Id, out var meter))
                         { <a asp-page="/MeterReadings/History" asp-route-meterId="@meter.Id">View readings: @meter.MeterName</a><small>@(meter.IsActive ? "Active" : "Disabled")</small> }
                         else { <span>@(node.CanLinkMeter ? "Meter not assigned" : "No separate meter")</span> }</td>

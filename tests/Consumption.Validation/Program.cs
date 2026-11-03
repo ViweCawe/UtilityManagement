@@ -47,22 +47,22 @@ Console.WriteLine("PASS: interval allocation, clipping, baseline, decimal precis
 var fixture=new Fixture(day);
 var service=fixture.Service();await service.LoadAsync();
 var period=service.ForPeriod(day.AddDays(1),day.AddDays(7));
-Equal(910m,period.Water.Total,"site supply is Main + Hydrant + Borehole incoming, never downstream flow");
-Equal(130m,period.Water.Average,"site daily source flow");Equal(7,period.CoveredDays,"coverage does not count capture dates");
+Equal(700m,period.Water.Total,"municipal control total equals Main Meter only; other sources and downstream flow stay separate");
+Equal(100m,period.Water.Average,"site daily source flow");Equal(7,period.CoveredDays,"coverage does not count capture dates");
 Equal(350m,service.ForPeriod(day.AddDays(1),day.AddDays(7),2).Water.Total,"specific meter drill-down");
-Equal(406m,service.ForPeriod(day.AddDays(1),day.AddDays(7),department:"Ops").Water.Total,"department frontier excludes its selected descendants");
-Equal(390m,service.ForPeriod(day.AddDays(2),day.AddDays(4)).Water.Total,"window wholly between captures retains source allocation");
+Equal(0m,service.ForPeriod(day.AddDays(1),day.AddDays(7),department:"Ops").Water.Total,"municipal department total is unavailable when a combined-source boundary cannot be split");
+Equal(300m,service.ForPeriod(day.AddDays(2),day.AddDays(4)).Water.Total,"window wholly between captures retains source allocation");
 fixture.Links.Remove("hydrant");var incomplete=fixture.Service();await incomplete.LoadAsync();
-Equal(0,incomplete.ForPeriod(day.AddDays(1),day.AddDays(7)).Water.CoveredDays,"unmapped source cannot silently fall back to summing all meters");
+Equal(7,incomplete.ForPeriod(day.AddDays(1),day.AddDays(7)).Water.CoveredDays,"unmapped independent hydrant does not block Main Meter");
 fixture.Links["hydrant"]=3;
 var report=new UtilityManagerProjects.Pages.Reports.IndexModel(fixture.Readings,fixture.Waste,fixture.Service()) { DateFilter="Custom",StartDate=day.AddDays(1),EndDate=day.AddDays(7) };
-Attach(report);await report.OnGet();Equal(910m,report.WaterTotal,"Reports uses the shared site boundary");Equal(50m,report.MeterDailyAverages.Single(r=>r.MeterId==2).DailyAverage,"Reports retains downstream per-meter daily averages");
+Attach(report);await report.OnGet();Equal(700m,report.WaterTotal,"Reports uses the shared site boundary");Equal(50m,report.MeterDailyAverages.Single(r=>r.MeterId==2).DailyAverage,"Reports retains downstream per-meter daily averages");
 var env=new UtilityManagerProjects.Pages.Environmental.IndexModel(fixture.Readings,fixture.Waste,fixture.People,fixture.Service(),fixture.Config) { DateFilter="Custom",StartDate=day.AddDays(1),EndDate=day.AddDays(7) };
-Attach(env);await env.OnGet();Equal(910m,env.WaterUsage,"Environmental matches Reports");Equal(13m,env.WaterPerPerson,"per-person denominator matches complete reporting interval");Equal(false,env.CarbonEstimateAvailable,"missing emissions factor does not invent a value");
+Attach(env);await env.OnGet();Equal(700m,env.WaterUsage,"Environmental matches Reports");Equal(10m,env.WaterPerPerson,"per-person denominator matches complete reporting interval");Equal(false,env.CarbonEstimateAvailable,"missing emissions factor does not invent a value");
 var dashboard=new UtilityManagerProjects.Pages.Dashboard.DashboardModel(fixture.Readings,fixture.Service()) { DateFilter="Custom",StartDate=day.AddDays(1),EndDate=day.AddDays(7) };
-Attach(dashboard);await dashboard.OnGet();Equal(910m,dashboard.WaterConsumption,"Dashboard matches Reports");
+Attach(dashboard);await dashboard.OnGet();Equal(700m,dashboard.WaterConsumption,"Dashboard matches Reports");
 var list=new UtilityManagerProjects.Pages.MeterReadings.ListModel(fixture.Readings,fixture.Service()) { DateFilter="Custom",StartDate=day.AddDays(1),EndDate=day.AddDays(7) };
-Attach(list);await list.OnGet();Equal(910m,list.WaterUsage,"Reading list summary matches site boundary");Equal(6,list.TotalReadings,"capture counts stay raw, not synthetic daily counts");
+Attach(list);await list.OnGet();Equal(700m,list.WaterUsage,"Reading list summary matches site boundary");Equal(6,list.TotalReadings,"capture counts stay raw, not synthetic daily counts");
 var file=(FileContentResult)await report.OnGetExportExcel();
 using var archive=new ZipArchive(new MemoryStream(file.FileContents));
 XDocument Xml(string path){using var stream=archive.GetEntry(path)!.Open();return XDocument.Load(stream);}
@@ -93,7 +93,7 @@ var baselinePeriod=baselineService.ForPeriod(day,day.AddDays(7));
 Equal(6,baselinePeriod.CapturesInPeriod,"saved starting captures remain visible");
 Equal(6,baselinePeriod.StartingOnlyMeterCount,"first captures explain pending calculation");
 Equal(0,baselinePeriod.Water.CoveredDays,"baseline is not consumption");
-Equal(3,baselinePeriod.Water.CoverageIssues.Count,"each source missing an interval is identified");
+Equal(1,baselinePeriod.Water.CoverageIssues.Count,"each source missing an interval is identified");
 var baselineRows=baselineService.DailyAverages(baselinePeriod);
 Equal(1000,baselineRows[0].LatestCounter!.Value,"show saved counter even without interval usage");
 Equal(true,baselineRows[0].CalculationStatus.StartsWith("Starting counter saved"),"explain why average is unavailable");
@@ -106,10 +106,35 @@ Equal(1100,sameDateService.DailyAverages(sameDatePeriod).Single(r=>r.MeterId==1)
 var pendingSourceFixture=new Fixture(day);pendingSourceFixture.History.RemoveAll(r=>r.MeterId==3&&r.ReadingDate.Date>day);
 var pendingSourceService=pendingSourceFixture.Service();await pendingSourceService.LoadAsync();
 var pendingSourcePeriod=pendingSourceService.ForPeriod(day,day.AddDays(7));
-Equal(0,pendingSourcePeriod.Water.CoveredDays,"incomplete supply boundary is not reported as a whole-site total");
-Equal(true,pendingSourcePeriod.Water.CoverageIssues.Any(x=>x.Contains("hydrant")),"identify the source holding back total");
+Equal(7,pendingSourcePeriod.Water.CoveredDays,"missing hydrant interval does not block municipal Main control total");
+Equal(0,pendingSourcePeriod.WaterSupplies.Single(x=>x.Role=="hydrant").Flow.CoveredDays,"hydrant availability remains independent");
 Equal(700m,pendingSourceService.ForPeriod(day,day.AddDays(7),1).Water.Total,"ready individual meters remain available");
 Console.WriteLine("PASS: first/same-day capture visibility, latest counters, availability explanations and individual-meter flow with incomplete site supply.");
+
+Equal(700m,period.WaterSupplies.Single(r=>r.Role=="main").Flow.Total,"main supply stays separate");
+Equal(56m,period.WaterSupplies.Single(r=>r.Role=="borehole-outlet").Flow.Total,"borehole usage uses its outlet, not the storage inlet");
+Equal(140m,period.WaterSupplies.Single(r=>r.Role=="borehole-inlet").Flow.Total,"borehole storage inflow remains separate");
+var shared=period.WaterAreas.Single();
+Equal(14m,shared.Combined.Total,"shared toilet counter remains visible");Equal(true,shared.HasCombinedMeter,"recognise a combined-source counter");
+Equal(0,shared.Municipal.MeterIds.Count,"do not invent municipal volume from combined counter");Equal(0,shared.Borehole.MeterIds.Count,"do not invent borehole volume from combined counter");
+var separate=new Fixture(day);
+// Two real separately metered inlets in a shared usage area; neither counter is inferred from its source parent.
+separate.graph.Nodes.Single(n=>n.Id=="garage").UsageArea="Separate inlets";
+separate.graph.Nodes.Single(n=>n.Id=="out").UsageArea="Separate inlets";
+var separateService=separate.Service();await separateService.LoadAsync();var separatePeriod=separateService.ForPeriod(day.AddDays(1),day.AddDays(7));
+var inlet=separatePeriod.WaterAreas.Single(r=>r.Area=="Separate inlets");
+Equal(350m,inlet.Municipal.Total,"separately measured municipal circuit");Equal(56m,inlet.Borehole.Total,"separately measured borehole circuit");Equal(406m,inlet.Combined.Total,"add independent inlet counters within area only");
+Equal(700m,separatePeriod.Water.Total,"separate area counters never inflate Main Meter");
+Console.WriteLine("PASS: Main municipal control total, independent borehole inlet/outlet/hydrant, combined-source unknowns and actual separate inlet metering.");
+
+Equal(700m,service.ForPeriod(day.AddDays(1),day.AddDays(7),department:"Supply").Water.Total,"department summaries keep hydrant outside Main branch");
+var staggered=new Fixture(day);
+staggered.graph.Nodes.Single(n=>n.Id=="garage").UsageArea="Aligned inlets";
+staggered.graph.Nodes.Single(n=>n.Id=="out").UsageArea="Aligned inlets";
+staggered.History.Single(r=>r.MeterId==5&&r.IsBaseline).ReadingDate=day.AddDays(4);
+var staggeredService=staggered.Service();await staggeredService.LoadAsync();var aligned=staggeredService.ForPeriod(day.AddDays(1),day.AddDays(7)).WaterAreas.Single(r=>r.Area=="Aligned inlets");
+Equal(3,aligned.Combined.CoveredDays,"area source comparisons use common covered dates");Equal(150m,aligned.Municipal.Total,"municipal component clipped to borehole coverage");Equal(56m,aligned.Borehole.Total,"borehole component matches the same dates");Equal(aligned.Combined.Total,aligned.Municipal.Total+aligned.Borehole.Total,"independent source inlets reconcile on matching dates");
+Console.WriteLine("PASS: source columns reconcile on aligned coverage and hydrant remains outside municipal Main-branch department totals.");
 
 static void Attach(PageModel page) => page.PageContext=new PageContext { HttpContext=new DefaultHttpContext(),ViewData=new ViewDataDictionary(new EmptyModelMetadataProvider(),new ModelStateDictionary()) };
 
@@ -119,7 +144,7 @@ public class Fixture
     public IConfiguration Config=new ConfigurationBuilder().Build();
     public List<Meter> Meters=[];public List<MeterReading> History=[];
     public IMeterData MeterData; public IMeterReadingData Readings;public IWasteReadingData Waste;public IDailyPeopleCountData People;public IDataAccess Db;
-    private WaterNetwork graph=new();
+    public WaterNetwork graph=new();
     public Fixture(DateTime day)
     {
         var ids=new[]{"main","garage","hydrant","incoming","out","toilet"};
@@ -131,7 +156,7 @@ public class Fixture
             History.Add(new MeterReading{Id=i*2+1,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,AreaName=m.AreaName,ReadingDate=day,CurrentReading=1000,PreviousReading=1000,Usage=0,IsBaseline=true});
             History.Add(new MeterReading{Id=i*2+2,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,AreaName=m.AreaName,ReadingDate=day.AddDays(7),CurrentReading=1000+deltas[i],PreviousReading=1000,PreviousReadingDate=day,IntervalDays=7,Usage=deltas[i]});
         }
-        graph=new WaterNetwork {Nodes=ids.Select((id,i)=>new WaterNetworkNode {Id=id,Label=id,Kind=kinds[i],Station="Lower",IsExternalSupply=i is 0 or 2 or 3}).ToList(),Connections=[new(){From="main",To="garage"},new(){From="incoming",To="out"},new(){From="out",To="toilet"},new(){From="main",To="toilet",Kind="backup",Condition="Borehole empty"}]};
+        graph=new WaterNetwork {Nodes=ids.Select((id,i)=>new WaterNetworkNode {Id=id,Label=id,Kind=kinds[i],Station="Lower",UsageArea=i==5?"Level 1 Visitor Toilets":"",ReportingRole=i switch{0=>"main",2=>"hydrant",3=>"borehole-inlet",4=>"borehole-outlet",_=>""},SupplyOrigin=i is 0 or 2?"municipal":i==3?"borehole":"other",IsExternalSupply=i is 0 or 2 or 3}).ToList(),Connections=[new(){From="main",To="garage"},new(){From="incoming",To="out"},new(){From="out",To="toilet"},new(){From="main",To="toilet",Kind="backup",Condition="Borehole empty"}]};
         MeterData=Proxy.Make<IMeterData>((method,args)=>Complete(method,Meters));
         Readings=Proxy.Make<IMeterReadingData>((method,args)=>Complete(method,History));
         Waste=Proxy.Make<IWasteReadingData>((method,args)=>Complete(method,Array.Empty<WasteReadingDisplay>()));

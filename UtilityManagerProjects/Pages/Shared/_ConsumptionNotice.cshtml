@@ -4,7 +4,7 @@
     @if(ViewData["ConsumptionWarnings"] is IEnumerable<string> warnings) { <ul>@foreach(var warning in warnings) { <li>@warning</li> }</ul> }
     <div>Saved captures in selected dates: <strong>@Model.CapturesInPeriod</strong>.</div>
     @if(Model.StartingOnlyMeterCount>0) { <p><strong>Starting readings saved for @Model.StartingOnlyMeterCount meter(s).</strong> Usage needs two reading dates for the same meter. Capture another counter on a later date; do not enter the same counter again just to fill a graph.</p> }
-    <div><strong>Estimated daily flow</strong> · Water: @Model.Water.CoveredDays / @Model.Water.Dates.Count days covered.</div>
+    <div><strong>@Model.Water.Label</strong> · Water: @Model.Water.CoveredDays / @Model.Water.Dates.Count days covered.</div>
     @if (Model.Electricity.MeterIds.Count>0) { <div>Electricity: @Model.Electricity.CoveredDays / @Model.Electricity.Dates.Count days covered.</div> }
     @if (Model.Water.Missing.Any()) { <ul>@foreach(var message in Model.Water.Missing) { <li>@message</li> }</ul> }
     @foreach(var scope in new[]{Model.Water,Model.Electricity}.Where(s=>s.CoveredDays==0&&s.CoverageIssues.Any())) {
@@ -16,7 +16,7 @@
     <strong>Estimated daily flow from meter intervals.</strong>
     Weekly captures are spread evenly over the days between them. The line changes when the next interval average changes; it does not measure actual daily variations.
     <div>@Model.Water.Label · @Model.Water.CoveredDays / @Model.Water.Dates.Count days covered.</div>
-    <div>Totals and daily averages use covered days only. Uncovered days are unknown, not zero. Site supply totals exclude unmetered rainwater. Stored-volume changes are not measured here, so inlet flow is not exact end-use consumption.</div>
+    <div>Totals and daily averages use covered days only. Uncovered days are unknown, not zero. The default water KPI is Main Meter municipal flow only; borehole and fire-hydrant readings are shown separately. Unmetered rainwater is excluded. Stored-volume changes are not measured here, so inlet flow is not exact end-use consumption.</div>
     <div>Per-meter and department flow can overlap along the same route. Compare them to understand distribution; do not add them to the site supply total.</div>
     </details>
 </div>

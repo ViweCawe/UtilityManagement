@@ -43,7 +43,7 @@ namespace UtilityManagerProjects.Pages.Usage
             var week = calculations.ForPeriod(current7Start,today);
             UsageRows = new List<UsageRow>
             {
-                new UsageRow { Category="Metered water supply",Unit="L",HasTotal=all.Water.CoveredDays>0,HasWeek=week.Water.CoveredDays>0,HasMonth=Consumption.Water.CoveredDays>0,Total=all.Water.Total,Current7Days=week.Water.Total,Current30Days=Consumption.Water.Total },
+                new UsageRow { Category="Main Meter municipal supply",Unit="L",HasTotal=all.Water.CoveredDays>0,HasWeek=week.Water.CoveredDays>0,HasMonth=Consumption.Water.CoveredDays>0,Total=all.Water.Total,Current7Days=week.Water.Total,Current30Days=Consumption.Water.Total },
                 new UsageRow { Category="Electricity",Unit="kWh",HasTotal=all.Electricity.CoveredDays>0,HasWeek=week.Electricity.CoveredDays>0,HasMonth=Consumption.Electricity.CoveredDays>0,Total=all.Electricity.Total,Current7Days=week.Electricity.Total,Current30Days=Consumption.Electricity.Total },
                 new UsageRow
                 {

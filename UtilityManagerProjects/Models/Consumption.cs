@@ -71,7 +71,8 @@ public sealed class ConsumptionScope
     }
     public int CoveredDays => CompleteRows.Select(r => r.ReadingDate).Distinct().Count();
     public bool IsComplete => CoveredDays == Dates.Count;
-    public decimal Total => CompleteRows.Sum(r => r.Usage);
+    // Subtotal each counter first so fractional daily rates conserve its interval before combining meters.
+    public decimal Total => CompleteRows.GroupBy(r=>r.MeterId).Sum(m=>m.Sum(r=>r.Usage));
     public decimal Average => CoveredDays == 0 ? 0 : Total / CoveredDays;
     public decimal CoveragePercent => Dates.Count == 0 ? 0 : 100m * CoveredDays / Dates.Count;
     public List<decimal?> Series()
@@ -81,8 +82,26 @@ public sealed class ConsumptionScope
     }
 }
 
+public sealed class WaterSupplyRow
+{
+    public string Label { get; init; } = "";
+    public string Role { get; init; } = "";
+    public ConsumptionScope Flow { get; init; } = new();
+}
+public sealed class WaterAreaRow
+{
+    public string Area { get; init; } = "";
+    public bool HasMunicipalSupply { get; init; }
+    public bool HasBoreholeSupply { get; init; }
+    public bool HasCombinedMeter { get; init; }
+    public ConsumptionScope Combined { get; init; } = new();
+    public ConsumptionScope Municipal { get; init; } = new();
+    public ConsumptionScope Borehole { get; init; } = new();
+}
 public sealed class ConsumptionPeriod
 {
+    public List<WaterSupplyRow> WaterSupplies { get; init; } = [];
+    public List<WaterAreaRow> WaterAreas { get; init; } = [];
     public int CapturesInPeriod { get; init; }
     public int StartingOnlyMeterCount { get; init; }
     public List<DailyUsage> AllDaily { get; init; } = [];
