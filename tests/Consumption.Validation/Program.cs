@@ -85,6 +85,32 @@ var partialElectric=new UtilityManagerProjects.Pages.Environmental.IndexModel(el
 Attach(partialElectric);await partialElectric.OnGet();Equal(false,partialElectric.ElectricityPerPersonAvailable,"unknown tail suppresses misleading per-person calculation");Equal(false,partialElectric.CarbonEstimateAvailable,"unknown tail suppresses carbon estimate");
 Console.WriteLine("PASS: electricity allocation, configured carbon factor and incomplete-coverage environmental guards.");
 
+// Reproduce newly captured meters: raw counters must be visible without inventing usage.
+var baselineFixture=new Fixture(day);
+baselineFixture.History.RemoveAll(r=>r.ReadingDate.Date>day);
+var baselineService=baselineFixture.Service();await baselineService.LoadAsync();
+var baselinePeriod=baselineService.ForPeriod(day,day.AddDays(7));
+Equal(6,baselinePeriod.CapturesInPeriod,"saved starting captures remain visible");
+Equal(6,baselinePeriod.StartingOnlyMeterCount,"first captures explain pending calculation");
+Equal(0,baselinePeriod.Water.CoveredDays,"baseline is not consumption");
+Equal(3,baselinePeriod.Water.CoverageIssues.Count,"each source missing an interval is identified");
+var baselineRows=baselineService.DailyAverages(baselinePeriod);
+Equal(1000,baselineRows[0].LatestCounter!.Value,"show saved counter even without interval usage");
+Equal(true,baselineRows[0].CalculationStatus.StartsWith("Starting counter saved"),"explain why average is unavailable");
+baselineFixture.History.Add(new MeterReading{Id=99,MeterId=1,MeterType=MeterType.Water,ReadingDate=day.AddHours(20),CurrentReading=1100});
+var sameDateService=baselineFixture.Service();await sameDateService.LoadAsync();
+var sameDatePeriod=sameDateService.ForPeriod(day,day);
+Equal(7,sameDatePeriod.CapturesInPeriod,"same-day captures are not lost");
+Equal(6,sameDatePeriod.StartingOnlyMeterCount,"two same-day captures do not invent daily coverage");
+Equal(1100,sameDateService.DailyAverages(sameDatePeriod).Single(r=>r.MeterId==1).LatestCounter!.Value,"latest same-day counter is shown");
+var pendingSourceFixture=new Fixture(day);pendingSourceFixture.History.RemoveAll(r=>r.MeterId==3&&r.ReadingDate.Date>day);
+var pendingSourceService=pendingSourceFixture.Service();await pendingSourceService.LoadAsync();
+var pendingSourcePeriod=pendingSourceService.ForPeriod(day,day.AddDays(7));
+Equal(0,pendingSourcePeriod.Water.CoveredDays,"incomplete supply boundary is not reported as a whole-site total");
+Equal(true,pendingSourcePeriod.Water.CoverageIssues.Any(x=>x.Contains("hydrant")),"identify the source holding back total");
+Equal(700m,pendingSourceService.ForPeriod(day,day.AddDays(7),1).Water.Total,"ready individual meters remain available");
+Console.WriteLine("PASS: first/same-day capture visibility, latest counters, availability explanations and individual-meter flow with incomplete site supply.");
+
 static void Attach(PageModel page) => page.PageContext=new PageContext { HttpContext=new DefaultHttpContext(),ViewData=new ViewDataDictionary(new EmptyModelMetadataProvider(),new ModelStateDictionary()) };
 
 public class Fixture

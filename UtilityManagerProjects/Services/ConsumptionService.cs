@@ -35,7 +35,10 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
         .Where(m=>(!meterId.HasValue||m.Id==meterId) && (string.IsNullOrWhiteSpace(department)||string.Equals(m.DepartmentName,department,StringComparison.OrdinalIgnoreCase)))
         .Select(m=>{
             var days=period.AllDaily.Where(d=>d.MeterId==m.Id).ToList();
-            return new MeterDailyAverageRow {MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
+            var captures=History.Where(r=>r.MeterId==m.Id).ToList();
+            var latest=captures.Where(r=>r.ReadingDate.Date<=period.Water.End).OrderByDescending(r=>r.ReadingDate).ThenByDescending(r=>r.Id).FirstOrDefault();
+            var status=days.Count>0?"Usage calculated":latest is null?"No saved counter by end date":captures.Select(r=>r.ReadingDate.Date).Distinct().Count()<2?"Starting counter saved — capture another reading on a later date":"No comparable interval for selected dates";
+            return new MeterDailyAverageRow {LatestCounter=latest?.CurrentReading,LatestCounterDate=latest?.ReadingDate,CalculationStatus=status,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
                 ReadingCount=History.Count(r=>r.MeterId==m.Id&&r.ReadingDate.Date>=period.Water.Start&&r.ReadingDate.Date<=period.Water.End),
                 CoveredDays=days.Count,TotalUsage=days.Sum(d=>d.Usage),DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count};
         }).OrderBy(r=>r.DepartmentName).ThenBy(r=>r.MeterName).ToList();
@@ -103,9 +106,25 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
             }
         }
         var electricIds = selected.Where(m => m.MeterType == MeterType.Electricity).Select(m => m.Id).ToHashSet();
-        var result = new ConsumptionPeriod { AllDaily = daily,
+        var captured=History.Where(r=>selectedIds.Contains(r.MeterId)&&r.ReadingDate.Date>=start&&r.ReadingDate.Date<=end).ToList();
+        var capturedIds=captured.Select(r=>r.MeterId).ToHashSet();
+        var startingOnly=capturedIds.Count(id=>History.Where(r=>r.MeterId==id).Select(r=>r.ReadingDate.Date).Distinct().Count()<2);
+        var result = new ConsumptionPeriod { AllDaily = daily,CapturesInPeriod=captured.Count,StartingOnlyMeterCount=startingOnly,
             Water = new ConsumptionScope { Start = start, End = end, MeterIds = expected, Missing = missing, Allocated = daily, Label = label },
             Electricity = new ConsumptionScope { Start = start, End = end, MeterIds = electricIds, Allocated = daily, Label = "Estimated electricity flow through selected meters" } };
+        foreach(var scope in new[]{result.Water,result.Electricity})
+        {
+            foreach(var id in scope.MeterIds.Where(id=>!daily.Any(d=>d.MeterId==id)))
+            {
+                var meter=Meters.Single(m=>m.Id==id);
+                var captures=History.Where(r=>r.MeterId==id).ToList();
+                scope.CoverageIssues.Add(captures.Count==0?$"{meter.MeterName}: no saved readings.":
+                    captures.Select(r=>r.ReadingDate.Date).Distinct().Count()<2?$"{meter.MeterName}: starting counter saved; another reading on a later date is needed.":
+                    $"{meter.MeterName}: no valid reading interval overlaps the selected dates.");
+            }
+            if(scope.MeterIds.Count>0&&scope.Missing.Count==0&&scope.CoveredDays==0&&scope.CoverageIssues.Count==0)
+                scope.CoverageIssues.Add("These meters have readings, but their covered dates do not overlap. Select one meter to view its flow, or capture all supply meters over matching dates.");
+        }
         periods[key]=result;
         return result;
     }

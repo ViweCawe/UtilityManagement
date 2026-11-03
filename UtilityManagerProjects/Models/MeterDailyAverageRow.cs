@@ -6,6 +6,9 @@ public sealed class MeterDailyAverageRow
  public string MeterName { get; set; } = "";
  public MeterType MeterType { get; set; }
  public string DepartmentName { get; set; } = "";
+ public int? LatestCounter { get; set; }
+ public DateTime? LatestCounterDate { get; set; }
+ public string CalculationStatus { get; set; } = "";
  public int ReadingCount { get; set; }
  public decimal TotalUsage { get; set; }
  public decimal DailyAverage { get; set; }
