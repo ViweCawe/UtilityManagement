@@ -1,0 +1,21 @@
+@model UtilityManagerProjects.Models.WaterConsumptionTable
+<section class="content-card" aria-label="Water consumption only">
+    <div class="content-card-header"><div><h2>Water consumption · final-use meters only</h2><p>Transfers, tank inlets and source outlet readings are excluded. Each included counter is confirmed to measure final use.</p></div></div>
+    @if(Model.Rows.Count>0)
+    {
+        <p><strong>Recorded consumption: @(Model.Scope.IsComplete?Model.Scope.Total.ToString("N1")+" L":"Full-period total unavailable")</strong><small class="table-subtext d-block">@Model.Scope.CoveredDays / @Model.Scope.Dates.Count common days covered</small></p>
+    }
+    <div class="table-wrap"><table class="utility-table">
+        <thead><tr><th>Consumption meter</th><th>Department</th><th>Consumption</th><th>Daily average</th><th>Days covered</th></tr></thead>
+        <tbody>
+            @foreach(var row in Model.Rows)
+            {
+                <tr data-consumption-meter="@row.MeterId"><td><a asp-page="/MeterReadings/History" asp-route-meterId="@row.MeterId">@row.MeterName</a></td><td>@row.DepartmentName</td><td>@(row.CoveredDays>0?row.TotalUsage.ToString("N1")+" L":"Awaiting comparable readings")</td><td>@(row.CoveredDays>0?row.DailyAverage.ToString("N1")+" L/day":"—")</td><td>@row.CoveredDays / @Model.Scope.Dates.Count</td></tr>
+            }
+            @if(Model.Rows.Count==0){<tr><td colspan="5">No confirmed final-use water meters match these filters. Source and transfer readings are kept in the flow tables.</td></tr>}
+        </tbody>
+    </table></div>
+    @foreach(var issue in Model.Scope.Missing){<p class="form-hint">@issue</p>}
+    <p class="form-hint">This table covers confirmed metered end uses. Unclassified points and unmetered use are excluded. Individual rows show their covered dates; the total requires coverage across all selected meters for the full period.</p>
+    @if(User.IsInRole("Admin")){<p><a asp-page="/WaterNetwork/Edit">Classify final-use meters in the network editor</a><small class="table-subtext d-block">Mark “This counter measures final consumption, not a tank transfer” only at a final-use boundary.</small></p>}
+</section>

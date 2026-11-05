@@ -6,7 +6,7 @@
 }
 
 <div class="page-shell">
-    @if (Model.Reading?.IsBaseline == true) { <div class="alert alert-info">This is the baseline capture. It does not represent consumption since zero. Capture a later counter reading to calculate interval usage.</div> }
+    @if (Model.Reading?.IsBaseline == true) { <div class="alert alert-info">This is the baseline capture. It does not represent water flowing since zero. Capture a later counter reading to calculate interval flow.</div> }
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     @if (Model.Reading != null)
@@ -69,7 +69,7 @@
                     <i class="bi bi-graph-up"></i>
                 </div>
                 <div class="stat-content">
-                    <p>Usage</p>
+                    <p>Recorded flow / energy</p>
                     <h2>@Model.Reading.Usage.ToString("N2") <span>@Model.Reading.Unit</span></h2>
                     <span>calculated from previous to current</span>
                 </div>
@@ -151,7 +151,7 @@
                     </div>
 
                     <div class="detail-row">
-                        <span>Usage</span>
+                        <span>Recorded flow / energy</span>
                         <strong class="trend-positive">@Model.Reading.Usage.ToString("N2") @Model.Reading.Unit</strong>
                     </div>
 

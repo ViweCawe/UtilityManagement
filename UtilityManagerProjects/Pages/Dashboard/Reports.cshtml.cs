@@ -17,6 +17,7 @@ namespace UtilityManagerProjects.Pages.Reports
         private readonly IMeterReadingData meterReadingData;
         private readonly IWasteReadingData wasteReadingData;
         private readonly ConsumptionService calculations;
+        public WaterConsumptionTable EndUse { get; private set; } = new();
         public ConsumptionPeriod Consumption { get; private set; } = new();
         public bool WaterChangeAvailable { get; private set; }
         public bool ElectricityChangeAvailable { get; private set; }
@@ -113,6 +114,7 @@ namespace UtilityManagerProjects.Pages.Reports
             DepartmentOptions = unfilteredCurrent.Select(x => x.DepartmentName).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
             MeterReadings = ApplyMeterFilters(unfilteredCurrent).Where(r => IsInRange(r.ReadingDate, CurrentStart, CurrentEnd)).OrderByDescending(r => r.ReadingDate).ToList();
             Consumption = calculations.ForPeriod(CurrentStart, CurrentEnd, MeterId, Department);
+            EndUse = calculations.ConsumptionTable(Consumption, MeterId, Department);
             ViewData["Consumption"] = Consumption;
             ViewData["ConsumptionWarnings"] = calculations.Warnings;
             var previous = calculations.ForPeriod(PreviousStart, PreviousEnd, MeterId, Department);

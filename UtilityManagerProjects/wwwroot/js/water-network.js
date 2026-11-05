@@ -162,7 +162,7 @@ if (payload) {
         }
         const supplies = network.connections.filter(e => e.to === selectedId && e.kind !== 'backup');
         const destinations = network.connections.filter(e => e.from === selectedId && e.kind !== 'backup');
-        routeList('Water comes from', supplies.map(e => e.from), (selected.kind === 'source' || selected.isExternalSupply || ['main','borehole-inlet','hydrant'].includes(reportingRole(selected))) ? 'External source / inlet.' : undefined);
+        routeList('Water comes from', supplies.map(e => e.from), (selected.kind === 'source' || selected.isExternalSupply || ['municipal-inlet','borehole-inlet','hydrant'].includes(reportingRole(selected))) ? 'External source / inlet.' : undefined);
         routeList('Water goes to', destinations.map(e => e.to));
         for(const edge of [...supplies,...destinations].filter(e=>e.purpose||e.condition)) {
             const p=document.createElement('p');p.textContent=`${nodes.get(edge.from).label} → ${nodes.get(edge.to).label}: ${edge.purpose||''}${edge.condition?' · '+edge.condition:''}`;details.append(p);

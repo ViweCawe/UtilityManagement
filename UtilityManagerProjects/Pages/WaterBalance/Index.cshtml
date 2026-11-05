@@ -3,28 +3,34 @@
 @{ ViewData["Title"]="Water movement and storage"; }
 @section Styles {<link rel="stylesheet" href="~/css/station-water-flow.css" asp-append-version="true"/>}
 <div class="page-shell">
- <div class="page-header-row"><div class="page-title"><h1>Water movement and storage</h1><p>Follow recorded water from the source, through transfers, to final use.</p></div>@if(User.IsInRole("Admin")){<a asp-page="/WaterNetwork/Edit" class="utility-btn-secondary">Configure tank boundaries</a>}</div>
- @if(ViewData["DateNotice"] is string notice){<p class="alert alert-info">@notice</p>}
- <div class="alert alert-info">A cumulative counter is not stored water. A change from 100,000 to 200,000 means 100,000 L passed through. Transfers debit one tank and credit the next; they are not additional consumption.</div>
- <form method="get" class="dashboard-filter-card"><div class="filter-group"><label asp-for="StartDate">From</label><input asp-for="StartDate" type="date" class="utility-input"/></div><div class="filter-group"><label asp-for="EndDate">Through</label><input asp-for="EndDate" type="date" class="utility-input"/></div><button class="utility-btn-primary" type="submit">Apply dates</button></form>
- <section class="stats-grid stats-grid-3">
-  <div class="stat-card"><div class="stat-content"><p>Main Meter supply in selected dates</p><h2>@(Model.Flow.Water.CoveredDays>0?Model.Flow.Water.Total.ToString("N1")+" L":"Unknown")</h2><span>@Model.Flow.Water.CoveredDays days covered · flow, not tank contents</span></div></div>
-  <div class="stat-card"><div class="stat-content"><p>Recorded final use</p><h2>@(Model.Report.FinalUse.IsComplete?Model.Report.FinalUse.Total.ToString("N1")+" L":"Not fully measured")</h2><span>Only counters confirmed to measure consumption</span></div></div>
-  <div class="stat-card"><div class="stat-content"><p>Calculable storage points</p><h2>@Model.Report.Balances.Count(b=>b.CalculatedStock.HasValue) / @Model.Report.Balances.Count</h2><span>Unknown opening or missing flow stays unknown</span></div></div>
- </section>
- <section class="content-card"><partial name="_BoreholeFlow" model="Model.Trace.Borehole" /></section>
- <partial name="_StationWaterFlow" model="Model.Trace" />
- @foreach(var issue in Model.Report.FinalUse.Missing){<p class="alert alert-warning">@issue</p>}
- <section class="content-card"><div class="content-card-header"><div><h2>Storage balances at the selected end date</h2><p>Closing stock = measured opening stock + recorded inflows − recorded outflows. A counter value is never used as opening stock.</p></div></div>
- <div class="table-wrap"><table class="utility-table"><thead><tr><th>Storage point</th><th>Measured opening</th><th>Period inflow</th><th>Period outflow</th><th>Period storage change</th><th>Calculated stock at end</th><th>Status</th></tr></thead><tbody>
- @foreach(var row in Model.Report.Balances){<tr><td>@row.Name</td><td>@(row.OpeningVolume.HasValue?row.OpeningVolume.Value.ToString("N1")+" L":"Unknown")<small class="table-subtext d-block">@(row.OpeningDate?.ToString("dd MMM yyyy")??"Not recorded")</small></td><td>@(row.PeriodInflow?.ToString("N1")??"—")</td><td>@(row.PeriodOutflow?.ToString("N1")??"—")</td><td>@(row.PeriodChange?.ToString("+0.0;-0.0;0.0")??"Unknown")</td><td><strong>@(row.CalculatedStock?.ToString("N1")+ (row.CalculatedStock.HasValue?" L":"Unknown"))</strong></td><td>@row.Status</td></tr>}
- </tbody></table></div><p class="form-hint">Period flow uses the selected dates. Closing stock includes all covered flow since the opening measurement, which may be earlier. All values are litres. Calculated stock is an estimate from reading intervals, not a physical tank-level measurement.</p></section>
- <section class="content-card"><h2>Paired internal transfers</h2><p>The same transfer counter is the supplier’s outlet and the receiving tank’s inlet. Its volume is counted once for each side of that movement, never as final use.</p>
- <div class="table-wrap"><table class="utility-table"><thead><tr><th>From</th><th>To</th><th>Transfer counter</th><th>Measured flow in selected dates</th></tr></thead><tbody>
- @foreach(var row in Model.Report.Transfers){<tr><td>@row.From</td><td>@row.To</td><td>@row.MeterName</td><td>@(row.Volume?.ToString("N1")+ (row.Volume.HasValue?" L":"Awaiting comparable readings"))</td></tr>}
- @if(!Model.Report.Transfers.Any()){<tr><td colspan="4">Configure the shared transfer counter as one tank’s outlet and the next tank’s inlet. No transfers are assumed from counter names.</td></tr>}
- </tbody></table></div></section>
-
+    <div class="page-header-row"><div class="page-title"><h1>Water movement and storage</h1><p>Track tank stock, transfers and final consumption separately.</p></div>@if(User.IsInRole("Admin")){<a asp-page="/WaterNetwork/Edit" class="utility-btn-secondary">Configure tank boundaries</a>}</div>
+    @if(ViewData["DateNotice"] is string notice){<p class="alert alert-info">@notice</p>}
+    <form method="get" class="dashboard-filter-card"><div class="filter-group"><label asp-for="StartDate">From</label><input asp-for="StartDate" type="date" class="utility-input"/></div><div class="filter-group"><label asp-for="EndDate">Through</label><input asp-for="EndDate" type="date" class="utility-input"/></div><button class="utility-btn-primary" type="submit">Apply dates</button></form>
+    <section class="stats-grid stats-grid-4">
+        <div class="stat-card"><div class="stat-content"><p>Municipal water received</p><h2>@(Model.Flow.MunicipalReceipt.CoveredDays>0?Model.Flow.MunicipalReceipt.Total.ToString("N1")+" L":"Not recorded")</h2><span>Separate physical inlet; no volume inferred from Main</span></div></div>
+        <div class="stat-card"><div class="stat-content"><p>Main outlet · water released</p><h2>@(Model.Flow.Water.CoveredDays>0?Model.Flow.Water.Total.ToString("N1")+" L":"Unknown")</h2><span>Includes transfers · @Model.Flow.Water.CoveredDays days covered</span></div></div>
+        <div class="stat-card"><div class="stat-content"><p>Recorded final consumption</p><h2>@(Model.EndUse.Scope.IsComplete?Model.EndUse.Scope.Total.ToString("N1")+" L":"Not fully measured")</h2><span>Confirmed final-use meters only</span></div></div>
+        <div class="stat-card"><div class="stat-content"><p>Calculable tank balances</p><h2>@Model.Report.Balances.Count(b=>b.CalculatedStock.HasValue) / @Model.Report.Balances.Count</h2><span>Missing flow or stock stays unknown</span></div></div>
+    </section>
+    <section class="content-card" aria-label="Tank balances">
+        <div class="content-card-header"><div><h2>Tank balances</h2><p>Opening stock + water received − water leaving = closing stock. Water leaving a tank may be a transfer to the next tank.</p></div></div>
+        <div class="table-wrap"><table class="utility-table tank-balance-table">
+            <thead><tr><th>Tank</th><th>Opening stock</th><th>Water received</th><th>Water leaving</th><th>Closing stock</th></tr></thead>
+            <tbody>
+                @foreach(var row in Model.Report.Balances)
+                {
+                    <tr data-tank-balance="@row.NodeId"><td><strong>@row.Name</strong><details><summary>Calculation details</summary><p>@row.Status</p>@if(row.OpeningVolume.HasValue){<p>Measured anchor: @row.OpeningVolume.Value.ToString("N1") L at end of @row.OpeningDate?.ToString("dd MMM yyyy").</p>}</details></td><td>@(row.PeriodOpeningStock.HasValue?row.PeriodOpeningStock.Value.ToString("N1")+" L":"Unknown")</td><td>@(row.PeriodInflow.HasValue?row.PeriodInflow.Value.ToString("N1")+" L":"Unknown")</td><td>@(row.PeriodOutflow.HasValue?row.PeriodOutflow.Value.ToString("N1")+" L":"Unknown")</td><td><strong>@(row.CalculatedStock.HasValue?row.CalculatedStock.Value.ToString("N1")+" L":"Unknown")</strong></td></tr>
+                }
+            </tbody>
+        </table></div>
+        <p class="form-hint">Opening stock is at the start of the selected dates; closing stock is at the selected end date. A physical opening measurement and complete inlet/outlet coverage are required. Source closing stock remains unknown while the municipal inlet is not recorded. Counter readings measure movement, not tank levels.</p>
+    </section>
+    <partial name="_WaterConsumptionTable" model="Model.EndUse" />
+    <section class="content-card"><partial name="_BoreholeFlow" model="Model.Trace.Borehole" /></section>
+    <partial name="_StationWaterFlow" model="Model.Trace" />
+    <details class="content-card"><summary>Paired internal tank transfers</summary><p>A shared transfer counter debits the supplying tank and credits the receiving tank. It is not extra consumption.</p><div class="table-wrap"><table class="utility-table"><thead><tr><th>From</th><th>To</th><th>Transfer counter</th><th>Recorded transfer</th></tr></thead><tbody>
+        @foreach(var row in Model.Report.Transfers){<tr><td>@row.From</td><td>@row.To</td><td>@row.MeterName</td><td>@(row.Volume.HasValue?row.Volume.Value.ToString("N1")+" L":"Awaiting comparable readings")</td></tr>}
+        @if(Model.Report.Transfers.Count==0){<tr><td colspan="4">Configure the same actual counter as the supplying tank’s outlet and receiving tank’s inlet where it measures that physical transfer.</td></tr>}
+    </tbody></table></div></details>
 </div>
-
 @section Scripts {<script type="module" src="~/js/station-water-flow.js" asp-append-version="true"></script>}

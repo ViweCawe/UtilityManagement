@@ -1,3 +1,5 @@
+> Updated physical boundary: Main Meter is the source outlet. The separate municipal inlet is not recorded. For current roles, tank balances and consumption-only tables, see [tank-balances-and-consumption.md](tank-balances-and-consumption.md). Earlier examples below illustrate arithmetic and must not be interpreted as measured municipal receipts.
+
 # Follow the water through Lower and Top Station
 
 The Water Network diagram opens with **Both stations** selected. It keeps their coordinate spaces apart and draws the route between stations. Each linked point shows selected-period flow alongside the latest cumulative counter by the selected end date. Select a point for its possible source routes, upstream/downstream connections and reading history. Dates use the same interval allocation as Reports and Dashboard.

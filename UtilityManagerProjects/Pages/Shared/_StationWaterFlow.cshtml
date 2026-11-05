@@ -29,7 +29,7 @@
                 <select id="station-meter-@station.Station" class="utility-input station-flow-meter">@foreach (var point in station.Points) { <option value="@point.Id">@point.Label</option> }</select>
                 <svg viewBox="0 0 800 210" role="img" aria-label="@station.Station Station daily average flow"></svg>
                 <p class="station-chart-status form-hint" aria-live="polite"></p>
-                <script type="application/json" class="station-flow-series">@Html.Raw(JsonSerializer.Serialize(new { dates = Enumerable.Range(0,(Model.End-Model.Start).Days+1).Select(i=>Model.Start.AddDays(i).ToString("yyyy-MM-dd")), points = station.Points.Select(p=>new { id=p.Id, label=p.Label, linked=p.MeterId.HasValue, series=p.Flow.Series() }) }))</script>
+                <script type="application/json" class="station-flow-series">@Html.Raw(JsonSerializer.Serialize(new { selected = station.Points.FirstOrDefault(p=>p.ReportingRole=="main")?.Id ?? station.Points.FirstOrDefault(p=>p.Flow.CoveredDays>0)?.Id ?? station.Points[0].Id, dates = Enumerable.Range(0,(Model.End-Model.Start).Days+1).Select(i=>Model.Start.AddDays(i).ToString("yyyy-MM-dd")), points = station.Points.Select(p=>new { id=p.Id, label=p.Label, linked=p.MeterId.HasValue, series=p.Flow.Series() }) }))</script>
             </div>
             <div class="table-wrap"><table class="utility-table station-flow-table">
                 <thead><tr><th>Point / linked meter</th><th>Recorded flow</th><th>Daily average</th><th>Days covered</th><th>Trace to source</th></tr></thead>

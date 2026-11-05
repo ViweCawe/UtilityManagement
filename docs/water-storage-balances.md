@@ -1,3 +1,5 @@
+> Updated physical boundary: Main Meter is the source outlet. The separate municipal inlet is not recorded. For current roles, tank balances and consumption-only tables, see [tank-balances-and-consumption.md](tank-balances-and-consumption.md). Earlier examples below illustrate arithmetic and must not be interpreted as measured municipal receipts.
+
 # Water movement, stock and final use
 
 A cumulative counter reading is not tank stock. Main Meter going from 100,000 to 200,000 L records 100,000 L supplied over that interval. The first reading is a baseline. Daily flow between captures is the interval difference divided across the elapsed days; dates after the last capture remain unknown.

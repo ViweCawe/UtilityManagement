@@ -9,6 +9,7 @@
     <Compile Include="../../UtilityManagerProjects/Models/WaterNetwork.cs" Link="WaterNetwork.cs" />
     <Compile Include="../../UtilityManagerProjects/Models/MeterDailyAverageRow.cs" Link="MeterDailyAverageRow.cs" />
     <Compile Include="../../UtilityManagerProjects/Models/WaterFlowTrace.cs" Link="WaterFlowTrace.cs" />
+    <Compile Include="../../UtilityManagerProjects/Models/WaterConsumption.cs" Link="WaterConsumption.cs" />
     <Compile Include="../../UtilityManagerProjects/Models/WaterStorage.cs" Link="WaterStorage.cs" />
     <Compile Include="../../UtilityManagerProjects/Models/Consumption.cs" Link="Consumption.cs" />
     <Compile Include="../../UtilityManagerProjects/Services/WaterNetworkStore.cs" Link="WaterNetworkStore.cs" />

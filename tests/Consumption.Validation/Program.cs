@@ -140,7 +140,7 @@ Console.WriteLine("PASS: source columns reconcile on aligned coverage and hydran
 var tankNames=new[]{"Main","Dock","Reservoir","Dosing","Header","Toilets","Use","Branch1","Use1","Branch2","Use2","Branch3","Use3"};
 var movements=new[]{100000,20000,15000,10000,10000,2000,500,800,200,800,200,800,200};
 var stocks=new Dictionary<int,(int[] In,int[] Out)>{[0]=([1],[2]),[1]=([2],[3]),[2]=([3],[4]),[3]=([4],[5]),[4]=([5],[6,8,10,12]),[5]=([6],[7]),[7]=([8],[9]),[9]=([10],[11]),[11]=([12],[13])};
-var physical=new WaterNetwork{Nodes=tankNames.Select((name,i)=>new WaterNetworkNode{Id=name.ToLowerInvariant(),Label=name,Station="Lower",Kind=i==0?"source":stocks.ContainsKey(i)?"storage":"usage",ReportingRole=i==0?"main":"",SupplyOrigin="municipal",IsExternalSupply=i==0,MeasuresFinalUse=!stocks.ContainsKey(i),Storage=stocks.TryGetValue(i,out var boundary)?new(){OpeningDate=day,OpeningVolumeLitres=0,InletMeterIds=boundary.In.ToList(),OutletMeterIds=boundary.Out.ToList(),AllFlowsConfirmed=true}:null}).ToList()};
+var physical=new WaterNetwork{Nodes=tankNames.Select((name,i)=>new WaterNetworkNode{Id=name.ToLowerInvariant(),Label=name,Station="Lower",Kind=i==0?"source":stocks.ContainsKey(i)?"storage":"usage",ReportingRole="",SupplyOrigin="municipal",IsExternalSupply=i==0,MeasuresFinalUse=!stocks.ContainsKey(i),Storage=stocks.TryGetValue(i,out var boundary)?new(){OpeningDate=day,OpeningVolumeLitres=0,InletMeterIds=boundary.In.ToList(),OutletMeterIds=boundary.Out.ToList(),AllFlowsConfirmed=true}:null}).ToList()};
 foreach(var (from,to) in new[]{(0,1),(1,2),(2,3),(3,4),(4,5),(5,6),(4,7),(7,8),(4,9),(9,10),(4,11),(11,12)}) physical.Connections.Add(new(){From=tankNames[from].ToLowerInvariant(),To=tankNames[to].ToLowerInvariant()});
 physical.Validate();
 var boundaryLinks=tankNames.Select((name,i)=>(name,i)).ToDictionary(p=>p.name.ToLowerInvariant(),p=>(int?)(p.i+1));
@@ -178,6 +178,7 @@ Equal(WasteDisposition.Other,WasteCategoryClassifier.Classify("Non-recyclable"),
 Console.WriteLine("PASS: full source-to-storage-to-use conservation, transfer pairing, nonzero counters, unknown openings, missing coverage and exclusive waste classification.");
 
 FlowTraceValidation.Run();
+OutletBoundaryValidation.Run();
 
 static void Attach(PageModel page) => page.PageContext=new PageContext { HttpContext=new DefaultHttpContext(),ViewData=new ViewDataDictionary(new EmptyModelMetadataProvider(),new ModelStateDictionary()) };
 

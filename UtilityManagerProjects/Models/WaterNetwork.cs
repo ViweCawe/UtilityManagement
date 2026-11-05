@@ -5,6 +5,7 @@ namespace UtilityManagerProjects.Models;
 /// <summary>Editable physical supply routes, independent of consumption readings.</summary>
 public sealed class WaterNetwork
 {
+    public int SourceBoundaryVersion { get; set; }
     public int CircuitDefinitionsVersion { get; set; }
     public string SourceUrl { get; init; } = "";
     public string ReviewedOn { get; init; } = "";
@@ -30,7 +31,36 @@ public sealed class WaterNetwork
             network.CircuitDefinitionsVersion=1;
         }
         network.Validate();
+        if (network.SourceBoundaryVersion < 1) network.UpgradeMainOutlet();
+        network.Validate();
         return network;
+    }
+
+    private void UpgradeMainOutlet()
+    {
+        var main = Nodes.SingleOrDefault(n => WaterAccounting.Role(n) == "main");
+        if (main is not null && !Nodes.Any(n => WaterAccounting.Role(n) == "municipal-inlet") &&
+            !Connections.Any(e => e.To == main.Id && e.Kind != "backup") && Nodes.Count < 500 && Connections.Count < 1500)
+        {
+            var id = "municipal-inlet";
+            for (var suffix = 2; Nodes.Any(n => n.Id == id); suffix++) id = "municipal-inlet-" + suffix;
+            var inletY = main.Y;
+            if (Nodes.Where(n => n.Station == main.Station).All(n => n.Y <= 99820))
+                foreach (var node in Nodes.Where(n => n.Station == main.Station)) node.Y += 180;
+            else inletY = Math.Max(0, main.Y - 180);
+            Nodes.Insert(0, new() { Id=id, Label="Municipal inlet · readings not recorded", Station=main.Station,
+                Kind="source", ReportingRole="municipal-inlet", SupplyOrigin="municipal", IsExternalSupply=true,
+                X=main.X, Y=inletY, Note="Separate physical meter into source storage. Its readings are not currently captured. Main Meter records water leaving storage. Link this actual inlet meter and capture its readings when available; never infer incoming volume from Main." });
+            Connections.Add(new() { From=id, To=main.Id, SourceFilter="municipal", Purpose="Municipal water into source storage; Main measures the outlet" });
+        }
+        if (main is not null)
+        {
+            main.IsExternalSupply = false;
+            if (main.Label is "Main Meter — Source" or "Main Meter - Source") main.Label="Main Meter · source outlet";
+            if (main.Note.StartsWith("Records the municipal water entering", StringComparison.Ordinal))
+                main.Note="Records water leaving source storage for Lower Station and transfers to Top Station. This is an outlet reading, not municipal inflow or final consumption. The separate municipal inlet meter is not currently recorded.";
+        }
+        SourceBoundaryVersion=1;
     }
 
     public void Validate()
@@ -45,7 +75,7 @@ public sealed class WaterNetwork
                 string.IsNullOrWhiteSpace(node.Label) || node.Label.Length > 100 ||
                 !System.Text.RegularExpressions.Regex.IsMatch(node.Id, "^[a-z0-9-]{1,80}$") ||
                 (node.Note?.Length ?? 0) > 1000 || (node.UsageArea?.Length ?? 0)>100 ||
-                node.ReportingRole is not (null or "" or "main" or "borehole-inlet" or "borehole-outlet" or "hydrant") ||
+                node.ReportingRole is not (null or "" or "main" or "municipal-inlet" or "borehole-inlet" or "borehole-outlet" or "hydrant") ||
                 node.SupplyOrigin is not (null or "" or "municipal" or "borehole" or "rain" or "other") ||
                 (node.MeterId.HasValue && (!node.CanLinkMeter || node.MeterId <= 0 || !meterIds.Add(node.MeterId.Value))) ||
                 node.Station is not ("Lower" or "Top") ||
@@ -71,8 +101,8 @@ public sealed class WaterNetwork
         foreach(var node in Nodes) {
             var role=WaterAccounting.Role(node);
             if(role.Length>0 && (!node.CanLinkMeter || !reportingRoles.Add(role)))
-                throw new InvalidDataException("Each reporting boundary needs one distinct metered point: Main Meter, Borehole In, Borehole Out or Fire Hydrant.");
-            if(role is "main" or "hydrant" or "borehole-inlet")
+                throw new InvalidDataException("Each reporting boundary needs one distinct metered point: Municipal Inlet, Main outlet, Borehole In, Borehole Out or Fire Hydrant.");
+            if(role is "municipal-inlet" or "hydrant" or "borehole-inlet")
                 if(Connections.Any(e=>e.To==node.Id&&e.Kind!="backup")) throw new InvalidDataException("An inlet reporting meter must not have a normal upstream connection.");
         }
         var credits=new HashSet<int>();var debits=new HashSet<int>();
@@ -91,7 +121,7 @@ public sealed class WaterNetwork
             if(!found.Contains(to.Id))throw new InvalidDataException("A paired tank transfer must follow a route on the water network. Check the supplier, receiver and counter.");
         }
         foreach(var node in Nodes.Where(n=>n.MeasuresFinalUse))
-            if(!node.CanLinkMeter||WaterAccounting.Role(node) is "main" or "borehole-inlet" or "borehole-outlet"||node.MeterId.HasValue&&credits.Contains(node.MeterId.Value)) throw new InvalidDataException("Final use must be a consumption counter, not a supply meter or a transfer credited to storage.");
+            if(!node.CanLinkMeter||WaterAccounting.Role(node) is "main" or "municipal-inlet" or "borehole-inlet" or "borehole-outlet"||node.MeterId.HasValue&&credits.Contains(node.MeterId.Value)) throw new InvalidDataException("Final use must be a consumption counter, not a supply meter or a transfer credited to storage.");
         // A cycle would make this documented source-to-consumer network misleading.
         var visiting = new HashSet<string>();
         var visited = new HashSet<string>();
@@ -111,7 +141,7 @@ public sealed class WaterNetwork
         foreach(var edge in Connections.Where(e=>!string.IsNullOrEmpty(e.SourceFilter)))
             if(!WaterAccounting.Origins(this,edge.From).Contains(edge.SourceFilter!)) throw new InvalidDataException("A route cannot carry a source its upstream point does not supply. Check the source type and circuit restriction.");
         foreach(var node in Nodes.Where(n=>WaterAccounting.Role(n).Length>0)) {
-            var required=WaterAccounting.Role(node) is "main" or "hydrant"?"municipal":"borehole";
+            var required=WaterAccounting.Role(node) is "main" or "municipal-inlet" or "hydrant"?"municipal":"borehole";
             var origins=WaterAccounting.Origins(this,node.Id);
             if(origins.Count!=1||!origins.Contains(required)) throw new InvalidDataException("Reporting meters must measure their declared source only. A combined municipal/borehole meter cannot represent either source total.");
         }
@@ -121,7 +151,7 @@ public sealed class WaterNetwork
 public sealed class WaterNetworkNode
 {
     public string Id { get; init; } = "";
-    public string Label { get; init; } = "";
+    public string Label { get; set; } = "";
     public string Station { get; init; } = "";
     public string Kind { get; init; } = "";
     public bool CanLinkMeter { get; init; } = true;
@@ -132,10 +162,10 @@ public sealed class WaterNetworkNode
     public string? UsageArea { get; set; }
     public WaterStorageSettings? Storage { get; set; }
     public bool MeasuresFinalUse { get; set; }
-    public string Note { get; init; } = "";
+    public string Note { get; set; } = "";
     public string FigmaNodeId { get; init; } = "";
     public double X { get; init; }
-    public double Y { get; init; }
+    public double Y { get; set; }
 }
 
 public sealed class WaterNetworkConnection
@@ -151,9 +181,9 @@ public sealed class WaterNetworkConnection
 
 public static class WaterAccounting
 {
-    public static string Role(WaterNetworkNode n) => n.ReportingRole ?? (n.Id switch {"main-tank"=>"main","borehole-in"=>"borehole-inlet","borehole-out"=>"borehole-outlet","fire-hydrant"=>"hydrant",_=>""});
+    public static string Role(WaterNetworkNode n) => n.ReportingRole ?? (n.Id switch {"main-tank"=>"main","municipal-inlet"=>"municipal-inlet","borehole-in"=>"borehole-inlet","borehole-out"=>"borehole-outlet","fire-hydrant"=>"hydrant",_=>""});
     public static string Area(WaterNetworkNode n) => n.UsageArea is null?n.Id switch {"workshop"=>"Workshop","staff-toilets-lower"=>"Level 1 Visitor Toilets",_=>""}:n.UsageArea.Trim();
-    public static string Origin(WaterNetworkNode n) => !string.IsNullOrWhiteSpace(n.SupplyOrigin)?n.SupplyOrigin:Role(n) switch {"main" or "hydrant"=>"municipal","borehole-inlet" or "borehole-outlet"=>"borehole",_=>"other"};
+    public static string Origin(WaterNetworkNode n) => !string.IsNullOrWhiteSpace(n.SupplyOrigin)?n.SupplyOrigin:Role(n) switch {"main" or "municipal-inlet" or "hydrant"=>"municipal","borehole-inlet" or "borehole-outlet"=>"borehole",_=>"other"};
     public static HashSet<string> Origins(WaterNetwork map,string id)
     {
         var cache=new Dictionary<string,HashSet<string>>();var visiting=new HashSet<string>();

@@ -51,7 +51,7 @@ public static class FlowTraceValidation
             Nodes = map.Nodes.Select(n => new WaterNetworkNode
             {
                 Id=n.Id, Label=n.Label, Station=n.Station, Kind=storageIds.Contains(n.Id)?n.Id=="main"?"source":"storage":n.Kind,
-                CanLinkMeter=n.CanLinkMeter, ReportingRole=n.ReportingRole, SupplyOrigin=n.SupplyOrigin,
+                CanLinkMeter=n.CanLinkMeter, ReportingRole=n.Id=="main"?"":n.ReportingRole, SupplyOrigin=n.SupplyOrigin,
                 IsExternalSupply=n.IsExternalSupply, MeasuresFinalUse=n.MeasuresFinalUse
             }).ToList(), Connections=map.Connections.ToList()
         };
