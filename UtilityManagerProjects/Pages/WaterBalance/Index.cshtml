@@ -1,6 +1,7 @@
 @page
 @model UtilityManagerProjects.Pages.WaterBalance.IndexModel
 @{ ViewData["Title"]="Water movement and storage"; }
+@section Styles {<link rel="stylesheet" href="~/css/station-water-flow.css" asp-append-version="true"/>}
 <div class="page-shell">
  <div class="page-header-row"><div class="page-title"><h1>Water movement and storage</h1><p>Follow recorded water from the source, through transfers, to final use.</p></div>@if(User.IsInRole("Admin")){<a asp-page="/WaterNetwork/Edit" class="utility-btn-secondary">Configure tank boundaries</a>}</div>
  @if(ViewData["DateNotice"] is string notice){<p class="alert alert-info">@notice</p>}
@@ -11,6 +12,8 @@
   <div class="stat-card"><div class="stat-content"><p>Recorded final use</p><h2>@(Model.Report.FinalUse.IsComplete?Model.Report.FinalUse.Total.ToString("N1")+" L":"Not fully measured")</h2><span>Only counters confirmed to measure consumption</span></div></div>
   <div class="stat-card"><div class="stat-content"><p>Calculable storage points</p><h2>@Model.Report.Balances.Count(b=>b.CalculatedStock.HasValue) / @Model.Report.Balances.Count</h2><span>Unknown opening or missing flow stays unknown</span></div></div>
  </section>
+ <section class="content-card"><partial name="_BoreholeFlow" model="Model.Trace.Borehole" /></section>
+ <partial name="_StationWaterFlow" model="Model.Trace" />
  @foreach(var issue in Model.Report.FinalUse.Missing){<p class="alert alert-warning">@issue</p>}
  <section class="content-card"><div class="content-card-header"><div><h2>Storage balances at the selected end date</h2><p>Closing stock = measured opening stock + recorded inflows − recorded outflows. A counter value is never used as opening stock.</p></div></div>
  <div class="table-wrap"><table class="utility-table"><thead><tr><th>Storage point</th><th>Measured opening</th><th>Period inflow</th><th>Period outflow</th><th>Period storage change</th><th>Calculated stock at end</th><th>Status</th></tr></thead><tbody>
@@ -21,8 +24,7 @@
  @foreach(var row in Model.Report.Transfers){<tr><td>@row.From</td><td>@row.To</td><td>@row.MeterName</td><td>@(row.Volume?.ToString("N1")+ (row.Volume.HasValue?" L":"Awaiting comparable readings"))</td></tr>}
  @if(!Model.Report.Transfers.Any()){<tr><td colspan="4">Configure the shared transfer counter as one tank’s outlet and the next tank’s inlet. No transfers are assumed from counter names.</td></tr>}
  </tbody></table></div></section>
- <section class="content-card"><h2>Flow recorded at each point</h2><p>These values show movement through individual counters. Do not sum source, tank and downstream readings as site consumption.</p>
- <div class="table-wrap"><table class="utility-table"><thead><tr><th>Point</th><th>Supplied by</th><th>Linked meter</th><th>Recorded flow</th><th>Days covered</th></tr></thead><tbody>
- @foreach(var row in Model.Report.PointFlows){<tr><td>@row.Point</td><td>@row.Suppliers</td><td>@row.Meter</td><td>@(row.Flow?.ToString("N1")+ (row.Flow.HasValue?" L":"Unknown"))</td><td>@row.CoveredDays</td></tr>}
- </tbody></table></div></section>
+
 </div>
+
+@section Scripts {<script type="module" src="~/js/station-water-flow.js" asp-append-version="true"></script>}

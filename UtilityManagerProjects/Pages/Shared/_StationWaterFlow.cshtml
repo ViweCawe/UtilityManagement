@@ -1,0 +1,60 @@
+@model UtilityManagerProjects.Models.WaterFlowTraceReport
+@using System.Text.Json
+@{
+    string Volume(decimal? value) => value.HasValue ? value.Value.ToString("N1") + " L" : "Unknown";
+}
+@foreach (var warning in Model.Warnings) { <p class="alert alert-warning">@warning</p> }
+<section class="content-card" aria-label="Transfers between stations">
+    <h2>Water moving between stations</h2>
+    <p>The receiving counter measures water arriving at the next station. This transfer is already part of its upstream supply.</p>
+    <div class="table-wrap"><table class="utility-table">
+        <thead><tr><th>From</th><th>Receiving meter</th><th>Recorded receipt</th><th>Coverage / route</th></tr></thead>
+        <tbody>
+            @foreach (var row in Model.Transfers)
+            {
+                <tr><td>@row.From<small class="table-subtext d-block">@row.FromStation Station</small></td><td><a asp-page="/WaterNetwork/Index" asp-route-node="@row.ToId" asp-route-StartDate="@Model.Start.ToString("yyyy-MM-dd")" asp-route-EndDate="@Model.End.ToString("yyyy-MM-dd")">@row.To</a><small class="table-subtext d-block">@row.ToStation Station</small></td><td>@Volume(row.Received.CoveredDays > 0 ? row.Received.Total : null)</td><td>@row.Received.CoveredDays / @row.Received.Dates.Count days<small class="table-subtext d-block">@(row.ExclusiveRoute ? "One mapped upstream meter" : "Additional possible inlet: source split unavailable")</small></td></tr>
+            }
+            @if (!Model.Transfers.Any()) { <tr><td colspan="4">No route between stations is configured. Add the actual supply connection in the network editor.</td></tr> }
+        </tbody>
+    </table></div>
+</section>
+@foreach (var station in Model.Stations)
+{
+    <section class="content-card station-flow-section" aria-labelledby="station-flow-@station.Station">
+        <div class="content-card-header"><div><h2 id="station-flow-@station.Station">@station.Station Station water flow</h2><p>Follow each recording back to its source. Parent and downstream flow are successive measurements of the same water.</p></div></div>
+        @if (station.Points.Count > 0)
+        {
+            <div class="station-flow-chart" data-station="@station.Station">
+                <label for="station-meter-@station.Station">Daily average by meter</label>
+                <select id="station-meter-@station.Station" class="utility-input station-flow-meter">@foreach (var point in station.Points) { <option value="@point.Id">@point.Label</option> }</select>
+                <svg viewBox="0 0 800 210" role="img" aria-label="@station.Station Station daily average flow"></svg>
+                <p class="station-chart-status form-hint" aria-live="polite"></p>
+                <script type="application/json" class="station-flow-series">@Html.Raw(JsonSerializer.Serialize(new { dates = Enumerable.Range(0,(Model.End-Model.Start).Days+1).Select(i=>Model.Start.AddDays(i).ToString("yyyy-MM-dd")), points = station.Points.Select(p=>new { id=p.Id, label=p.Label, linked=p.MeterId.HasValue, series=p.Flow.Series() }) }))</script>
+            </div>
+            <div class="table-wrap"><table class="utility-table station-flow-table">
+                <thead><tr><th>Point / linked meter</th><th>Recorded flow</th><th>Daily average</th><th>Days covered</th><th>Trace to source</th></tr></thead>
+                <tbody>
+                    @foreach (var point in station.Points)
+                    {
+                        <tr data-flow-point="@point.Id"><td><a asp-page="/WaterNetwork/Index" asp-route-node="@point.Id" asp-route-StartDate="@Model.Start.ToString("yyyy-MM-dd")" asp-route-EndDate="@Model.End.ToString("yyyy-MM-dd")">@point.Label</a><small class="table-subtext d-block">@point.MeterName</small><small class="table-subtext d-block">@(point.MeasuresFinalUse ? "Confirmed final-use counter" : "Recorded movement")</small></td>
+                        <td>@Volume(point.Flow.CoveredDays > 0 ? point.Flow.Total : null)</td><td>@(point.Flow.CoveredDays > 0 ? point.Flow.Average.ToString("N1") + " L/day" : "—")</td><td>@point.Flow.CoveredDays / @point.Flow.Dates.Count</td>
+                        <td><details><summary>@(point.Sources.Count > 0 ? string.Join(" + ",point.Sources.Select(s=>s.SourceLabel)) : "Source not mapped")</summary>
+                            @foreach (var source in point.Sources) { <p>@source.Path @if(source.Conditional){<small>· conditional route</small>}</p> }
+                            @if(point.Sources.Count > 1){<small>Possible supply paths; this counter does not separate their volumes.</small>}
+                        </details></td></tr>
+                    }
+                </tbody>
+            </table></div>
+            <details class="station-comparison"><summary>Compare parent meters with their next measured branches</summary>
+                <p>Compare only the next meter on each branch over matching covered days. A daughter’s meter and her storage meter are not added together against the original source.</p>
+                <div class="table-wrap"><table class="utility-table"><thead><tr><th>Parent meter</th><th>Next measured branches</th><th>Parent on matched days</th><th>Branches on matched days</th><th>Difference</th><th>Coverage / explanation</th></tr></thead><tbody>
+                @foreach (var point in station.Points.Where(p=>p.NextPoints.Count>0))
+                {
+                    <tr><td>@point.Label</td><td>@(point.NextPoints.Count>0?string.Join(", ",point.NextPoints):"No further meter mapped")</td><td>@Volume(point.ComparedParent)</td><td>@Volume(point.ComparedBranches)</td><td>@Volume(point.Difference)</td><td>@if(point.ComparedDays>0){<span>@point.ComparedDays matched days</span><small class="table-subtext d-block">@(point.Difference<0?"Downstream flow exceeds this interval's parent flow; check stored water, other inputs and readings.":"Difference may include storage change, unmetered use or losses; it is not proven consumption.")</small>}@foreach(var issue in point.ComparisonIssues){<small class="table-subtext d-block">@issue</small>}@if(point.NextPoints.Count==0){<small class="table-subtext d-block">@(point.MeasuresFinalUse?"Confirmed final use is reported separately.":"No downstream measurement establishes what was used versus stored.")</small>}</td></tr>
+                }
+                </tbody></table></div>
+            </details>
+        }
+        else { <p>No metered points are configured for this station.</p> }
+    </section>
+}

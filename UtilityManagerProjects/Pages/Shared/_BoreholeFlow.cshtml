@@ -1,0 +1,21 @@
+@model UtilityManagerProjects.Models.BoreholeFlowPair
+@{
+    string Flow(UtilityManagerProjects.Models.ConsumptionScope value) => value.CoveredDays > 0 ? value.Total.ToString("N1") + " L" : "Awaiting comparable readings";
+}
+<div class="borehole-flow" aria-label="Paired borehole readings">
+    <h3>Borehole · incoming and outgoing</h3>
+    <p>Incoming records water entering the tank. Out records water supplied from the tank for use. Each value comes from that counter’s change over time.</p>
+    <div class="table-wrap"><table class="utility-table">
+        <thead><tr><th>Boundary</th><th>Recorded flow</th><th>Days covered</th></tr></thead>
+        <tbody>
+            <tr><td>Borehole Incoming · into storage</td><td>@Flow(Model.Incoming)</td><td>@Model.Incoming.CoveredDays / @Model.Incoming.Dates.Count</td></tr>
+            <tr><td>Borehole Out · supplied from storage</td><td>@Flow(Model.Outgoing)</td><td>@Model.Outgoing.CoveredDays / @Model.Outgoing.Dates.Count</td></tr>
+        </tbody>
+    </table></div>
+    @if (Model.Difference.HasValue)
+    {
+        <p class="borehole-matched"><strong>On @Model.MatchedDays matching days:</strong> @Model.MatchedIncoming?.ToString("N1") L in − @Model.MatchedOutgoing?.ToString("N1") L out = <strong>@Model.Difference?.ToString("+0.0;-0.0;0.0") L measured difference.</strong></p>
+    }
+    @foreach (var issue in Model.Issues) { <p class="form-hint">@issue</p> }
+    <p class="form-hint">Incoming and Out are paired, never added together. A negative difference can mean stored water was drawn down. This difference is not remaining stock or a proven loss; stock also needs a measured opening volume and every flow accounted for.</p>
+</div>

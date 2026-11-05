@@ -1,3 +1,4 @@
+import { stationNetworkLayout } from './station-water-flow-model.mjs';
 import { reportingRole } from './water-network-accounting.mjs';
 import { traceNetwork, traceEdge } from './water-network-graph.mjs';
 
@@ -5,6 +6,7 @@ const payload = document.getElementById('water-network-data');
 if (payload) {
     const network = JSON.parse(payload.textContent);
     const readings = JSON.parse(document.getElementById('water-network-readings')?.textContent || '{}');
+    const sourceRoutes = JSON.parse(document.getElementById('water-network-traces')?.textContent || '{}');
     const formatReading = value => new Intl.NumberFormat().format(value);
     const nodes = new Map(network.nodes.map(n => [n.id, n]));
     const station = document.getElementById('network-station');
@@ -14,7 +16,8 @@ if (payload) {
     const details = document.getElementById('selected-point-routes');
     const namespace = 'http://www.w3.org/2000/svg';
     const roleLabels = { source: 'Source', storage: 'Storage tank', distribution: 'Distribution', usage: 'Water use', transfer: 'Transfer', unresolved: 'To confirm' };
-    let selectedId = (network.nodes.find(n => reportingRole(n) === 'main') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id;
+    const requestedId = new URLSearchParams(location.search).get('node');
+    let selectedId = nodes.has(requestedId) ? requestedId : (network.nodes.find(n => reportingRole(n) === 'main') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id;
 
     function svg(type, attributes = {}, text) {
         const element = document.createElementNS(namespace, type);
@@ -26,7 +29,7 @@ if (payload) {
     function select(id) {
         selectedId = id;
         const node = nodes.get(id);
-        if (station.value !== node.station) {
+        if (station.value !== 'All' && station.value !== node.station) {
             station.value = node.station;
             fillPoints();
         }
@@ -36,7 +39,7 @@ if (payload) {
 
     function fillPoints() {
         point.replaceChildren();
-        for (const node of network.nodes.filter(n => n.station === station.value)) {
+        for (const node of network.nodes.filter(n => station.value === 'All' || n.station === station.value)) {
             const option = document.createElement('option');
             option.value = node.id;
             option.textContent = node.label;
@@ -70,9 +73,12 @@ if (payload) {
     function render() {
         const selected = nodes.get(selectedId);
         const trace = traceNetwork(network, selectedId, backup.checked);
-        const visible = network.nodes.filter(n => n.station === station.value);
+        const layout = stationNetworkLayout(network, station.value);
+        const visible = layout.nodes;
+        const visibleIds = new Set(visible.map(n => n.id));
+        const position = node => ({x:node.x,y:node.y+(layout.offsets[node.station]||0)});
         const active = new Set([selectedId, ...trace.upstream, ...trace.downstream]);
-        const height = Math.max(...visible.map(n => n.y)) + 165;
+        const height = layout.height;
         diagram.setAttribute('viewBox', `-20 -25 1310 ${height + 25}`);
         diagram.style.aspectRatio = `1310 / ${height + 25}`;
         diagram.replaceChildren();
@@ -84,16 +90,18 @@ if (payload) {
             defs.append(marker);
         }
         diagram.append(defs);
+        for (const label of layout.labels) diagram.append(svg('text',{x:0,y:label.y,class:'wn-station-label'},label.text));
         for (const edge of network.connections) {
             const from = nodes.get(edge.from), to = nodes.get(edge.to);
-            if (from.station !== station.value || to.station !== station.value) continue;
+            if (!visibleIds.has(from.id) || !visibleIds.has(to.id)) continue;
+            const fromPosition=position(from),toPosition=position(to);
             const highlighted = traceEdge(edge, selectedId, trace, backup.checked);
-            let x1 = from.x + 90, y1 = from.y + 120, x2 = to.x + 90, y2 = to.y;
+            let x1 = fromPosition.x + 90, y1 = fromPosition.y + 120, x2 = toPosition.x + 90, y2 = toPosition.y;
             let d;
-            if (from.y === to.y) {
+            if (fromPosition.y === toPosition.y) {
                 const direction = to.x > from.x ? 1 : -1;
-                x1 = from.x + (direction === 1 ? 180 : 0); y1 = from.y + 40;
-                x2 = to.x + (direction === 1 ? 0 : 180); y2 = to.y + 40;
+                x1 = from.x + (direction === 1 ? 180 : 0); y1 = fromPosition.y + 40;
+                x2 = to.x + (direction === 1 ? 0 : 180); y2 = toPosition.y + 40;
                 d = `M ${x1} ${y1} L ${x2} ${y2}`;
             } else {
                 const mid = y1 + (y2 - y1) / 2;
@@ -106,7 +114,7 @@ if (payload) {
             diagram.append(path);
         }
         for (const node of visible) {
-            const group = svg('g', { transform: `translate(${node.x},${node.y})`, tabindex: 0,
+            const group = svg('g', { transform: `translate(${position(node).x},${position(node).y})`, tabindex: 0,
                 role: 'button', 'aria-label': `${node.label}, ${node.kind}${node.id === selectedId ? ', selected' : ''}`,
                 'aria-pressed': node.id === selectedId ? 'true' : 'false',
                 class: `wn-node ${node.id === selectedId ? 'selected' : ''} ${active.has(node.id) ? 'traced' : ''} ${node.kind}` });
@@ -120,9 +128,11 @@ if (payload) {
             lines.forEach((line, index) => text.append(svg('tspan', { x: 90, dy: index ? 16 : 0 }, line)));
             group.append(text, svg('text', { x: 90, y: 68, 'text-anchor': 'middle', class: 'wn-node-kind' }, roleLabels[node.kind].toUpperCase()));
             const measurement = readings[node.id];
-            const valueLabel = measurement ? (measurement.currentReading == null ? 'No readings yet' : `${formatReading(measurement.currentReading)} ${measurement.unit}`) : (node.canLinkMeter === false ? 'No separate meter' : 'Assign a meter');
+            const valueLabel = measurement ? (measurement.flowLitres == null ? 'Flow awaiting readings' : `Flow: ${formatReading(measurement.flowLitres)} L`) : (node.canLinkMeter === false ? 'No separate meter' : 'Assign a meter');
             group.append(svg('text', { x: 90, y: 90, 'text-anchor': 'middle', class: 'wn-reading-value' }, valueLabel));
-            group.append(svg('text', { x: 90, y: 108, 'text-anchor': 'middle', class: 'wn-reading-date' }, measurement?.capturedAt || ''));
+            const counter = measurement?.currentReading == null ? '' : `Counter: ${formatReading(measurement.currentReading)} ${measurement.unit}`;
+            group.append(svg('text', { x: 90, y: 108, 'text-anchor': 'middle', class: 'wn-reading-date' }, counter));
+            group.append(svg('title',{},`${node.label}: ${valueLabel}. ${counter}. ${measurement?.coveredDays||0} of ${measurement?.totalDays||0} days covered.`));
             group.addEventListener('click', () => select(node.id));
             group.addEventListener('keydown', event => {
                 if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(node.id); }
@@ -138,6 +148,14 @@ if (payload) {
         readout.className = 'wn-reading-panel';
         readout.textContent = measurement ? `${measurement.name} (#${measurement.meterId}) · Latest counter: ${measurement.currentReading == null ? 'No readings yet' : formatReading(measurement.currentReading) + ' ' + measurement.unit} · Captured: ${measurement.capturedAt || '—'}` : (selected.canLinkMeter === false ? 'No separate meter at this point.' : 'Assign the actual meter to show its saved readings.');
         details.append(readout);
+        if(measurement){
+            const flow=document.createElement('p');flow.textContent=measurement.flowLitres==null?'Selected-period flow is unknown until comparable readings are available.':`Selected-period flow: ${formatReading(measurement.flowLitres)} L · ${measurement.coveredDays} of ${measurement.totalDays} days covered.`;details.append(flow);
+        }
+        const sourcePaths=sourceRoutes[selectedId]||[];
+        if(sourcePaths.length){
+            const heading=document.createElement('h4');heading.textContent='Trace to source · possible supply routes';details.append(heading);
+            for(const path of sourcePaths){const p=document.createElement('p');p.textContent=path;details.append(p);}
+        }
         if (measurement?.historyUrl) {
             const history = document.createElement('a'); history.href = measurement.historyUrl;
             history.textContent = 'View this meter’s readings'; details.append(history);
@@ -156,17 +174,20 @@ if (payload) {
         explanation.className = 'wn-trace-summary';
         explanation.textContent = `Highlighted route: ${trace.upstream.size} connected points before this point and ${trace.downstream.size} after it. Use “Show” to follow a connection on the map.`;
         details.append(explanation);
+        // Keep the chosen point visible inside the scrollable canvas on small screens.
+        const canvas=diagram.closest('.wn-canvas'),chosen=diagram.querySelector('.wn-node.selected');
+        if(canvas&&chosen){const frame=canvas.getBoundingClientRect(),box=chosen.getBoundingClientRect();canvas.scrollLeft+=box.left-frame.left-(canvas.clientWidth-box.width)/2;canvas.scrollTop+=box.top-frame.top-(canvas.clientHeight-box.height)/2;}
     }
 
     document.getElementById('network-reset').addEventListener('click', () => select((network.nodes.find(n => reportingRole(n) === 'main') || network.nodes.find(n => n.kind === 'source') || network.nodes[0]).id));
     station.addEventListener('change', () => {
         fillPoints();
-        select(network.nodes.find(n => n.station === station.value && n.kind === 'source')?.id || network.nodes.find(n => n.station === station.value).id);
+        select(network.nodes.find(n => (station.value === 'All' || n.station === station.value) && reportingRole(n) === 'main')?.id || network.nodes.find(n => (station.value === 'All' || n.station === station.value) && n.canLinkMeter !== false)?.id || network.nodes.find(n => station.value === 'All' || n.station === station.value).id);
     });
     point.addEventListener('change', () => select(point.value));
     backup.addEventListener('change', render);
-    for (const option of station.options) option.disabled = !network.nodes.some(n => n.station === option.value);
-    station.value = nodes.get(selectedId).station;
+    for (const option of station.options) option.disabled = option.value !== 'All' && !network.nodes.some(n => n.station === option.value);
+    station.value = 'All';
     fillPoints();
     select(selectedId);
     document.getElementById('network-controls').hidden = false;
