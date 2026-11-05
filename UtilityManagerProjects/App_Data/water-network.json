@@ -238,7 +238,7 @@
       "id": "header",
       "label": "Header Tank",
       "station": "Top",
-      "kind": "distribution",
+      "kind": "storage",
       "figmaNodeId": "1:677",
       "x": 505,
       "y": 560,

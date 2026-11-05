@@ -11,7 +11,7 @@
         </div>
         <div class="page-actions">
             <a class="utility-btn-secondary" asp-page="./List">
-                <i class="bi bi-arrow-left"></i> Back to Latest Readings
+                <i class="bi bi-arrow-left"></i> Back to collections
             </a>
         </div>
     </div>
@@ -70,7 +70,6 @@
                         <td>
                             <div class="table-date">
                                 <strong>@item.ReadingDate.ToString("dd MMM yyyy")</strong>
-                                <span>@item.ReadingDate.ToString("HH:mm")</span>
                             </div>
                         </td>
                         <td>@item.EmployeeEmail</td>

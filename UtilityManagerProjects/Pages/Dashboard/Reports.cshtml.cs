@@ -244,7 +244,7 @@ namespace UtilityManagerProjects.Pages.Reports
         private static bool IsRecyclingCategory(string? category)
         {
             return !string.IsNullOrWhiteSpace(category) &&
-                   category.Contains("recycl", StringComparison.OrdinalIgnoreCase);
+                   WasteCategoryClassifier.Classify(category)==WasteDisposition.Recycling;
         }
 
         private static decimal GetMeterTotal(IEnumerable<DailyUsage> readings, MeterType meterType)

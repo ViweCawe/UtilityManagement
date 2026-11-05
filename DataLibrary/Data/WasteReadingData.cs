@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using DataLibrary.Db;
 using DataLibrary.Models;
 using System;
@@ -30,7 +30,7 @@ namespace DataLibrary.Data
             dp.Add("WasteTypeId", wasteDataReading.WasteTypeId);
             dp.Add("CreatedBy", wasteDataReading.CreatedBy);
             dp.Add("WasteAmount", wasteDataReading.WasteAmount);
-            dp.Add("RecordedAt", wasteDataReading.CreatedAt);
+            dp.Add("RecordedAt", wasteDataReading.ReadingDate);
             dp.Add("Notes", wasteDataReading.Notes);
 
      
@@ -47,7 +47,7 @@ namespace DataLibrary.Data
       int readingId,
       decimal wasteAmount,
       string notes,
-      int updatedByEmployeeId)
+      int updatedByEmployeeId, DateTime? readingDate = null)
         {
             return dataAccess.SaveData(
                 "dbo.spWasteReadings_Update",
@@ -57,10 +57,12 @@ namespace DataLibrary.Data
                     WasteAmount = wasteAmount,
                     Notes = notes,
                     UpdatedAt = DateTime.Now,
-                    UpdatedBy = updatedByEmployeeId
+                    UpdatedBy = updatedByEmployeeId, ReadingDate=readingDate
                 },
                 connectionString.SqlConnectionName);
         }
+        public Task<int> DeleteWasteReading(int id,int employeeId) => dataAccess.SaveData("dbo.spWasteReadings_Delete",new {Id=id,UpdatedBy=employeeId,UpdatedAt=DateTime.Now},connectionString.SqlConnectionName);
+
         public async Task<WasteReading?> GetWasteReadingById(int id)
         {
             var records = await dataAccess.LoadData<

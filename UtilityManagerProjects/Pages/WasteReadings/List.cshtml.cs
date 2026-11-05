@@ -44,6 +44,9 @@ namespace UtilityManagerProjects.Pages.WasteReadings
 
         public decimal TotalWasteGenerated { get; set; }
         public decimal PreviousWasteGenerated { get; set; }
+        public bool WasteGrowthAvailable => PreviousWasteGenerated>0;
+        public bool WeeklyGrowthAvailable => Previous7DaysWaste>0;
+        public bool MonthlyGrowthAvailable => Previous30DaysWaste>0;
         public double WasteGrowthPercent { get; set; }
 
         public decimal Current7DaysWaste { get; set; }
@@ -69,7 +72,6 @@ namespace UtilityManagerProjects.Pages.WasteReadings
         public List<WasteSummaryRow> WasteTypeSummary { get; set; } = new();
         public List<WasteSummaryRow> WasteCategorySummary { get; set; } = new();
         public List<WasteSummaryRow> WasteMaterialSummary { get; set; } = new();
-        public List<WasteReadingDisplay> LatestReadings { get; set; } = new();
         public string DailyLabelsJson { get; set; } = "[]";
         public string DailyWasteJson { get; set; } = "[]";
 
@@ -94,19 +96,11 @@ namespace UtilityManagerProjects.Pages.WasteReadings
                 .Where(x => x.IsDeleted == false)
                 .ToList();
 
-            var currentRows = activeRows
-                .Where(x => IsInRange(x.ReadingDate, CurrentStart, CurrentEnd))
-                .ToList();
-
-            var previousRows = activeRows
-                .Where(x => IsInRange(x.ReadingDate, PreviousStart, PreviousEnd))
-                .ToList();
-
             if (!string.IsNullOrWhiteSpace(SearchTerm))
             {
                 var search = SearchTerm.Trim();
 
-                currentRows = currentRows
+                activeRows = activeRows
                     .Where(x =>
                         ContainsText(x.Id.ToString(), search) ||
                         ContainsText(x.WasteTypeId.ToString(), search) ||
@@ -117,15 +111,8 @@ namespace UtilityManagerProjects.Pages.WasteReadings
                         ContainsText(x.Notes, search))
                     .ToList();
             }
-            LatestReadings = currentRows
-                .GroupBy(x => x.WasteTypeId)
-                .Select(group => group
-                    .OrderByDescending(x => x.ReadingDate)
-                    .ThenByDescending(x => x.Id)
-                    .First())
-                .OrderByDescending(x => x.ReadingDate)
-                .ToList();
-
+            var currentRows=activeRows.Where(x=>IsInRange(x.ReadingDate,CurrentStart,CurrentEnd)).ToList();
+            var previousRows=activeRows.Where(x=>IsInRange(x.ReadingDate,PreviousStart,PreviousEnd)).ToList();
             WasteReadings = currentRows
                 .OrderByDescending(x => x.ReadingDate)
                 .ToList();
@@ -242,10 +229,8 @@ namespace UtilityManagerProjects.Pages.WasteReadings
                 CurrentEnd = today;
             }
 
-            if (CurrentStart > CurrentEnd)
-            {
-                (CurrentStart, CurrentEnd) = (CurrentEnd, CurrentStart);
-            }
+            var range=UtilityManagerProjects.Services.ConsumptionService.ReportingRange(CurrentStart,CurrentEnd);
+            CurrentStart=range.Start;CurrentEnd=range.End;ViewData["WasteDateNotice"]=range.Notice;
 
             var days = (CurrentEnd - CurrentStart).Days + 1;
 
@@ -275,25 +260,14 @@ namespace UtilityManagerProjects.Pages.WasteReadings
         {
             if (previousValue == 0)
             {
-                return currentValue > 0 ? 100 : 0;
+                return 0;
             }
 
             return Math.Round((double)((currentValue - previousValue) / previousValue * 100), 1);
         }
 
-        private static bool IsRecycling(WasteReadingDisplay item)
-        {
-            return ContainsText(item.WasteCategory, "recycl") ||
-                   ContainsText(item.WasteTypeName, "recycl") ||
-                   ContainsText(item.WasteMaterial, "recycl");
-        }
-
-        private static bool IsLandfill(WasteReadingDisplay item)
-        {
-            return ContainsText(item.WasteCategory, "landfill") ||
-                   ContainsText(item.WasteTypeName, "landfill") ||
-                   ContainsText(item.WasteMaterial, "landfill");
-        }
+        private static bool IsRecycling(WasteReadingDisplay item) => WasteCategoryClassifier.Classify(item.WasteCategory)==WasteDisposition.Recycling;
+        private static bool IsLandfill(WasteReadingDisplay item) => WasteCategoryClassifier.Classify(item.WasteCategory)==WasteDisposition.Landfill;
 
         private void BuildDailyWasteChart()
         {
@@ -385,6 +359,7 @@ namespace UtilityManagerProjects.Pages.WasteReadings
                 .Take(5)
                 .ToList();
 
+            if(WasteCategorySummary.Count>5) topCategories.Add(new WasteSummaryRow{Name="Other categories",TotalAmount=WasteCategorySummary.Skip(5).Sum(x=>x.TotalAmount)});
             CategoryLabelsJson = JsonSerializer.Serialize(topCategories.Select(x => x.Name));
             CategoryDataJson = JsonSerializer.Serialize(topCategories.Select(x => x.TotalAmount));
         }
@@ -395,6 +370,7 @@ namespace UtilityManagerProjects.Pages.WasteReadings
                 .Take(5)
                 .ToList();
 
+            if(WasteMaterialSummary.Count>5) topMaterials.Add(new WasteSummaryRow{Name="Other materials",TotalAmount=WasteMaterialSummary.Skip(5).Sum(x=>x.TotalAmount)});
             MaterialLabelsJson = JsonSerializer.Serialize(topMaterials.Select(x => x.Name));
             MaterialDataJson = JsonSerializer.Serialize(topMaterials.Select(x => x.TotalAmount));
         }

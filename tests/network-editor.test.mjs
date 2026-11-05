@@ -53,3 +53,14 @@ test('Main reporting boundary stays unique and cannot measure mixed sources',()=
  assert.throws(()=>validateNetwork({nodes:[main,bore,point('mixed',{reportingRole:'borehole-outlet'})],connections:[route('m','mixed'),route('b','mixed')]}));
  assert.throws(()=>validateNetwork({nodes:[main,point('basin')],connections:[route('m','basin',{sourceFilter:'borehole'})]}));
 });
+
+const storageMap=()=>({nodes:[point('source',{kind:'source',meterId:1,storage:{openingDate:'2025-01-01T00:00:00',openingVolumeLitres:0,inletMeterIds:[1],outletMeterIds:[2],allFlowsConfirmed:true}}),point('tank',{kind:'storage',meterId:2,storage:{openingDate:'2025-01-01T00:00:00',openingVolumeLitres:0,inletMeterIds:[2],outletMeterIds:[3],allFlowsConfirmed:true}}),point('use',{meterId:3,measuresFinalUse:true})],connections:[route('source','tank'),route('tank','use')]});
+test('a shared transfer debits its supplier and credits its receiving tank',()=>assert.doesNotThrow(()=>validateNetwork(storageMap())));
+test('a boundary counter cannot credit two tanks or double as final use',()=>{
+ const duplicate=storageMap();duplicate.nodes[0].storage.inletMeterIds=[2];assert.throws(()=>validateNetwork(duplicate));
+ const transferUse=storageMap();transferUse.nodes[1].measuresFinalUse=true;assert.throws(()=>validateNetwork(transferUse));
+});
+test('paired transfers must follow the map and stock requires a measured date',()=>{
+ const disconnected=storageMap();disconnected.connections=disconnected.connections.filter(e=>e.from!=='source');assert.throws(()=>validateNetwork(disconnected));
+ const undated=storageMap();undated.nodes[0].storage.openingDate=null;assert.throws(()=>validateNetwork(undated));
+});

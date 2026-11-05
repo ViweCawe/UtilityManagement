@@ -136,6 +136,47 @@ var staggeredService=staggered.Service();await staggeredService.LoadAsync();var 
 Equal(3,aligned.Combined.CoveredDays,"area source comparisons use common covered dates");Equal(150m,aligned.Municipal.Total,"municipal component clipped to borehole coverage");Equal(56m,aligned.Borehole.Total,"borehole component matches the same dates");Equal(aligned.Combined.Total,aligned.Municipal.Total+aligned.Borehole.Total,"independent source inlets reconcile on matching dates");
 Console.WriteLine("PASS: source columns reconcile on aligned coverage and hydrant remains outside municipal Main-branch department totals.");
 
+// Explicitly measured empty opening tanks; counter baselines are deliberately NOT zero.
+var tankNames=new[]{"Main","Dock","Reservoir","Dosing","Header","Toilets","Use","Branch1","Use1","Branch2","Use2","Branch3","Use3"};
+var movements=new[]{100000,20000,15000,10000,10000,2000,500,800,200,800,200,800,200};
+var stocks=new Dictionary<int,(int[] In,int[] Out)>{[0]=([1],[2]),[1]=([2],[3]),[2]=([3],[4]),[3]=([4],[5]),[4]=([5],[6,8,10,12]),[5]=([6],[7]),[7]=([8],[9]),[9]=([10],[11]),[11]=([12],[13])};
+var physical=new WaterNetwork{Nodes=tankNames.Select((name,i)=>new WaterNetworkNode{Id=name.ToLowerInvariant(),Label=name,Station="Lower",Kind=i==0?"source":stocks.ContainsKey(i)?"storage":"usage",ReportingRole=i==0?"main":"",SupplyOrigin="municipal",IsExternalSupply=i==0,MeasuresFinalUse=!stocks.ContainsKey(i),Storage=stocks.TryGetValue(i,out var boundary)?new(){OpeningDate=day,OpeningVolumeLitres=0,InletMeterIds=boundary.In.ToList(),OutletMeterIds=boundary.Out.ToList(),AllFlowsConfirmed=true}:null}).ToList()};
+foreach(var (from,to) in new[]{(0,1),(1,2),(2,3),(3,4),(4,5),(5,6),(4,7),(7,8),(4,9),(9,10),(4,11),(11,12)}) physical.Connections.Add(new(){From=tankNames[from].ToLowerInvariant(),To=tankNames[to].ToLowerInvariant()});
+physical.Validate();
+var boundaryLinks=tankNames.Select((name,i)=>(name,i)).ToDictionary(p=>p.name.ToLowerInvariant(),p=>(int?)(p.i+1));
+var stockMeters=movements.Select((_,i)=>new Meter{Id=i+1,MeterName=tankNames[i],MeterType=MeterType.Water,IsActive=true}).ToList();
+var stockReadings=movements.SelectMany((amount,i)=>new[]{Capture(i+1,day,100000),Capture(i+1,day.AddDays(1),100000+amount,2)}).ToList();
+WaterStorageReport Balance()=>WaterStorageAccounting.Calculate(physical,boundaryLinks,stockMeters,stockReadings,day.AddDays(1),day.AddDays(1));
+var waterBalance=Balance();
+Equal(80000m,waterBalance.Balances.Single(b=>b.Name=="Main").CalculatedStock,"Main counter 200000 is not stock; opening zero + supply 100000 - transfer 20000");
+Equal(5000m,waterBalance.Balances.Single(b=>b.Name=="Dock").CalculatedStock,"Dock transfer subtracts Reservoir inlet once");
+Equal(5000m,waterBalance.Balances.Single(b=>b.Name=="Reservoir").CalculatedStock,"Reservoir retained stock");
+Equal(0m,waterBalance.Balances.Single(b=>b.Name=="Dosing").CalculatedStock,"dosing flow is transferred, not consumed");
+Equal(5600m,waterBalance.Balances.Single(b=>b.Name=="Header").CalculatedStock,"Header supplies toilets and three 800 litre branches");
+Equal(1500m,waterBalance.Balances.Single(b=>b.Name=="Toilets").CalculatedStock,"toilet stock excludes measured final consumption");
+Equal(1100m,waterBalance.FinalUse.Total,"only measured final-use counters count as consumption");
+Equal(100000m,waterBalance.Balances.Sum(b=>b.CalculatedStock)+waterBalance.FinalUse.Total,"entire network conserves Main input without double counting transfers");
+Equal(8,waterBalance.Transfers.Count,"one row per shared internal transfer counter");
+physical.Nodes[1].Storage!.OpeningDate=null;physical.Nodes[1].Storage!.OpeningVolumeLitres=null;
+Equal(null,Balance().Balances.Single(b=>b.Name=="Dock").CalculatedStock,"unknown opening stock is never inferred from a cumulative counter");
+physical.Nodes[1].Storage!.OpeningDate=day;physical.Nodes[1].Storage!.OpeningVolumeLitres=0;
+physical.Nodes[1].Storage!.AllFlowsConfirmed=false;
+Equal(null,Balance().Balances.Single(b=>b.Name=="Dock").CalculatedStock,"unconfirmed losses and flows prevent invented stock");
+physical.Nodes[1].Storage!.AllFlowsConfirmed=true;
+stockReadings.Single(h=>h.MeterId==3&&h.ReadingDate>day).CurrentReading=140000;
+Equal(null,Balance().Balances.Single(b=>b.Name=="Dock").CalculatedStock,"negative calculated stock is an inconsistency, not negative litres displayed");
+stockReadings.Single(h=>h.MeterId==3&&h.ReadingDate>day).CurrentReading=115000;
+var mixed=System.Text.Json.JsonSerializer.Deserialize<WaterNetwork>(System.Text.Json.JsonSerializer.Serialize(physical))!;
+mixed.Nodes.Add(new(){Id="bore",Label="Borehole",Station="Lower",Kind="source",SupplyOrigin="borehole",IsExternalSupply=true});mixed.Connections.Add(new(){From="bore",To="dock"});mixed.Validate();
+Equal(null,WaterStorageAccounting.Calculate(mixed,boundaryLinks,stockMeters,stockReadings,day.AddDays(1),day.AddDays(1)).Balances.Single(b=>b.Name=="Main").CalculatedStock,"combined-source Dock inlet cannot be entirely debited to municipal Main storage");
+stockReadings.RemoveAll(h=>h.MeterId==3&&h.ReadingDate>day);
+Equal(null,Balance().Balances.Single(b=>b.Name=="Dock").CalculatedStock,"missing outlet interval prevents stock calculation");
+physical.Nodes[1].Storage!.OpeningDate=day.AddDays(1);physical.Nodes[1].Storage!.OpeningVolumeLitres=123;
+Equal(123m,Balance().Balances.Single(b=>b.Name=="Dock").CalculatedStock,"physical opening measurement on the report end is independent of missing flow");
+Equal(WasteDisposition.Other,WasteCategoryClassifier.Classify("Recycling / Landfill"),"ambiguous category is not counted twice");
+Equal(WasteDisposition.Other,WasteCategoryClassifier.Classify("Non-recyclable"),"non-recyclable is not recycling");
+Console.WriteLine("PASS: full source-to-storage-to-use conservation, transfer pairing, nonzero counters, unknown openings, missing coverage and exclusive waste classification.");
+
 static void Attach(PageModel page) => page.PageContext=new PageContext { HttpContext=new DefaultHttpContext(),ViewData=new ViewDataDictionary(new EmptyModelMetadataProvider(),new ModelStateDictionary()) };
 
 public class Fixture

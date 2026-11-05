@@ -37,6 +37,24 @@ try {
    selected=node.id;task.value='review';renderAll();const card=document.querySelector(`[data-point-id="${node.id}"]`);card.open=true;card.scrollIntoView({block:'center'});
   }));
  }
+ function storageControls(node) {
+  const box=el('details','', 'ne-storage-settings');box.append(el('summary','Storage balance and final-use measurements'));
+  if(node.canLinkMeter!==false){const final=el('input');final.type='checkbox';final.checked=node.measuresFinalUse===true;final.addEventListener('change',()=>{node.measuresFinalUse=final.checked;renderReview();});box.append(field('This counter measures final consumption, not a tank transfer',final));}
+  if(!['source','storage'].includes(node.kind))return box;
+  const enable=el('input');enable.type='checkbox';enable.checked=!!node.storage;
+  enable.addEventListener('change',()=>{node.storage=enable.checked?{openingDate:null,openingVolumeLitres:null,inletMeterIds:[],outletMeterIds:[],allFlowsConfirmed:false}:null;const replacement=storageControls(node);replacement.open=true;box.replaceWith(replacement);renderReview();});
+  box.append(field('This point represents physical stored water; configure its balance',enable));
+  box.append(el('p','A cumulative reading is not tank contents. Only enter a measured opening volume. One transfer counter may be the supplier’s outlet and the next tank’s inlet.'));
+  if(!node.storage)return box;
+  const stock=node.storage,volume=input(stock.openingVolumeLitres??'',v=>stock.openingVolumeLitres=v===''?null:Number(v));volume.type='number';volume.min='0';volume.step='0.01';
+  const date=input(stock.openingDate?.slice(0,10)||'',v=>stock.openingDate=v?v+'T00:00:00':null);date.type='date';
+  box.append(field('Measured opening stock (litres), not the counter value',volume),field('Opening stock measured at end of this date',date));
+  function choices(key,title){const group=el('fieldset');group.append(el('legend',title));for(const meter of meters.filter(m=>map.nodes.some(n=>n.meterId===m.id))){const checked=el('input');checked.type='checkbox';checked.checked=stock[key].includes(meter.id);checked.addEventListener('change',()=>{stock[key]=checked.checked?[...stock[key],meter.id]:stock[key].filter(id=>id!==meter.id);renderReview();});const label=el('label',meter.name,'ne-meter-choice');label.prepend(checked);group.append(label);}return group;}
+  box.append(choices('inletMeterIds','Counters measuring water into this tank'),choices('outletMeterIds','Counters measuring all water leaving this tank'));
+  const verified=el('input');verified.type='checkbox';verified.checked=stock.allFlowsConfirmed===true;verified.addEventListener('change',()=>{stock.allFlowsConfirmed=verified.checked;renderReview();});box.append(field('I verified every inlet, outlet, rain input and use/loss is accounted for by these counters',verified));
+  box.append(el('p','If any path is unmetered or not confirmed, leave this unchecked. Unknown remaining stock will stay unknown.'));
+  return box;
+ }
  function renderFlow(){const root=document.getElementById('network-editor-points');const opened=new Set([...root.querySelectorAll('details[open]')].map(e=>e.dataset.pointId));root.replaceChildren();
   for(const section of flowSections(map)){
    const group=el('section','', 'ne-flow-section');group.append(el('h3',section.label));
@@ -57,7 +75,7 @@ try {
      external.addEventListener('change',()=>{node.isExternalSupply=external.checked;renderReview();});fields.append(field('External water inlet (not a downstream meter)',external));
     }
     if(!parents.length)fields.append(field('Source water type',select(Object.entries(origins),rootOrigin(node),v=>{node.supplyOrigin=v;renderFlow();renderReview();})));
-    fields.append(field('Description',input(node.note,v=>node.note=v,1000)));card.append(fields);
+    fields.append(field('Description',input(node.note,v=>node.note=v,1000)));card.append(fields);card.append(storageControls(node));
     card.append(button('Change supply connections',()=>{selected=node.id;task.value='move';renderTask();document.getElementById('network-editor-workspace').scrollIntoView({block:'center'});}),button('Remove point from map',()=>{if(confirm(`Remove ${node.label} and its routes from the map? Its meter and reading history are kept.`)){removePoint(map,node.id);selected=map.nodes[0]?.id;renderAll();}}));group.append(card);
    }root.append(group);
   }
