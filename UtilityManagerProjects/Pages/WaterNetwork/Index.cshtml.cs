@@ -12,6 +12,9 @@ namespace UtilityManagerProjects.Pages.WaterNetwork;
 public class IndexModel(IConfiguration configuration,
     IMeterData meterData, IMeterReadingData readingData, IDataAccess dataAccess, ConnectionStringData connection, UtilityManagerProjects.Services.WaterNetworkStore networkStore) : PageModel
 {
+    [BindProperty(SupportsGet = true)] public DateTime? StartDate { get; set; }
+    [BindProperty(SupportsGet = true)] public DateTime? EndDate { get; set; }
+    public WaterFlowTraceReport FlowTrace { get; private set; } = new();
     public Models.WaterNetwork Network { get; private set; } = new();
     public Dictionary<string, Meter> LinkedMeters { get; } = new(StringComparer.Ordinal);
     public List<string> MappingWarnings { get; } = [];
@@ -40,6 +43,8 @@ public class IndexModel(IConfiguration configuration,
 
     public async Task OnGetAsync()
     {
+        var range = Services.ConsumptionService.ReportingRange(StartDate ?? DateTime.Today.AddDays(-6), EndDate ?? DateTime.Today);
+        StartDate = range.Start; EndDate = range.End; ViewData["DateNotice"] = range.Notice;
         Network = (await networkStore.LoadAsync()).Network;
 
         // Meter IDs must be explicitly configured after on-site verification.
@@ -69,13 +74,18 @@ public class IndexModel(IConfiguration configuration,
             }
             LinkedMeters.Add(mapping.Key, meter);
         }
-        var readings = (await readingData.GetLatestMeterReadings()).Where(r => !r.IsDeleted)
-            .GroupBy(r => r.MeterId).ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.ReadingDate).ThenByDescending(r => r.Id).First());
+        var history = (await readingData.GetAllMeterReading()).Where(r => !r.IsDeleted && r.ReadingDate.Date <= DateTime.Today).ToList();
+        FlowTrace = WaterFlowTracing.Calculate(Network, LinkedMeters.ToDictionary(p=>p.Key,p=>(int?)p.Value.Id), AvailableMeters, history, range.Start, range.End);
+        var flows = FlowTrace.Points.ToDictionary(p => p.Id);
+        var readings = history.Where(r => r.ReadingDate.Date <= range.End).GroupBy(r => r.MeterId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.ReadingDate).ThenByDescending(r => r.Id).First());
         foreach (var pair in LinkedMeters)
         {
             readings.TryGetValue(pair.Value.Id, out var reading);
             Latest[pair.Key] = new { meterId = pair.Value.Id, name = pair.Value.MeterName,
                 currentReading = reading?.CurrentReading, capturedAt = reading?.ReadingDate.ToString("dd MMM yyyy"),
+                flowLitres = flows[pair.Key].Flow.CoveredDays > 0 ? (decimal?)flows[pair.Key].Flow.Total : null,
+                coveredDays = flows[pair.Key].Flow.CoveredDays, totalDays = flows[pair.Key].Flow.Dates.Count,
                 unit = pair.Value.Unit, historyUrl = Url.Page("/MeterReadings/History", new { meterId = pair.Value.Id }) };
         }
     }

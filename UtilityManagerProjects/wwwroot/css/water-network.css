@@ -14,7 +14,7 @@
 .wn-controls .wn-checkbox { display: flex; align-items: center; padding-bottom: 8px; max-width: 190px; }
 .wn-explore-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; }
 .wn-legend { padding: 16px; display: flex; flex-wrap: wrap; gap: 16px; font-size: .75rem; color: #475569; }
-.wn-canvas { overflow: auto; padding: 18px 12px; background: #f8fafc; border-block: 1px solid #e2e8f0; }
+.wn-canvas { max-height:850px; overflow: auto; padding: 18px 12px; background: #f8fafc; border-block: 1px solid #e2e8f0; }
 #network-diagram { display: block; width: 100%; min-width: 1000px; }
 .wn-node { cursor: pointer; }
 .wn-node rect { fill: #fff; stroke: #cbd5e1; stroke-width: 1.5; }
@@ -67,3 +67,7 @@
 .wn-reading-panel { border-left: 3px solid #2563eb; padding: 12px; background: #eff6ff; color: #172b4d; }
 .wn-node .wn-reading-value { fill: #1d4ed8; font-size: 13px; font-weight: 800; }
 .wn-node .wn-reading-date { fill: #475569; font-size: 9px; font-weight: 400; }
+
+#network-diagram .wn-station-label { fill:#172b4d; font-size:20px; font-weight:700; }
+
+@media(max-width:640px) { .wn-canvas { max-height:560px; } }

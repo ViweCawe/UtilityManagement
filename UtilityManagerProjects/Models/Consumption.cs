@@ -100,6 +100,7 @@ public sealed class WaterAreaRow
 }
 public sealed class ConsumptionPeriod
 {
+    public BoreholeFlowPair? BoreholePair { get; init; }
     public List<WaterSupplyRow> WaterSupplies { get; init; } = [];
     public List<WaterAreaRow> WaterAreas { get; init; } = [];
     public int CapturesInPeriod { get; init; }

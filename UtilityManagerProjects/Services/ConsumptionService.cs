@@ -10,6 +10,7 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
 {
     public sealed class Link { public string NodeId { get; set; } = ""; public int? MeterId { get; set; } }
     private Task? load;
+    private readonly Dictionary<(DateTime, DateTime), WaterFlowTraceReport> flowTraces = [];
     private readonly Dictionary<(DateTime,DateTime,int?,string),ConsumptionPeriod> periods = [];
     public List<MeterReading> History { get; private set; } = [];
     public List<Meter> Meters { get; private set; } = [];
@@ -45,6 +46,13 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
                 ReadingCount=History.Count(r=>r.MeterId==m.Id&&r.ReadingDate.Date>=period.Water.Start&&r.ReadingDate.Date<=period.Water.End),
                 CoveredDays=days.Count,TotalUsage=days.Sum(d=>d.Usage),DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count};
         }).OrderBy(r=>r.DepartmentName).ThenBy(r=>r.MeterName).ToList();
+
+    public WaterFlowTraceReport FlowTraceForPeriod(DateTime start, DateTime end)
+    {
+        var key = (start.Date, end.Date);
+        if (!flowTraces.TryGetValue(key, out var report)) flowTraces[key] = report = WaterFlowTracing.Calculate(network, links, Meters, History, start, end);
+        return report;
+    }
 
     public WaterStorageReport StorageForPeriod(DateTime start,DateTime end) => WaterStorageAccounting.Calculate(network,links,Meters,History,start,end);
 
@@ -151,7 +159,7 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
         var captured=History.Where(r=>selectedIds.Contains(r.MeterId)&&r.ReadingDate.Date>=start&&r.ReadingDate.Date<=end).ToList();
         var capturedIds=captured.Select(r=>r.MeterId).ToHashSet();
         var startingOnly=capturedIds.Count(id=>History.Where(r=>r.MeterId==id).Select(r=>r.ReadingDate.Date).Distinct().Count()<2);
-        var result = new ConsumptionPeriod { WaterSupplies=supplies,WaterAreas=areas,AllDaily = daily,CapturesInPeriod=captured.Count,StartingOnlyMeterCount=startingOnly,
+        var result = new ConsumptionPeriod { BoreholePair = !meterId.HasValue && string.IsNullOrWhiteSpace(department) ? FlowTraceForPeriod(start,end).Borehole : null, WaterSupplies=supplies,WaterAreas=areas,AllDaily = daily,CapturesInPeriod=captured.Count,StartingOnlyMeterCount=startingOnly,
             Water = new ConsumptionScope { Start = start, End = end, MeterIds = expected, Missing = missing, Allocated = daily, Label = label },
             Electricity = new ConsumptionScope { Start = start, End = end, MeterIds = electricIds, Allocated = daily, Label = "Estimated electricity flow through selected meters" } };
         foreach(var scope in new[]{result.Water,result.Electricity})

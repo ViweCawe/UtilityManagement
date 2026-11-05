@@ -177,6 +177,8 @@ Equal(WasteDisposition.Other,WasteCategoryClassifier.Classify("Recycling / Landf
 Equal(WasteDisposition.Other,WasteCategoryClassifier.Classify("Non-recyclable"),"non-recyclable is not recycling");
 Console.WriteLine("PASS: full source-to-storage-to-use conservation, transfer pairing, nonzero counters, unknown openings, missing coverage and exclusive waste classification.");
 
+FlowTraceValidation.Run();
+
 static void Attach(PageModel page) => page.PageContext=new PageContext { HttpContext=new DefaultHttpContext(),ViewData=new ViewDataDictionary(new EmptyModelMetadataProvider(),new ModelStateDictionary()) };
 
 public class Fixture

@@ -1,0 +1,20 @@
+.station-flow-chart { max-width:900px; margin:18px 0 24px; }
+.station-flow-chart label { display:block; font-weight:600; margin-bottom:6px; }
+.station-flow-chart select { max-width:420px; }
+.station-flow-chart svg { display:block; width:100%; height:auto; margin-top:14px; background:#f8fafc; border:1px solid #dbe5ee; border-radius:8px; }
+.station-flow-chart svg text { fill:#334155; font:13px system-ui,sans-serif; }
+.station-flow-table details { min-width:200px; max-width:400px; white-space:normal; }
+.station-flow-table details p { margin:8px 0; overflow-wrap:anywhere; }
+.station-flow-table summary,.station-comparison>summary { color:#174b81; font-weight:600; cursor:pointer; }
+.station-comparison { margin-top:20px; }
+.station-comparison>p { margin-top:12px; }
+.borehole-matched { padding:12px; background:#eef6ff; color:#172b4d; border-radius:6px; }
+@media(max-width:640px) { .station-flow-chart select { max-width:100%; } }
+
+.station-comparison .utility-table { table-layout:fixed; min-width:900px; }
+.station-comparison :is(th,td) { white-space:normal; overflow-wrap:anywhere; }
+.station-comparison :is(th,td):nth-child(1) { width:15%; }
+.station-comparison :is(th,td):nth-child(2) { width:22%; }
+.station-comparison :is(th,td):nth-child(3),.station-comparison :is(th,td):nth-child(4),.station-comparison :is(th,td):nth-child(5) { width:11%; }
+.station-comparison :is(th,td):nth-child(6) { width:30%; }
+.station-flow-section h2,.borehole-flow h3 { font-size:1.2rem; font-weight:700; }

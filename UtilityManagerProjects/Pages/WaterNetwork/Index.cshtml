@@ -13,6 +13,13 @@
         <div class="page-title"><h1>Water Network</h1><p>Follow water from supply, through storage, to use.</p></div>
     </header>
 
+    @if(ViewData["DateNotice"] is string notice){<p class="alert alert-info">@notice</p>}
+    <form method="get" class="wn-controls content-card">
+        <label asp-for="StartDate">Flow from<input asp-for="StartDate" type="date" class="utility-input"/></label>
+        <label asp-for="EndDate">Through<input asp-for="EndDate" type="date" class="utility-input"/></label>
+        <button type="submit" class="utility-btn-primary">Show flow</button>
+        <a class="utility-btn-secondary" asp-page="/WaterBalance/Index" asp-route-StartDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-EndDate="@Model.EndDate?.ToString("yyyy-MM-dd")">Compare station flows and borehole</a>
+    </form>
     @if (TempData["LinkError"] is string linkError) { <p class="alert alert-warning" role="alert">@linkError</p> }
     @if (User.IsInRole("Admin"))
     {
@@ -38,9 +45,9 @@
 
     <section class="content-card wn-explorer" aria-labelledby="network-heading">
         <div class="content-card-header">
-            <div><h2 id="network-heading">Explore the flow</h2><p>Choose a station, then select a point on the map.</p></div>
+            <div><h2 id="network-heading">Explore the flow</h2><p>View both stations together or focus on one. Select a point to follow its source and downstream branches.</p></div>
             <div class="wn-controls" hidden id="network-controls">
-                <label for="network-station">Station <select id="network-station"><option value="Lower">Lower Station</option><option value="Top">Top Station</option></select></label>
+                <label for="network-station">Station <select id="network-station"><option value="All">Both stations</option><option value="Lower">Lower Station</option><option value="Top">Top Station</option></select></label>
                 <label for="network-point">Show point <select id="network-point"></select></label>
                 <label class="wn-checkbox"><input id="network-backup" type="checkbox" /> Highlight conditional supply routes</label>
             </div>
@@ -51,7 +58,7 @@
                 <div class="wn-canvas" tabindex="0" aria-label="Water network diagram, scroll horizontally to explore">
                     <svg id="network-diagram" role="group" aria-label="Interactive water network"></svg>
                 </div>
-                <p class="wn-caption">Arrows show the direction of supply. The highlighted route shows connected points; it does not indicate live valve status.</p>
+                <p class="wn-caption">Flow shows the difference between cumulative readings allocated over the selected dates. Counter shows the latest saved reading by the end date. Highlighted connections show possible routes, not live valve status.</p>
             </div>
             <aside class="wn-details" aria-labelledby="selected-point-title">
                 <span id="selected-point-kind" class="wn-eyebrow"></span>
@@ -94,6 +101,7 @@
 </div>
 @section Scripts {
     <script id="water-network-readings" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Latest))</script>
+    <script id="water-network-traces" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.FlowTrace.Points.ToDictionary(p=>p.Id,p=>p.Sources.Select(s=>s.Path+(s.Conditional?" (conditional route)":"")).ToList())))</script>
     <script id="water-network-data" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model.Network, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }))</script>
     <script type="module" src="~/js/water-network.js" asp-append-version="true"></script>
 }
