@@ -7,7 +7,7 @@ namespace UtilityManagerProjects.Models
     {
         public int Id { get; set; }
         [Required,StringLength(10)] public string CounterUnit { get; set; } = "L";
-        [StringLength(100)] public string SerialNumber { get; set; } = "";
+        [StringLength(100)] public string? SerialNumber { get; set; }
         [EnumDataType(typeof(MeterFlowDirection))] public MeterFlowDirection FlowDirection { get; set; }
         public DateTime? InstalledOn { get; set; }
 

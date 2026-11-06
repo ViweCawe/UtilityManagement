@@ -79,7 +79,7 @@ namespace UtilityManagerProjects.Pages.Meters
 
             var meter = new Meter
             {
-                CounterUnit=Input.CounterUnit,SerialNumber=Input.SerialNumber.Trim(),FlowDirection=Input.FlowDirection,
+                CounterUnit=Input.CounterUnit,SerialNumber=Input.SerialNumber?.Trim() ?? "",FlowDirection=Input.FlowDirection,
                 ReplacesMeterId=Input.ReplacesMeterId,InstalledOn=Input.InstalledOn,
                 AssetKind = Input.AssetKind.Value,
                 NetworkRole = Input.NetworkRole.Value,
@@ -146,7 +146,7 @@ namespace UtilityManagerProjects.Pages.Meters
         public class MeterInput
         {
             [Required, StringLength(10)] public string CounterUnit { get; set; } = "L";
-            [StringLength(100)] public string SerialNumber { get; set; } = "";
+            [StringLength(100)] public string? SerialNumber { get; set; }
             [EnumDataType(typeof(MeterFlowDirection))] public MeterFlowDirection FlowDirection { get; set; } = MeterFlowDirection.Outlet;
             [Range(1,int.MaxValue)] public int? ReplacesMeterId { get; set; }
             public DateTime? InstalledOn { get; set; }
