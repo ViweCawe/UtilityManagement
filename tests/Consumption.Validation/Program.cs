@@ -184,6 +184,7 @@ FlowTraceValidation.Run();
 OutletBoundaryValidation.Run();
 OutletOnlyValidation.Run();
 MeterLifecycleValidation.Run();
+LitreDisplayValidation.Run();
 
 static void Attach(PageModel page) => page.PageContext=new PageContext { HttpContext=new DefaultHttpContext(),ViewData=new ViewDataDictionary(new EmptyModelMetadataProvider(),new ModelStateDictionary()) };
 

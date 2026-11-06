@@ -8,6 +8,9 @@ public sealed class MeterDailyAverageRow
  public string DepartmentName { get; set; } = "";
  public decimal? LatestCounter { get; set; }
  public string CounterUnit { get; set; } = "L";
+ public decimal? DisplayLatestCounter => LatestCounter*(MeterUnits.Valid(CounterUnit,MeterType)?MeterUnits.Factor(CounterUnit,MeterType):1m);
+ public string CounterDisplayUnit => MeterUnits.Valid(CounterUnit,MeterType)?Unit:CounterUnit;
+ public bool HasConvertedCounter => MeterUnits.Valid(CounterUnit,MeterType)&&MeterUnits.Factor(CounterUnit,MeterType)!=1m;
  public DateTime? LatestCounterDate { get; set; }
  public string CalculationStatus { get; set; } = "";
  public string ReadingPurpose { get; set; } = "";

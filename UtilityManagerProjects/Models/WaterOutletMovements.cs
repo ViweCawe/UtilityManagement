@@ -16,6 +16,10 @@ public sealed class WaterOutletMovement
     public decimal ClosingCounter { get; init; }
     public decimal? Volume { get; init; }
     public string CounterUnit { get; init; } = "L";
+    public decimal DisplayFactor => MeterUnits.Valid(CounterUnit,MeterType.Water)?MeterUnits.Factor(CounterUnit,MeterType.Water):1m;
+    public decimal DisplayOpeningCounter => OpeningCounter*DisplayFactor;
+    public decimal DisplayClosingCounter => ClosingCounter*DisplayFactor;
+    public string DisplayUnit => MeterUnits.Valid(CounterUnit,MeterType.Water)?"L":CounterUnit;
     public string Status { get; init; } = "";
 }
 
