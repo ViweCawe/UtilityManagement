@@ -9,13 +9,13 @@ namespace DataLibrary.Models
         public int Id { get; set; }
         public string MeterName { get; set; } = string.Empty;
         public MeterType MeterType { get; set; }
-        public string Unit => MeterType switch
-        {
-            MeterType.Electricity => "kWh",
-            MeterType.Water => "L",
-            _ => string.Empty,
-      
-        };
+        public string? CounterUnit { get; set; }
+        public string Unit { get => MeterUnits.Normalize(CounterUnit,MeterType); set => CounterUnit=value; }
+        public string SerialNumber { get; set; } = "";
+        public MeterFlowDirection FlowDirection { get; set; }
+        public int? ReplacesMeterId { get; set; }
+        public DateTime? InstalledOn { get; set; }
+        public DateTime? RetiredOn { get; set; }
 
         public AssetKind AssetKind { get; set; } = AssetKind.Meter;
         public WaterNetworkRole NetworkRole { get; set; } = WaterNetworkRole.EndUse;

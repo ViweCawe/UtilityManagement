@@ -1,0 +1,18 @@
+@page
+@model UtilityManagerProjects.Pages.Meters.LifecycleModel
+@using System.Text.Json
+@{ ViewData["Title"]="Meter replacement history"; }
+<div class="page-shell">
+ <div class="page-header-row"><div class="page-title"><h1>Meter history and trend</h1><p>The same measurement point across separate physical counters. Counter readings never cross a replacement boundary.</p></div><a class="utility-btn-secondary" asp-page="./Index">Meter register</a></div>
+ @foreach(var issue in Model.Issues){<p class="alert alert-warning">@issue</p>}
+ <form method="get" class="content-card"><input type="hidden" asp-for="Id" /><label asp-for="StartDate">From</label><input asp-for="StartDate" type="date" class="utility-input" /><label asp-for="EndDate">Through</label><input asp-for="EndDate" type="date" class="utility-input" /><button class="utility-btn-primary">Apply dates</button></form>
+ <section class="content-card"><h2>Physical meter replacements</h2><div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter / serial</th><th>Counter unit</th><th>Direction</th><th>Installed</th><th>Retired</th><th>Replaces</th><th>Status</th></tr></thead><tbody>
+ @foreach(var m in Model.Family){<tr><td>#@m.Id · @m.MeterName<small class="d-block">@m.SerialNumber</small></td><td>@m.Unit</td><td>@m.FlowDirection</td><td>@(m.InstalledOn?.ToString("dd MMM yyyy")??"Not recorded")</td><td>@(m.RetiredOn?.ToString("dd MMM yyyy")??"—")</td><td>@(m.ReplacesMeterId?.ToString()??"Original")</td><td>@(m.IsActive?"Active":"Inactive / replaced")</td></tr>}
+ </tbody></table></div></section>
+ <section class="content-card"><h2>Daily average across replacements</h2><p>Water is compared in litres. Blank dates mean no comparable interval. A first counter is a baseline, not usage.</p><svg id="lifecycle-chart" viewBox="0 0 900 230" role="img" aria-label="Daily flow across replaced meters" style="width:100%;height:auto"></svg><p id="lifecycle-coverage" class="form-hint"></p><script type="application/json" id="lifecycle-series">@Html.Raw(JsonSerializer.Serialize(new {values=Model.Series,unit=Model.Unit,start=Model.StartDate?.ToString("yyyy-MM-dd"),end=Model.EndDate?.ToString("yyyy-MM-dd")}))</script></section>
+ <section class="content-card"><h2>Monthly recorded flow · @Model.Unit</h2><p>Transfers remain transfers. This trend does not reclassify them as final consumption.</p><div class="table-wrap"><table class="utility-table"><thead><tr><th>Month</th><th>Recorded flow subtotal</th><th>Covered days</th><th>Daily average on covered days</th></tr></thead><tbody>
+ @foreach(var month in Model.Months){<tr><td>@month.Month.ToString("MMM yyyy")</td><td>@(month.CoveredDays>0?month.Volume.ToString("N1"):"Unknown") @Model.Unit</td><td>@month.CoveredDays / @month.Days</td><td>@(month.CoveredDays>0?(month.Volume/month.CoveredDays).ToString("N1"):"Unknown") @Model.Unit/day</td></tr>}
+ </tbody></table></div></section>
+ <section class="content-card"><h2>Physical counter captures</h2><p>Latest 1,000 matching captures, in each meter’s original unit.</p><div class="table-wrap"><table class="utility-table"><thead><tr><th>Date</th><th>Physical meter</th><th>Counter</th><th>Original unit</th><th>Details</th></tr></thead><tbody>@foreach(var r in Model.Captures){<tr><td>@r.ReadingDate.ToString("dd MMM yyyy")</td><td>#@r.MeterId · @r.MeterName</td><td>@r.CurrentReading.ToString("#,##0.######")</td><td>@r.Unit</td><td><a asp-page="/MeterReadings/Display" asp-route-id="@r.Id">Capture #@r.Id</a></td></tr>}</tbody></table></div></section>
+</div>
+@section Scripts {<script src="~/js/meter-lifecycle.js" asp-append-version="true"></script>}

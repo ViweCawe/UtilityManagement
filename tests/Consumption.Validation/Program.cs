@@ -183,6 +183,7 @@ Console.WriteLine("PASS: full source-to-storage-to-use conservation, transfer pa
 FlowTraceValidation.Run();
 OutletBoundaryValidation.Run();
 OutletOnlyValidation.Run();
+MeterLifecycleValidation.Run();
 
 static void Attach(PageModel page) => page.PageContext=new PageContext { HttpContext=new DefaultHttpContext(),ViewData=new ViewDataDictionary(new EmptyModelMetadataProvider(),new ModelStateDictionary()) };
 

@@ -43,11 +43,11 @@ public class CreateModel : PageModel
 
         [Required(ErrorMessage = "Current reading is required.")]
         [Range(
-            typeof(int),
+            typeof(decimal),
             "0",
-            "792281625",
+            "9999999999999.999999",
             ErrorMessage = "Current reading cannot be negative.")]
-        public int? CurrentReading { get; set; }
+        public decimal? CurrentReading { get; set; }
 
         [Required(ErrorMessage = "Reading date is required.")]
         public DateTime? ReadingDate { get; set; }
@@ -74,7 +74,7 @@ public class CreateModel : PageModel
         MeterItems = meters?.Where(m => m.IsActive)
             .Select(m => new SelectListItem
             {
-                Text = m.MeterName,
+                Text = $"{m.MeterName} ({m.Unit} · {m.FlowDirection})",
                 Value = m.Id.ToString()
             })
             .ToList() ?? new();
@@ -95,6 +95,8 @@ public class CreateModel : PageModel
             return Page();
         }
 
+        if(!MeterUnits.ValidCounter(Input.CurrentReading!.Value) || Input.ReadingDate!.Value>DateTime.Now || meter.InstalledOn.HasValue&&Input.ReadingDate<meter.InstalledOn || meter.RetiredOn.HasValue&&Input.ReadingDate>meter.RetiredOn)
+        { ModelState.AddModelError("Input.CurrentReading","Use up to six decimals and a capture date within this physical meter’s service dates.");return Page(); }
         var userId = userManager.GetUserId(User);
 
         if (string.IsNullOrWhiteSpace(userId))
@@ -131,9 +133,9 @@ public class CreateModel : PageModel
         var reading = new MeterReading
         {
             MeterId = meter.Id,
-            PreviousReading = (int)previousReading,
+            PreviousReading = previousReading,
             CurrentReading = Input.CurrentReading!.Value,
-            Usage = (int)(Input.CurrentReading.Value - previousReading),
+            Usage = Input.CurrentReading.Value - previousReading,
             ReadingDate = Input.ReadingDate!.Value,
             EmployeeId = employee.Id,
             Notes = Input.Notes?.Trim() ?? string.Empty,
@@ -177,7 +179,7 @@ public class CreateModel : PageModel
         MeterItems = meters?.Where(m => m.IsActive)
             .Select(m => new SelectListItem
             {
-                Text = m.MeterName,
+                Text = $"{m.MeterName} ({m.Unit} · {m.FlowDirection})",
                 Value = m.Id.ToString()
             })
             .ToList() ?? new();

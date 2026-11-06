@@ -49,6 +49,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
 
         public async Task<IActionResult> OnPost()
         {
+            if(!MeterUnits.ValidCounter(ReadingUpdate.CurrentReadingUpdate)||ReadingUpdate.ReadingDateUpdate>DateTime.Now)ModelState.AddModelError(string.Empty,"Use a nonnegative counter with up to six decimals and a capture date no later than now.");
             if (!ModelState.IsValid)
             {
                 Reading = await meterReadingData

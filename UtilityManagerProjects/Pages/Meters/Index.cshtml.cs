@@ -31,6 +31,8 @@ namespace UtilityManagerProjects.Pages.Meters
         [BindProperty(SupportsGet = true)]
         public int PageSize { get; set; } = 10;
 
+        public List<Meter> InactiveMeters { get; private set; } = [];
+        public Dictionary<int,Meter> Successors { get; private set; } = [];
         public int WaterCount { get; private set; }
         public int ElectricityCount { get; private set; }
         public int TotalCount { get; private set; }
@@ -46,6 +48,9 @@ namespace UtilityManagerProjects.Pages.Meters
         {
             var meters = (await meterData.GetMeters()).ToList();
 
+            Successors=meters.Where(m=>m.ReplacesMeterId.HasValue).ToDictionary(m=>m.ReplacesMeterId!.Value);
+            InactiveMeters=meters.Where(m=>!m.IsActive).Where(m=>string.IsNullOrWhiteSpace(Search)||m.MeterName.Contains(Search,StringComparison.OrdinalIgnoreCase)||m.SerialNumber.Contains(Search,StringComparison.OrdinalIgnoreCase)||m.Id.ToString()==Search).OrderByDescending(m=>m.RetiredOn).ThenBy(m=>m.MeterName).ToList();
+            meters=meters.Where(m=>m.IsActive).ToList();
             TotalCount = meters.Count;
             WaterCount = meters.Count(x => x.MeterType == MeterType.Water && x.AssetKind == AssetKind.Meter);
             ElectricityCount = meters.Count(x => x.MeterType == MeterType.Electricity && x.AssetKind == AssetKind.Meter);
@@ -81,7 +86,7 @@ namespace UtilityManagerProjects.Pages.Meters
                     AssetKind = x.AssetKind,
                     NetworkRole = x.NetworkRole,
                     MeterType = x.MeterType.ToString(),
-                    IsActive = x.IsActive,
+                    IsActive = x.IsActive,Unit=x.Unit,SerialNumber=x.SerialNumber,FlowDirection=x.FlowDirection,ReplacesMeterId=x.ReplacesMeterId,
                     LastUpdatedAt = GetLastUpdatedAt(x)
                 })
                 .ToList();
@@ -93,6 +98,7 @@ namespace UtilityManagerProjects.Pages.Meters
             int pageNumber = 1,
             int pageSize = 10)
         {
+            if(!User.IsInRole("Admin"))return Forbid();
             var meter = (await meterData.GetMeters()).SingleOrDefault(x => x.Id == id);
             if (meter is null)
             {
@@ -149,6 +155,10 @@ namespace UtilityManagerProjects.Pages.Meters
 
         public class MeterRow
         {
+            public string Unit { get; set; } = "";
+            public string SerialNumber { get; set; } = "";
+            public MeterFlowDirection FlowDirection { get; set; }
+            public int? ReplacesMeterId { get; set; }
             public int Id { get; set; }
             public AssetKind AssetKind { get; set; }
             public WaterNetworkRole NetworkRole { get; set; }

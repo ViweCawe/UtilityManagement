@@ -1,4 +1,4 @@
-﻿using DataLibrary.Models;
+using DataLibrary.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace UtilityManagerProjects.Models
@@ -9,7 +9,7 @@ namespace UtilityManagerProjects.Models
 
         [Required]
         [Display(Name = "Current Reading")]
-        public int CurrentReadingUpdate { get; set; }
+        public decimal CurrentReadingUpdate { get; set; }
         [Display(Name = "Reading Date")]
         public DateTime ReadingDateUpdate { get; set; } = new();
 

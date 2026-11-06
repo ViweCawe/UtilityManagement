@@ -6,6 +6,10 @@ namespace UtilityManagerProjects.Models
     public class MeterUpdate
     {
         public int Id { get; set; }
+        [Required,StringLength(10)] public string CounterUnit { get; set; } = "L";
+        [StringLength(100)] public string SerialNumber { get; set; } = "";
+        [EnumDataType(typeof(MeterFlowDirection))] public MeterFlowDirection FlowDirection { get; set; }
+        public DateTime? InstalledOn { get; set; }
 
         [Required(ErrorMessage = "Enter a meter name.")]
         [StringLength(100)]

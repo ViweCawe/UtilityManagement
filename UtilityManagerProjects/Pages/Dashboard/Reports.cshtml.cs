@@ -230,14 +230,7 @@ namespace UtilityManagerProjects.Pages.Reports
 
         private void BuildMeterDailyAverages()
         {
-            MeterDailyAverages = calculations.Meters
-                .Where(m => (!MeterId.HasValue || m.Id == MeterId) && (string.IsNullOrWhiteSpace(Department) || string.Equals(m.DepartmentName, Department, StringComparison.OrdinalIgnoreCase)))
-                .Select(m => {
-                    var days = Consumption.AllDaily.Where(d => d.MeterId == m.Id).ToList();
-                    return new MeterDailyAverageRow { MeterId=m.Id, MeterName=m.MeterName, MeterType=m.MeterType, DepartmentName=m.DepartmentName,
-                        ReadingCount=MeterReadings.Count(r=>r.MeterId==m.Id), CoveredDays=days.Count,
-                        TotalUsage=days.Sum(d=>d.Usage), DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count };
-                }).OrderBy(x=>x.DepartmentName).ThenBy(x=>x.MeterName).ToList();
+            MeterDailyAverages = calculations.DailyAverages(Consumption,MeterId,Department);
         }
 
         private static bool IsInRange(DateTime date, DateTime startDate, DateTime endDate)
@@ -459,14 +452,14 @@ namespace UtilityManagerProjects.Pages.Reports
 
         private List<List<ExcelCell>> BuildIntervalEvidenceCells()
         {
-            var rows=new List<List<ExcelCell>> { Row(TextCell("Meter ID",3),TextCell("Meter",3),TextCell("Opening ID",3),TextCell("Opening date (may be outside filter)",3),TextCell("Opening counter",3),TextCell("Closing ID",3),TextCell("Closing date (may be outside filter)",3),TextCell("Closing counter",3),TextCell("Calendar days",3),TextCell("Counter change",3),TextCell("Daily estimate",3),TextCell("Unit",3)) };
+            var rows=new List<List<ExcelCell>> { Row(TextCell("Meter ID",3),TextCell("Meter",3),TextCell("Opening ID",3),TextCell("Opening date (may be outside filter)",3),TextCell("Opening counter",3),TextCell("Closing ID",3),TextCell("Closing date (may be outside filter)",3),TextCell("Closing counter",3),TextCell("Calendar days",3),TextCell("Counter change",3),TextCell("Daily estimate (L / kWh)",3),TextCell("Counter unit",3)) };
             var captures=calculations.History.ToDictionary(r=>r.Id);
             foreach(var pair in Consumption.AllDaily.Select(d=>(d.MeterId,d.OpeningReadingId,d.ClosingReadingId)).Distinct().OrderBy(p=>p.MeterId).ThenBy(p=>p.ClosingReadingId))
             {
                 var opening=captures[pair.OpeningReadingId]; var closing=captures[pair.ClosingReadingId];
                 var days=(closing.ReadingDate.Date-opening.ReadingDate.Date).Days;
                 var delta=(decimal)closing.CurrentReading-opening.CurrentReading;
-                rows.Add(Row(NumberCell(pair.MeterId,5),TextCell(closing.MeterName,4),NumberCell(opening.Id,5),DateCell(opening.ReadingDate),NumberCell(opening.CurrentReading,5),NumberCell(closing.Id,5),DateCell(closing.ReadingDate),NumberCell(closing.CurrentReading,5),NumberCell(days,5),NumberCell(delta,5),NumberCell(delta/days,5),TextCell(closing.Unit,4)));
+                rows.Add(Row(NumberCell(pair.MeterId,5),TextCell(closing.MeterName,4),NumberCell(opening.Id,5),DateCell(opening.ReadingDate),NumberCell(opening.CurrentReading,5),NumberCell(closing.Id,5),DateCell(closing.ReadingDate),NumberCell(closing.CurrentReading,5),NumberCell(days,5),NumberCell(delta,5),NumberCell(delta*MeterUnits.Factor(closing.Unit,closing.MeterType)/days,5),TextCell(closing.Unit,4)));
             }
             return rows;
         }
@@ -516,7 +509,7 @@ namespace UtilityManagerProjects.Pages.Reports
             rows.Add(Row(TextCell("MEASURED OUTLET TRANSFERS · FULL CAPTURE INTERVALS, NOT ADDITIVE",8),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
             rows.Add(Row(TextCell("Outlet / meter",3),TextCell("Opening capture",3),TextCell("Closing capture",3),TextCell("Counter change L",3),TextCell("Next mapped points",3),TextCell("Measurement basis",3)));
             foreach(var transfer in OutletTransfers.Rows)
-                rows.Add(Row(TextCell(transfer.Point+" / "+transfer.MeterName,4),TextCell($"#{transfer.OpeningId} {transfer.OpeningDate:yyyy-MM-dd HH:mm} · {transfer.OpeningCounter} L",4),TextCell($"#{transfer.ClosingId} {transfer.ClosingDate:yyyy-MM-dd HH:mm} · {transfer.ClosingCounter} L",4),transfer.Volume.HasValue?NumberCell(transfer.Volume.Value,5):TextCell("Check counter",4),TextCell(transfer.Destinations,4),TextCell(transfer.Status,4)));
+                rows.Add(Row(TextCell(transfer.Point+" / "+transfer.MeterName,4),TextCell($"#{transfer.OpeningId} {transfer.OpeningDate:yyyy-MM-dd HH:mm} · {transfer.OpeningCounter} {transfer.CounterUnit}",4),TextCell($"#{transfer.ClosingId} {transfer.ClosingDate:yyyy-MM-dd HH:mm} · {transfer.ClosingCounter} {transfer.CounterUnit}",4),transfer.Volume.HasValue?NumberCell(transfer.Volume.Value,5):TextCell("Check counter",4),TextCell(transfer.Destinations,4),TextCell(transfer.Status,4)));
             if(OutletTransfers.Truncated)rows.Add(Row(TextCell("Latest 500 intervals shown; narrow the filter for earlier captures.",4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
 
             rows.Add(Row(TextCell("Methodology",3),TextCell("Estimated daily flow from consecutive counters; unknown days excluded",4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
@@ -775,19 +768,6 @@ namespace UtilityManagerProjects.Pages.Reports
             public DateTime? PeakDate { get; set; }
             public double ChangePercent { get; set; }
             public string ManagementNote { get; set; } = string.Empty;
-        }
-
-        public class MeterDailyAverageRow
-        {
-            public int MeterId { get; set; }
-            public string MeterName { get; set; } = string.Empty;
-            public MeterType MeterType { get; set; }
-            public string DepartmentName { get; set; } = string.Empty;
-            public int ReadingCount { get; set; }
-            public decimal TotalUsage { get; set; }
-            public int CoveredDays { get; set; }
-            public decimal DailyAverage { get; set; }
-            public string Unit => MeterType == MeterType.Water ? "L" : "kWh";
         }
 
         private class PeakDay

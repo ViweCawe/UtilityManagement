@@ -29,6 +29,7 @@ namespace UtilityManagerProjects.Pages.Meters
         [BindProperty]
         public MeterInput Input { get; set; } = new();
 
+        public List<SelectListItem> ReplacementOptions { get; private set; } = new();
         public List<SelectListItem> AreaOptions { get; private set; } = new();
         public List<SelectListItem> DepartmentOptions { get; private set; } = new();
         public List<SelectListItem> StationOptions { get; private set; } = new();
@@ -61,6 +62,10 @@ namespace UtilityManagerProjects.Pages.Meters
                     "Select either an electricity or water meter.");
             }
 
+            if(Input.MeterType.HasValue && !MeterUnits.Valid(Input.CounterUnit,Input.MeterType.Value))ModelState.AddModelError("Input.CounterUnit","Water uses L, kL or m³; m² is area. Electricity uses kWh.");
+            if(Input.ReplacesMeterId.HasValue && !ReplacementOptions.Any(o=>o.Value==Input.ReplacesMeterId.ToString()))ModelState.AddModelError("Input.ReplacesMeterId","Choose a meter without an existing successor.");
+            if(Input.ReplacesMeterId.HasValue && !Input.InstalledOn.HasValue)ModelState.AddModelError("Input.InstalledOn","Record the replacement cutover date and time.");
+            if(Input.InstalledOn>DateTime.Now)ModelState.AddModelError("Input.InstalledOn","Installation cannot be in the future.");
             if (Input.AssetKind.HasValue && Input.NetworkRole.HasValue && Input.MeterType.HasValue)
             {
                 var error = MeterAssetRules.Validate(Input.AssetKind.Value, Input.NetworkRole.Value, Input.MeterType.Value, Input.CapacityLitres);
@@ -74,6 +79,8 @@ namespace UtilityManagerProjects.Pages.Meters
 
             var meter = new Meter
             {
+                CounterUnit=Input.CounterUnit,SerialNumber=Input.SerialNumber.Trim(),FlowDirection=Input.FlowDirection,
+                ReplacesMeterId=Input.ReplacesMeterId,InstalledOn=Input.InstalledOn,
                 AssetKind = Input.AssetKind.Value,
                 NetworkRole = Input.NetworkRole.Value,
                 CapacityLitres = Input.CapacityLitres,
@@ -85,7 +92,9 @@ namespace UtilityManagerProjects.Pages.Meters
                 IsCumulative = Input.IsCumulative
             };
 
-            var meterId = await meterData.InsertMeter(meter);
+            int meterId;
+            try { meterId = await meterData.InsertMeter(meter); }
+            catch(Exception ex) when(ex is ArgumentException || ex is Microsoft.Data.SqlClient.SqlException){ModelState.AddModelError(string.Empty,"Meter could not be saved. Check replacement boundaries, service dates, units and whether another replacement was already recorded.");return Page();}
 
             TempData["SuccessMessage"] =
                 $"Meter {meter.MeterName} was created with ID {meterId}.";
@@ -95,6 +104,8 @@ namespace UtilityManagerProjects.Pages.Meters
 
         private async Task LoadOptionsAsync()
         {
+            var all=await meterData.GetMeters();
+            ReplacementOptions=all.Where(m=>!all.Any(n=>n.ReplacesMeterId==m.Id)).OrderBy(m=>m.MeterName).Select(m=>new SelectListItem($"#{m.Id} {m.MeterName} · {m.SerialNumber} · {(m.IsActive?"active":"inactive")}",m.Id.ToString())).ToList();
             var areasTask = areaData.GetAreas();
             var departmentsTask = departmentData.GetDepartments();
             var stationsTask = stationData.GetStations();
@@ -134,6 +145,11 @@ namespace UtilityManagerProjects.Pages.Meters
 
         public class MeterInput
         {
+            [Required, StringLength(10)] public string CounterUnit { get; set; } = "L";
+            [StringLength(100)] public string SerialNumber { get; set; } = "";
+            [EnumDataType(typeof(MeterFlowDirection))] public MeterFlowDirection FlowDirection { get; set; } = MeterFlowDirection.Outlet;
+            [Range(1,int.MaxValue)] public int? ReplacesMeterId { get; set; }
+            public DateTime? InstalledOn { get; set; }
             [Required(ErrorMessage = "Enter a meter name.")]
             [StringLength(100)]
             [Display(Name = "Meter name")]
@@ -167,7 +183,7 @@ namespace UtilityManagerProjects.Pages.Meters
             public int StationId { get; set; }
 
             [Display(Name = "Cumulative meter")]
-            public bool IsCumulative { get; set; }
+            public bool IsCumulative { get; set; } = true;
         }
     }
 }

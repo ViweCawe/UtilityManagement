@@ -33,7 +33,10 @@
         </div>
         <div class="page-actions">
             <a class="utility-btn-secondary" asp-page="/WaterNetwork/Index"><i class="bi bi-diagram-3"></i> Water Network</a>
+            @if(User.IsInRole("Admin")){
+            <a class="utility-btn-secondary" asp-page="/Imports/MeterImport">Import readings</a>
             <a class="utility-btn-primary" asp-page="./Create"><i class="bi bi-plus-lg"></i> Add Meter</a>
+            }
         </div>
     </div>
 
@@ -59,7 +62,7 @@
 
     <section class="content-card">
         <div class="content-card-header">
-            <div><h3>All Meters</h3><p>Water and electricity meter register.</p></div>
+            <div><h3>Active meters</h3><p>Water and electricity meter register.</p></div>
             <form method="get" class="meter-toolbar">
                 <input class="search-box" asp-for="Search" type="search" placeholder="Search meters..." />
                 <select class="meter-page-size" asp-for="PageSize" aria-label="Rows per page" onchange="this.form.submit()">
@@ -83,7 +86,7 @@
                         <th>Meter Name</th>
                         <th>Type</th>
                         <th>Status</th>
-                        <th>Last updated</th>
+                        <th>Unit / direction</th>
                         <th><span class="visually-hidden">Actions</span></th>
                     </tr>
                 </thead>
@@ -95,7 +98,7 @@
                             var pillClass = $"reading-{meter.MeterType.ToLowerInvariant()}";
                             <tr>
                                 <td>@meter.Reference</td>
-                                <td>@meter.MeterName<br /><small>@meter.AssetKind · @meter.NetworkRole</small></td>
+                                <td>@meter.MeterName<br /><small>@meter.AssetKind · @meter.NetworkRole · @meter.SerialNumber</small></td>
                                 <td><span class="reading-pill @pillClass">@meter.MeterType</span></td>
                                 <td>
                                     <span class="meter-status @(meter.IsActive ? "" : "disabled")">
@@ -103,32 +106,24 @@
                                         @(meter.IsActive ? "Active" : "Disabled")
                                     </span>
                                 </td>
-                                <td class="meter-updated">
-                                    @if (meter.LastUpdatedAt.HasValue)
-                                    {
-                                        <time datetime="@meter.LastUpdatedAt.Value.ToString("O")">@meter.LastUpdatedAt.Value.ToLocalTime().ToString("dd MMM yyyy")</time>
-                                    }
-                                    else
-                                    {
-                                        <span>Not recorded</span>
-                                    }
-                                </td>
+                                <td>@meter.Unit · @meter.FlowDirection @if(meter.ReplacesMeterId.HasValue){<small class="d-block">Replaces #@meter.ReplacesMeterId</small>}</td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a class="icon-action" asp-page="./Edit" asp-route-id="@meter.Id" title="Edit meter" aria-label="Edit @meter.MeterName"><i class="bi bi-pencil"></i></a>
+                                        <a class="utility-btn-secondary" asp-page="./Lifecycle" asp-route-id="@meter.Id">History / trend</a>@if(User.IsInRole("Admin")){<a class="utility-btn-secondary" asp-page="./Edit" asp-route-id="@meter.Id" title="Edit meter" aria-label="Edit @meter.MeterName">Edit</a>
                                         @if (meter.IsActive)
                                         {
                                             <form method="post" asp-page-handler="Disable" class="inline-action-form"
                                                   asp-route-id="@meter.Id" asp-route-search="@Model.Search"
                                                   asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize"
                                                   onsubmit="return confirm('Disable this meter? Existing history will be kept.');">
-                                                <button class="icon-action danger" type="submit" title="Disable meter" aria-label="Disable @meter.MeterName"><i class="bi bi-slash-circle"></i></button>
+                                                <button class="utility-btn-secondary" type="submit" title="Disable meter" aria-label="Disable @meter.MeterName">Retire</button>
                                             </form>
                                         }
                                         else
                                         {
-                                            <button class="icon-action" type="button" disabled title="Meter disabled"><i class="bi bi-slash-circle"></i></button>
+                                            <button class="icon-action" type="button" disabled title="Meter disabled">Retire</button>
                                         }
+                                    }
                                     </div>
                                 </td>
                             </tr>
@@ -161,3 +156,8 @@
         </nav>
     </section>
 </div>
+
+<section class="content-card" aria-label="Inactive and replaced meters"><h2>Inactive / replaced meters</h2><p>Historical physical counters are kept for imports, checks and trends.</p><div class="table-wrap"><table class="utility-table"><thead><tr><th>Meter</th><th>Serial</th><th>Unit / direction</th><th>Retired</th><th>Replaced by</th><th>History</th></tr></thead><tbody>
+@foreach(var meter in Model.InactiveMeters){<tr><td>#@meter.Id · @meter.MeterName</td><td>@meter.SerialNumber</td><td>@meter.Unit · @meter.FlowDirection</td><td>@(meter.RetiredOn?.ToString("dd MMM yyyy")??"Not recorded")</td><td>@(Model.Successors.TryGetValue(meter.Id,out var next)?$"#{next.Id} {next.MeterName}":"No replacement linked")</td><td><a asp-page="./Lifecycle" asp-route-id="@meter.Id">History / trend</a></td></tr>}
+@if(Model.InactiveMeters.Count==0){<tr><td colspan="6">No inactive meters match.</td></tr>}
+</tbody></table></div></section>

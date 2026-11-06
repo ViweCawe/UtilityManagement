@@ -74,7 +74,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             Consumption = calculations.ForPeriod(CurrentStart,CurrentEnd,MeterId,Department);
             EndUse = calculations.ConsumptionTable(Consumption, MeterId, Department);
             OutletTransfers=calculations.OutletMovements(Consumption,MeterId,Department);
-            ReadingPurposes=calculations.Meters.ToDictionary(m=>m.Id,m=>calculations.ReadingPurpose(m.Id));
+            ReadingPurposes=calculations.AllMeters.ToDictionary(m=>m.Id,m=>calculations.ReadingPurpose(calculations.ReportingId(m.Id)));
             ViewData["Consumption"] = Consumption;
             ViewData["ConsumptionWarnings"] = calculations.Warnings;
 

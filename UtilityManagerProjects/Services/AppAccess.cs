@@ -10,7 +10,8 @@ public static class AppAccess
             options.Conventions.AuthorizeFolder("/");
             options.Conventions.AllowAnonymousToPage("/Index");
             options.Conventions.AllowAnonymousToPage("/Error");
-            foreach(var folder in new[]{"/Admin","/Area","/Stations","/MeterAreas"}) options.Conventions.AuthorizeFolder(folder,"AdminOnly");
+            foreach(var page in new[]{"/Meters/Create","/Meters/Edit"})options.Conventions.AuthorizePage(page,"AdminOnly");
+            foreach(var folder in new[]{"/Admin","/Area","/Stations","/MeterAreas","/Imports"}) options.Conventions.AuthorizeFolder(folder,"AdminOnly");
         });
     }
 }

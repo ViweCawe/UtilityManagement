@@ -12,9 +12,10 @@ public sealed class WaterOutletMovement
     public int ClosingId { get; init; }
     public DateTime OpeningDate { get; init; }
     public DateTime ClosingDate { get; init; }
-    public int OpeningCounter { get; init; }
-    public int ClosingCounter { get; init; }
+    public decimal OpeningCounter { get; init; }
+    public decimal ClosingCounter { get; init; }
     public decimal? Volume { get; init; }
+    public string CounterUnit { get; init; } = "L";
     public string Status { get; init; } = "";
 }
 
@@ -38,9 +39,10 @@ public static class WaterOutletMovements
         var pointByMeter=links.Where(p=>p.Value.HasValue&&active.ContainsKey(p.Value.Value)&&map.Nodes.Any(n=>n.Id==p.Key&&n.CanLinkMeter))
             .GroupBy(p=>p.Value!.Value).Where(g=>g.Count()==1).ToDictionary(g=>g.Key,g=>map.Nodes.Single(n=>n.Id==g.Single().Key));
         var rows=new List<WaterOutletMovement>();
-        foreach(var group in captures.Where(r=>!r.IsDeleted&&active.ContainsKey(r.MeterId)&&r.ReadingDate.Date<=DateTime.Today).GroupBy(r=>r.MeterId))
+        foreach(var group in captures.Where(r=>!r.IsDeleted&&active.ContainsKey(r.MeterId)&&r.ReadingDate.Date<=DateTime.Today).GroupBy(r=>r.PhysicalMeterId ?? r.MeterId))
         {
-            if(final.Contains(group.Key)||!pointByMeter.TryGetValue(group.Key,out var point)||WaterAccounting.CounterBoundary(point)!="outlet")continue;
+            var reportingId=group.First().MeterId;
+            if(final.Contains(reportingId)||!pointByMeter.TryGetValue(reportingId,out var point)||WaterAccounting.CounterBoundary(point)!="outlet")continue;
             var destinations=new HashSet<string>();var seen=new HashSet<string>();
             var queue=new Queue<string>(map.Connections.Where(e=>e.From==point.Id).Select(e=>e.To));
             while(queue.TryDequeue(out var id))
@@ -62,9 +64,9 @@ public static class WaterOutletMovements
                 if(previous.ReadingDate.Date==current.ReadingDate.Date)notes.Add("Same-day capture change; daily-average coverage remains separate.");
                 if(destinations.Count!=1)notes.Add("Destination volume is not split across branches. Use a dedicated transfer measurement or confirmed filling record to identify a specific destination.");
                 else notes.Add("Measured at the sender's outlet. Arrival at the next tank is not separately measured here.");
-                rows.Add(new(){MeterId=group.Key,MeterName=active[group.Key].MeterName,Point=point.Label,Destinations=string.Join(", ",destinations),
+                rows.Add(new(){MeterId=reportingId,MeterName=group.First().MeterName,Point=point.Label,Destinations=string.Join(", ",destinations),
                     OpeningId=previous.Id,ClosingId=current.Id,OpeningDate=previous.ReadingDate,ClosingDate=current.ReadingDate,
-                    OpeningCounter=previous.CurrentReading,ClosingCounter=current.CurrentReading,Volume=delta>=0?delta:null,Status=string.Join(" ",notes)});
+                    OpeningCounter=previous.CurrentReading,ClosingCounter=current.CurrentReading,CounterUnit=current.Unit,Volume=delta>=0&&current.Unit==previous.Unit&&MeterUnits.Valid(current.Unit,current.MeterType)?delta*MeterUnits.Factor(current.Unit,current.MeterType):null,Status=string.Join(" ",notes)});
             }
         }
         return new(){Rows=rows.OrderByDescending(r=>r.ClosingDate).ThenBy(r=>r.MeterName).Take(500).ToList(),Truncated=rows.Count>500};

@@ -10,7 +10,7 @@
 
     <div class="page-header-row">
         <div class="page-title">
-            <h1>@Model.MeterDisplayName()</h1>
+            <a asp-page="/Meters/Lifecycle" asp-route-id="@Model.MeterId" class="utility-btn-secondary">Replacement history and five-year trend</a><h1>@Model.MeterDisplayName()</h1>
             <p>Full meter reading history for Meter ID @Model.MeterId.</p>
         </div>
 
@@ -69,7 +69,7 @@
                 </div>
                 <div class="stat-content">
                     <p>Latest Reading</p>
-                    <h2>@Model.LatestReading.CurrentReading.ToString("N2") <span>@unit</span></h2>
+                    <h2>@Model.LatestReading.CurrentReading.ToString("#,##0.######") <span>@unit</span></h2>
                     <span>@Model.LatestReading.ReadingDate.ToString("dd MMM yyyy")</span>
                 </div>
             </div>
@@ -123,13 +123,13 @@
                                     </div>
                                 </td>
 
-                                <td>@reading.PreviousReading.ToString("N2") @unit</td>
+                                <td>@reading.PreviousReading.ToString("#,##0.######") @unit</td>
 
                                 <td>
                                     <a class="table-main-link"
                                        asp-page="./Display"
                                        asp-route-id="@reading.Id">
-                                        @reading.CurrentReading.ToString("N2") @unit
+                                        @reading.CurrentReading.ToString("#,##0.######") @unit
                                     </a>
                                 </td>
 

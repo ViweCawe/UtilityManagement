@@ -129,4 +129,5 @@
 <ItemGroup><Build Include="dbo\Tables\WaterNetworkDocument.sql" /><Build Include="dbo\StoredProcedures\spWaterNetworkDocument_Get.sql" /><Build Include="dbo\StoredProcedures\spWaterNetworkDocument_Save.sql" /></ItemGroup>
 <ItemGroup><Build Include="dbo\Views\vwMeterReadingIntervals.sql" /></ItemGroup>
 <ItemGroup><Build Include="dbo\StoredProcedures\spAdminAreas_All.sql" /><Build Include="dbo\StoredProcedures\spAdminLocations_All.sql" /><Build Include="dbo\StoredProcedures\spAdminArea_Save.sql" /><Build Include="dbo\StoredProcedures\spAdminLocation_Save.sql" /><Build Include="dbo\StoredProcedures\spAdminArea_Delete.sql" /><Build Include="dbo\StoredProcedures\spAdminLocation_Delete.sql" /></ItemGroup>
+<ItemGroup><Build Include="dbo\Tables\MeterReadingImportBatches.sql" /><Build Include="dbo\Indexes\MeterReplacementIndex.sql" /><Build Include="dbo\StoredProcedures\spMeterReadings_Import.sql" /><None Include="Scripts\UpgradeMeterLifecycle.sql" /></ItemGroup>
 </Project>
