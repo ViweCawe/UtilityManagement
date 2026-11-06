@@ -29,6 +29,7 @@ export function validateNetwork(map) {
         if(!['source','storage'].includes(n.kind)||!Array.isArray(ins)||!Array.isArray(outs)||ins.length>500||outs.length>500||[...ins,...outs].some(id=>!Number.isInteger(id)||id<=0)||ins.some(id=>outs.includes(id)))throw new Error('Storage needs distinct inlet and outlet counters on a physical source/storage point.');
         if((b.openingDate!=null)!==(b.openingVolumeLitres!=null)||b.openingVolumeLitres!=null&&(!Number.isFinite(b.openingVolumeLitres)||b.openingVolumeLitres<0))throw new Error('Enter both a measured opening volume and its date. Do not use the cumulative counter as stock.');
         if(b.openingDate!=null){const date=new Date(b.openingDate);if(!Number.isFinite(date.getTime())||date.getFullYear()<1753||date.setHours(0,0,0,0)>new Date().setHours(0,0,0,0))throw new Error('Choose a valid opening stock date no later than today.');}
+        if(counterBoundary(n)==='inlet'&&outs.includes(n.meterId))throw new Error('An incoming counter cannot also be its own tank outlet.');
         if(counterBoundary(n)==='outlet'&&ins.includes(n.meterId))throw new Error('This tank counter measures an outlet. Its counter cannot also be its tank inlet.');
         for(const id of ins){if(credits.has(id))throw new Error('A transfer counter can credit only one receiving tank.');credits.set(id,n.id);}
         for(const id of outs){if(debits.has(id))throw new Error('A transfer counter can debit only one supplying tank.');debits.add(id);}

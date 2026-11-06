@@ -1,13 +1,6 @@
-﻿CREATE PROCEDURE [dbo].[spMeters_Delete]
-@Id INT
-AS
+CREATE PROCEDURE dbo.spMeters_Delete @Id INT AS
 BEGIN
-
-
-SET NOCOUNT ON;
-	DELETE FROM dbo.Meters
-	WHERE Id = @Id;
-	UPDATE dbo.Meters
-		SET IsDeleted = 1
-		WHERE Id = @Id;
-END
+ SET NOCOUNT ON;
+ -- Retire the physical meter; reading and replacement history must survive.
+ UPDATE dbo.Meters SET IsActive=0,RetiredOn=COALESCE(RetiredOn,GETDATE()) WHERE Id=@Id;
+END;

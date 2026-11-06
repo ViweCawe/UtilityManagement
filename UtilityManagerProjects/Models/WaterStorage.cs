@@ -82,6 +82,7 @@ public static class WaterStorageAccounting
    if(row.OpeningDate==end && row.OpeningVolume.HasValue) row.CalculatedStock=row.OpeningVolume;
    if(ownOutlet && settings.InletMeterIds.Contains(ownId!.Value)){row.Status="Review tank boundaries: this tank's counter measures water leaving. It cannot also measure incoming water. Choose its upstream transfer counter for inflow.";continue;}
    if(ownOutlet && settings.OutletMeterIds.Count>0 && !settings.OutletMeterIds.ToHashSet().SetEquals(new[]{ownId!.Value})){row.Status="Review outlet boundaries: use this tank's own outlet counter once, rather than adding downstream tank counters as its outflow.";continue;}
+   if(WaterAccounting.CounterBoundary(node)=="inlet" && ownId.HasValue && settings.OutletMeterIds.Contains(ownId.Value)){row.PeriodOutflow=null;row.Status="Review tank boundaries: an incoming counter cannot also measure this tank’s outlet.";continue;}
    var outletIds=ownOutlet?new List<int>{ownId!.Value}:settings.OutletMeterIds;
    bool Linked(int id)=>active.ContainsKey(id)&&links.Any(p=>p.Value==id&&map.Nodes.Any(n=>n.Id==p.Key));
    var inScope=Scope(settings.InletMeterIds,start,end);var outScope=Scope(outletIds,start,end);

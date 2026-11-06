@@ -12,6 +12,8 @@
     <Compile Include="../../UtilityManagerProjects/Models/WaterConsumption.cs" Link="WaterConsumption.cs" />
     <Compile Include="../../UtilityManagerProjects/Models/WaterOutletMovements.cs" Link="WaterOutletMovements.cs" />
     <Compile Include="../../UtilityManagerProjects/Models/WaterStorage.cs" Link="WaterStorage.cs" />
+    <Compile Include="../../UtilityManagerProjects/Models/MeterLineage.cs" Link="MeterLineage.cs" />
+    <Compile Include="../../UtilityManagerProjects/Models/MeterReadingImport.cs" Link="MeterReadingImport.cs" />
     <Compile Include="../../UtilityManagerProjects/Models/Consumption.cs" Link="Consumption.cs" />
     <Compile Include="../../UtilityManagerProjects/Services/WaterNetworkStore.cs" Link="WaterNetworkStore.cs" />
     <Compile Include="../../UtilityManagerProjects/Services/ConsumptionService.cs" Link="ConsumptionService.cs" />

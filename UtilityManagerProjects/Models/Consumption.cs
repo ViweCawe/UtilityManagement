@@ -22,7 +22,7 @@ public static class IntervalConsumption
     public static List<DailyUsage> Allocate(IEnumerable<MeterReading> readings, DateTime start, DateTime end)
     {
         var result = new List<DailyUsage>();
-        foreach (var group in readings.Where(r => !r.IsDeleted).GroupBy(r => r.MeterId))
+        foreach (var group in readings.Where(r => !r.IsDeleted).GroupBy(r => r.PhysicalMeterId ?? r.MeterId))
         {
             var captures = group.GroupBy(r => r.ReadingDate.Date)
                 .Select(g => g.OrderByDescending(r => r.ReadingDate).ThenByDescending(r => r.Id).First())
@@ -31,7 +31,8 @@ public static class IntervalConsumption
             {
                 var previous = captures[i - 1]; var current = captures[i];
                 var days = (current.ReadingDate.Date - previous.ReadingDate.Date).Days;
-                var delta = (decimal)current.CurrentReading - previous.CurrentReading;
+                if(current.Unit!=previous.Unit || !MeterUnits.Valid(current.Unit,current.MeterType))continue;
+                var delta = (current.CurrentReading - previous.CurrentReading)*MeterUnits.Factor(current.Unit,current.MeterType);
                 if (days <= 0 || delta < 0) continue; // A reset needs a new baseline, never negative usage.
                 var first = previous.ReadingDate.Date.AddDays(1) > start.Date ? previous.ReadingDate.Date.AddDays(1) : start.Date;
                 var last = current.ReadingDate.Date < end.Date ? current.ReadingDate.Date : end.Date;

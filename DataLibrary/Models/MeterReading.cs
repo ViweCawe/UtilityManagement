@@ -7,6 +7,10 @@ namespace DataLibrary.Models
     {
         public int Id { get; set; }
         public int MeterId { get; set; }
+        public int? ImportBatchId { get; set; }
+        public string? ImportFileName { get; set; }
+        public string SerialNumber { get; set; } = "";
+        public MeterFlowDirection FlowDirection { get; set; }
         public int EmployeeId { get; set; }
 
         public string MeterName { get; set; } = "";
@@ -15,21 +19,25 @@ namespace DataLibrary.Models
         public string DepartmentName { get; set; } = string.Empty;
         public MeterType MeterType { get; set; }
 
-        public string Unit => MeterType switch
+        public string? CounterUnit { get; set; }
+        public string Unit { get => MeterUnits.Normalize(CounterUnit,MeterType); set => CounterUnit=value; }
+        // Physical counters remain separate even when reporting under one replacement chain.
+        public int? PhysicalMeterId { get; set; }
+        public MeterReading ForReporting(int pointId)
         {
-            MeterType.Electricity => "kWh",
-            MeterType.Water => "L",
-            _ => string.Empty
-        };
+            var copy=(MeterReading)MemberwiseClone();
+            copy.PhysicalMeterId=PhysicalMeterId ?? MeterId; copy.MeterId=pointId;
+            return copy;
+        }
         public DateTime ReadingDate { get; set; } = DateTime.Now;
         [Required]
-        [Range(0, Int32.MaxValue)]
-        public int CurrentReading { get; set; }
-        public int PreviousReading { get; set; }
+        [Range(typeof(decimal), "0", "9999999999999.999999")]
+        public decimal CurrentReading { get; set; }
+        public decimal PreviousReading { get; set; }
         public string MeterNameWithUnit => $"{MeterName} ({Unit})";
         public string EmployeeEmail { get; set; } = string.Empty;
         public string UpdatedByEmployeeEmail { get; set; } = string.Empty;
-        public int Usage { get; set; }
+        public decimal Usage { get; set; }
         public DateTime? PreviousReadingDate { get; set; }
         public int? IntervalDays { get; set; }
         public bool IsBaseline { get; set; }

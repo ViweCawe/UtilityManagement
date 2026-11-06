@@ -3,6 +3,10 @@
 @using DataLibrary.Models
 
 @{
+    ViewData["CounterUnit"]=Model.Input.CounterUnit;
+    ViewData["SerialNumber"]=Model.Input.SerialNumber;
+    ViewData["FlowDirection"]=Model.Input.FlowDirection;
+    ViewData["InstalledOn"]=Model.Input.InstalledOn?.ToString("yyyy-MM-ddTHH:mm:ss");
     ViewData["Title"] = "Edit Meter";
 }
 
@@ -59,7 +63,7 @@
     </div>
 
     <div class="meter-edit-layout">
-        <form method="post" class="meter-form-card">
+        <form method="post" class="meter-form-card"><section class="content-card"><h2>Counter units and physical meter</h2><partial name="_MeterCounterFields" /><p class="form-hint">Once readings exist, unit and measurement boundary are preserved. Use Add Meter to record a replacement.</p></section>
             <input asp-for="Input.Id" type="hidden" />
             <div asp-validation-summary="ModelOnly"></div>
 

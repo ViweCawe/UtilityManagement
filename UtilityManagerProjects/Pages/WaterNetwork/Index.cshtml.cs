@@ -10,7 +10,7 @@ namespace UtilityManagerProjects.Pages.WaterNetwork;
 
 [Authorize]
 public class IndexModel(IConfiguration configuration,
-    IMeterData meterData, IMeterReadingData readingData, IDataAccess dataAccess, ConnectionStringData connection, UtilityManagerProjects.Services.WaterNetworkStore networkStore) : PageModel
+    IMeterData meterData, IMeterReadingData readingData, IDataAccess dataAccess, ConnectionStringData connection, UtilityManagerProjects.Services.WaterNetworkStore networkStore, UtilityManagerProjects.Services.ConsumptionService calculations) : PageModel
 {
     [BindProperty(SupportsGet = true)] public DateTime? StartDate { get; set; }
     [BindProperty(SupportsGet = true)] public DateTime? EndDate { get; set; }
@@ -45,6 +45,7 @@ public class IndexModel(IConfiguration configuration,
     {
         var range = Services.ConsumptionService.ReportingRange(StartDate ?? DateTime.Today.AddDays(-6), EndDate ?? DateTime.Today);
         StartDate = range.Start; EndDate = range.End; ViewData["DateNotice"] = range.Notice;
+        await calculations.LoadAsync();
         Network = (await networkStore.LoadAsync()).Network;
 
         // Meter IDs must be explicitly configured after on-site verification.
@@ -62,12 +63,12 @@ public class IndexModel(IConfiguration configuration,
             if (mapping.Value is null) continue;
             var node = Network.Nodes.SingleOrDefault(n => n.Id == mapping.Key);
             if (node is null || !node.CanLinkMeter || !int.TryParse(mapping.Value, out var meterId) || meterId <= 0 ||
-                !meters.TryGetValue(meterId, out var meter) || meter.MeterType != MeterType.Water)
+                !meters.TryGetValue(calculations.ReportingId(meterId), out var meter) || meter.MeterType != MeterType.Water)
             {
                 MappingWarnings.Add($"Mapping '{mapping.Key}' must reference a map node and an existing water meter.");
                 continue;
             }
-            if (!mappedIds.Add(meterId))
+            if (!mappedIds.Add(meter.Id))
             {
                 MappingWarnings.Add($"Meter {meterId} is mapped more than once. Review the configuration.");
                 continue;
@@ -75,9 +76,9 @@ public class IndexModel(IConfiguration configuration,
             LinkedMeters.Add(mapping.Key, meter);
         }
         var history = (await readingData.GetAllMeterReading()).Where(r => !r.IsDeleted && r.ReadingDate.Date <= DateTime.Today).ToList();
-        FlowTrace = WaterFlowTracing.Calculate(Network, LinkedMeters.ToDictionary(p=>p.Key,p=>(int?)p.Value.Id), AvailableMeters, history, range.Start, range.End);
+        FlowTrace = calculations.FlowTraceForPeriod(range.Start,range.End);
         var flows = FlowTrace.Points.ToDictionary(p => p.Id);
-        var readings = history.Where(r => r.ReadingDate.Date <= range.End).GroupBy(r => r.MeterId)
+        var readings = calculations.ReportingHistory.Where(r => r.ReadingDate.Date <= range.End).GroupBy(r => r.MeterId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.ReadingDate).ThenByDescending(r => r.Id).First());
         foreach (var pair in LinkedMeters)
         {
@@ -86,7 +87,7 @@ public class IndexModel(IConfiguration configuration,
                 currentReading = reading?.CurrentReading, capturedAt = reading?.ReadingDate.ToString("dd MMM yyyy"),
                 flowLitres = flows[pair.Key].Flow.CoveredDays > 0 ? (decimal?)flows[pair.Key].Flow.Total : null,
                 coveredDays = flows[pair.Key].Flow.CoveredDays, totalDays = flows[pair.Key].Flow.Dates.Count,
-                unit = pair.Value.Unit, historyUrl = Url.Page("/MeterReadings/History", new { meterId = pair.Value.Id }) };
+                unit = reading?.Unit??pair.Value.Unit, historyUrl = Url.Page("/MeterReadings/History", new { meterId = pair.Value.Id }) };
         }
     }
 }

@@ -2,7 +2,7 @@ CREATE PROCEDURE [dbo].[spMeters_All]
 AS
 BEGIN 
 		SET NOCOUNT ON;
-		SELECT[m].[Id], [m].[AssetKind], [m].[NetworkRole], [m].[CapacityLitres],
+		SELECT[m].[Id], [m].[SerialNumber], [m].[FlowDirection], [m].[ReplacesMeterId], [m].[InstalledOn], [m].[RetiredOn], [m].[AssetKind], [m].[NetworkRole], [m].[CapacityLitres],
         [m].[AreaId], [m].[DepartmentId], [m].[StationId], [m].[IsCumulative],
 		[m].[MeterName],
 		[m].[MeterType],
@@ -21,7 +21,7 @@ BEGIN
 		ON [m].StationId = [s].Id
 		LEFT JOIN dbo.Departments [d]
 		ON [m].DepartmentId = [d].[Id]
-			WHERE [m].IsActive = 1
+			WHERE [m].IsDeleted = 0
 			ORDER BY [m].MeterName;
 			
 END

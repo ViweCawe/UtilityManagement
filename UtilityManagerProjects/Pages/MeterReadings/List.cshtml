@@ -263,8 +263,8 @@
                                     </div>
                                 </td>
 
-                                <td>@reading.PreviousReading.ToString("N0") @unit</td>
-                                <td>@reading.CurrentReading.ToString("N0") @unit</td>
+                                <td>@reading.PreviousReading.ToString("#,##0.######") @unit</td>
+                                <td>@reading.CurrentReading.ToString("#,##0.######") @unit</td>
 
                                 <td class="trend-positive">
                                     @reading.Usage.ToString("N0") @unit

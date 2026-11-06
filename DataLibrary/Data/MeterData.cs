@@ -42,6 +42,11 @@ namespace DataLibrary.Data
             var parameters = new DynamicParameters();
             var error = MeterAssetRules.Validate(meter.AssetKind, meter.NetworkRole, meter.MeterType, meter.CapacityLitres);
             if (error is not null) throw new ArgumentException(error);
+            if(!MeterUnits.Valid(meter.Unit,meter.MeterType))throw new ArgumentException("Choose a valid counter unit.");
+            parameters.Add("SerialNumber",meter.SerialNumber);
+            parameters.Add("FlowDirection",(int)meter.FlowDirection);
+            parameters.Add("ReplacesMeterId",meter.ReplacesMeterId);
+            parameters.Add("InstalledOn",meter.InstalledOn);
             parameters.Add("AssetKind", (int)meter.AssetKind);
             parameters.Add("NetworkRole", (int)meter.NetworkRole);
             parameters.Add("CapacityLitres", meter.CapacityLitres);
@@ -95,6 +100,9 @@ namespace DataLibrary.Data
                     MeterType = (int)meter.MeterType,
                     meter.MeterName,
                     meter.Unit,
+                    meter.SerialNumber,
+                    FlowDirection=(int)meter.FlowDirection,
+                    meter.InstalledOn,
                     meter.AreaId,
                     meter.DepartmentId,
                     meter.StationId,

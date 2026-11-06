@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using DataLibrary.Db;
 using DataLibrary.Models;
 using System;
@@ -38,7 +38,7 @@ namespace DataLibrary.Data
             return p.Get<int>("Id");
         }
 
-        public Task<int> UpdateMeterReadings(int readingId, int readingUpdate,string notes, int updatedByEmployeeId,DateTime dateReadingUpdate)
+        public Task<int> UpdateMeterReadings(int readingId, decimal readingUpdate,string notes, int updatedByEmployeeId,DateTime dateReadingUpdate)
         {
             return dataAcces.SaveData("dbo.spMeterReadings_Update",
                 new

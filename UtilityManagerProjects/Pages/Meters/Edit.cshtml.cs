@@ -46,7 +46,7 @@ namespace UtilityManagerProjects.Pages.Meters
 
             Input = new MeterUpdate
             {
-                Id = meter.Id,
+                Id = meter.Id,CounterUnit=meter.Unit,SerialNumber=meter.SerialNumber,FlowDirection=meter.FlowDirection,InstalledOn=meter.InstalledOn,
                 AssetKind = meter.AssetKind,
                 NetworkRole = meter.NetworkRole,
                 CapacityLitres = meter.CapacityLitres,
@@ -89,6 +89,7 @@ namespace UtilityManagerProjects.Pages.Meters
                     "Select either an electricity or water meter.");
             }
 
+            if(Input.MeterType.HasValue&&!MeterUnits.Valid(Input.CounterUnit,Input.MeterType.Value))ModelState.AddModelError("Input.CounterUnit","Use L, kL or m³ for water, kWh for electricity.");
             if (Input.AssetKind.HasValue && Input.NetworkRole.HasValue && Input.MeterType.HasValue)
             {
                 var error = MeterAssetRules.Validate(Input.AssetKind.Value, Input.NetworkRole.Value, Input.MeterType.Value, Input.CapacityLitres);
@@ -109,8 +110,10 @@ namespace UtilityManagerProjects.Pages.Meters
             meter.DepartmentId = Input.DepartmentId;
             meter.StationId = Input.StationId;
             meter.IsCumulative = Input.IsCumulative;
+            meter.Unit=Input.CounterUnit;meter.SerialNumber=Input.SerialNumber.Trim();meter.FlowDirection=Input.FlowDirection;meter.InstalledOn=Input.InstalledOn;
 
-            await meterData.UpdateMeter(meter);
+            try { await meterData.UpdateMeter(meter); }
+            catch(Microsoft.Data.SqlClient.SqlException){ModelState.AddModelError(string.Empty,"Cannot change a recorded meter’s unit, measurement boundary or service dates. Create a replacement to keep history accurate.");return Page();}
 
             TempData["SuccessMessage"] = $"Meter {meter.MeterName} was updated.";
             return RedirectToPage("./Index");

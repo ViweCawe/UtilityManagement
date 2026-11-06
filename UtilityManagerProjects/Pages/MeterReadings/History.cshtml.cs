@@ -63,7 +63,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                 return string.Empty;
             }
 
-            return LatestReading.MeterType == MeterType.Water ? "L" : "kWh";
+            return LatestReading.Unit;
         }
 
         public string MeterDisplayName()

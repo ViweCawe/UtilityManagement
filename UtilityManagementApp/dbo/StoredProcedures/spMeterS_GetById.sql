@@ -4,7 +4,7 @@ AS
 BEGIN 
 	SET NOCOUNT ON;
 	SELECT 
-		[m].[Id], [m].[AssetKind], [m].[NetworkRole], [m].[CapacityLitres],
+		[m].[Id], [m].[SerialNumber], [m].[FlowDirection], [m].[ReplacesMeterId], [m].[InstalledOn], [m].[RetiredOn], [m].[AssetKind], [m].[NetworkRole], [m].[CapacityLitres],
         [m].[AreaId], [m].[DepartmentId], [m].[StationId], [m].[IsCumulative],
 		[m].[MeterName],
 		[m].[MeterType],
@@ -24,5 +24,5 @@ BEGIN
 		LEFT JOIN dbo.Departments [d]
 		ON [m].DepartmentId = [d].[Id]
 		WHERE [m].Id = @Id
-		AND [m].IsActive = 1;
+		AND [m].IsDeleted = 0;
 END

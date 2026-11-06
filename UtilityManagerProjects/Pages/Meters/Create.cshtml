@@ -3,6 +3,10 @@
 @using DataLibrary.Models
 
 @{
+    ViewData["CounterUnit"]=Model.Input.CounterUnit;
+    ViewData["SerialNumber"]=Model.Input.SerialNumber;
+    ViewData["FlowDirection"]=Model.Input.FlowDirection;
+    ViewData["InstalledOn"]=Model.Input.InstalledOn?.ToString("yyyy-MM-ddTHH:mm:ss");
     ViewData["Title"] = "Add Meter or Tank";
 }
 
@@ -338,7 +342,7 @@
                             </span>
                             <span class="meter-type-copy">
                                 <strong>Water</strong>
-                                <span>Usage recorded in litres</span>
+                                <span>Counter unit selected below</span>
                             </span>
                         </label>
 
@@ -411,6 +415,9 @@
                 </label>
             </section>
 
+            <section class="meter-form-section"><h2>Counter units and replacement history</h2><partial name="_MeterCounterFields" />
+                <div class="meter-field"><label asp-for="Input.ReplacesMeterId">Replaces an existing physical meter (optional)</label><select asp-for="Input.ReplacesMeterId" asp-items="Model.ReplacementOptions" class="utility-input"><option value="">New measurement point · no previous meter</option></select><span asp-validation-for="Input.ReplacesMeterId" class="text-danger"></span><p class="form-hint">Choose the previous counter at the same boundary. Saving retires it and preserves its readings. Keep its utility, direction, role, area and station unchanged.</p></div>
+            </section>
             <div class="meter-form-actions">
                 <a class="utility-btn-secondary" asp-page="./Index">Cancel</a>
                 <button type="submit" class="utility-btn-primary">

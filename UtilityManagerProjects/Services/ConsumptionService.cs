@@ -10,6 +10,11 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
 {
     public sealed class Link { public string NodeId { get; set; } = ""; public int? MeterId { get; set; } }
     private Task? load;
+    public List<Meter> AllMeters { get; private set; } = [];
+    private List<MeterReading> accountingHistory = [];
+    private MeterLineage? lineage;
+    public List<MeterReading> ReportingHistory => accountingHistory;
+    public int ReportingId(int id) => lineage?.Resolve(id) ?? id;
     private readonly Dictionary<(DateTime, DateTime), WaterFlowTraceReport> flowTraces = [];
     private readonly Dictionary<(DateTime,DateTime,int?,string),ConsumptionPeriod> periods = [];
     public List<MeterReading> History { get; private set; } = [];
@@ -21,29 +26,41 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
     public Task LoadAsync() => load ??= LoadCoreAsync();
     private async Task LoadCoreAsync()
     {
-        Meters = (await meterData.GetMeters()).Where(m => m.IsActive && m.MeterType is MeterType.Water or MeterType.Electricity).ToList();
-        var ids = Meters.Select(m => m.Id).ToHashSet();
+        AllMeters = (await meterData.GetMeters()).Where(m => m.MeterType is MeterType.Water or MeterType.Electricity).ToList();
+        lineage=new MeterLineage(AllMeters);
+        Meters=AllMeters.Where(m=>m.IsActive && ReportingId(m.Id)==m.Id).ToList();
+        var ids=AllMeters.Select(m=>m.Id).ToHashSet();
         History = (await readings.GetAllMeterReading()).Where(r => !r.IsDeleted && ids.Contains(r.MeterId) && r.ReadingDate.Date <= DateTime.Today).ToList();
+        foreach(var row in History) { var meter=AllMeters.Single(m=>m.Id==row.MeterId);row.Unit=meter.Unit;row.MeterType=meter.MeterType; }
+        accountingHistory=History.Where(r=>lineage.InService(r)&&MeterUnits.Valid(r.Unit,r.MeterType)).Select(r=>r.ForReporting(ReportingId(r.MeterId))).ToList();
+        if(accountingHistory.Count!=History.Count)Warnings.Add("Some captures fall outside a meter’s service dates or have an unsupported unit; review the physical history before using totals.");
         network = (await store.LoadAsync()).Network;
         links = configuration.GetSection("WaterNetwork:MeterIds").GetChildren()
             .ToDictionary(p => p.Key, p => int.TryParse(p.Value, out var id) ? (int?)id : null);
         foreach (var link in await db.LoadData<Link, object>("dbo.spWaterNetworkLinks_All", new { }, connection.SqlConnectionName)) links[link.NodeId] = link.MeterId;
+        links=links.ToDictionary(p=>p.Key,p=>p.Value.HasValue?(int?)ReportingId(p.Value.Value):null);
+        foreach(var node in network.Nodes) {
+            if(node.MeterId.HasValue)node.MeterId=ReportingId(node.MeterId.Value);
+            var assigned=AllMeters.SingleOrDefault(m=>m.Id==links.GetValueOrDefault(node.Id));
+            if(assigned?.FlowDirection is MeterFlowDirection.Inlet or MeterFlowDirection.Outlet)node.CounterBoundary=assigned.FlowDirection==MeterFlowDirection.Inlet?"inlet":"outlet";
+            if(node.Storage is not null){node.Storage.InletMeterIds=node.Storage.InletMeterIds.Select(ReportingId).Distinct().ToList();node.Storage.OutletMeterIds=node.Storage.OutletMeterIds.Select(ReportingId).Distinct().ToList();}
+        }
         if (History.GroupBy(r => r.MeterId).Any(g => g.OrderBy(r => r.ReadingDate).ThenBy(r => r.Id).Zip(g.OrderBy(r => r.ReadingDate).ThenBy(r => r.Id).Skip(1)).Any(p => p.Second.CurrentReading < p.First.CurrentReading)))
             Warnings.Add("A counter decreases in the reading history. That interval is excluded until the reset or incorrect capture is resolved.");
     }
 
     public List<MeterDailyAverageRow> DailyAverages(ConsumptionPeriod period,int? meterId=null,string? department=null) => Meters
-        .Where(m=>(!meterId.HasValue||m.Id==meterId) && (string.IsNullOrWhiteSpace(department)||string.Equals(m.DepartmentName,department,StringComparison.OrdinalIgnoreCase)))
+        .Where(m=>(!meterId.HasValue||m.Id==ReportingId(meterId.Value)) && (string.IsNullOrWhiteSpace(department)||string.Equals(m.DepartmentName,department,StringComparison.OrdinalIgnoreCase)))
         .Select(m=>{
             var days=period.AllDaily.Where(d=>d.MeterId==m.Id).ToList();
-            var captures=History.Where(r=>r.MeterId==m.Id).ToList();
+            var captures=History.Where(r=>ReportingId(r.MeterId)==m.Id).ToList();
             var latest=captures.Where(r=>r.ReadingDate.Date<=period.Water.End).OrderByDescending(r=>r.ReadingDate).ThenByDescending(r=>r.Id).FirstOrDefault();
             var status=days.Count>0?"Usage calculated":latest is null?"No saved counter by end date":captures.Select(r=>r.ReadingDate.Date).Distinct().Count()<2?"Starting counter saved — capture another reading on a later date":"No comparable interval for selected dates";
             var points=network.Nodes.Where(n=>links.GetValueOrDefault(n.Id)==m.Id).ToList();
             var meterOrigins=points.SelectMany(n=>WaterAccounting.Origins(network,n.Id)).Distinct().ToList();
             var supply=m.MeterType!=MeterType.Water?"Electricity":meterOrigins.Count>1?"Combined sources · split not separately measured":meterOrigins.SingleOrDefault() switch {"municipal"=>"Municipal supply","borehole"=>"Borehole supply","rain"=>"Rainwater",_=>"Water source not confirmed on map"};
-            return new MeterDailyAverageRow {ReadingPurpose=ReadingPurpose(m.Id),IsConfirmedConsumption=FinalUseSelection().MeterIds.Contains(m.Id),SupplyDescription=supply,LatestCounter=latest?.CurrentReading,LatestCounterDate=latest?.ReadingDate,CalculationStatus=status,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
-                ReadingCount=History.Count(r=>r.MeterId==m.Id&&r.ReadingDate.Date>=period.Water.Start&&r.ReadingDate.Date<=period.Water.End),
+            return new MeterDailyAverageRow {ReadingPurpose=ReadingPurpose(m.Id),IsConfirmedConsumption=FinalUseSelection().MeterIds.Contains(m.Id),SupplyDescription=supply,CounterUnit=latest?.Unit??m.Unit,LatestCounter=latest?.CurrentReading,LatestCounterDate=latest?.ReadingDate,CalculationStatus=status,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,
+                ReadingCount=History.Count(r=>ReportingId(r.MeterId)==m.Id&&r.ReadingDate.Date>=period.Water.Start&&r.ReadingDate.Date<=period.Water.End),
                 CoveredDays=days.Count,TotalUsage=days.Sum(d=>d.Usage),DailyAverage=days.Count==0?0:days.Sum(d=>d.Usage)/days.Count};
         }).OrderBy(r=>r.DepartmentName).ThenBy(r=>r.MeterName).ToList();
 
@@ -78,16 +95,16 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
     }
 
     public WaterOutletMovementTable OutletMovements(ConsumptionPeriod period, int? meterId=null, string? department=null) =>
-        WaterOutletMovements.Calculate(network,links,Meters,History,period.Water.Start,period.Water.End,meterId,department);
+        WaterOutletMovements.Calculate(network,links,Meters,accountingHistory,period.Water.Start,period.Water.End,meterId.HasValue?ReportingId(meterId.Value):null,department);
 
     public WaterFlowTraceReport FlowTraceForPeriod(DateTime start, DateTime end)
     {
         var key = (start.Date, end.Date);
-        if (!flowTraces.TryGetValue(key, out var report)) flowTraces[key] = report = WaterFlowTracing.Calculate(network, links, Meters, History, start, end);
+        if (!flowTraces.TryGetValue(key, out var report)) flowTraces[key] = report = WaterFlowTracing.Calculate(network, links, Meters, accountingHistory, start, end);
         return report;
     }
 
-    public WaterStorageReport StorageForPeriod(DateTime start,DateTime end) => WaterStorageAccounting.Calculate(network,links,Meters,History,start,end,FlowTraceForPeriod(start,end).Borehole);
+    public WaterStorageReport StorageForPeriod(DateTime start,DateTime end) => WaterStorageAccounting.Calculate(network,links,Meters,accountingHistory,start,end,FlowTraceForPeriod(start,end).Borehole);
 
     public static (DateTime Start, DateTime End, string? Notice) ReportingRange(DateTime start, DateTime end)
     {
@@ -107,13 +124,14 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
     {
         start=start.Date; end=end.Date;
         department=string.IsNullOrWhiteSpace(department)?null:department.Trim();
+        if(meterId.HasValue)meterId=ReportingId(meterId.Value);
         var key=(start,end,meterId,department?.ToUpperInvariant()??"");
         if(periods.TryGetValue(key,out var cached)) return cached;
         if (end.Date < start.Date || (end.Date - start.Date).Days > 3660) throw new ArgumentException("Choose a date range of at most ten years.");
         var selected = Meters.Where(m => (!meterId.HasValue || m.Id == meterId) &&
             (string.IsNullOrWhiteSpace(department) || string.Equals(m.DepartmentName.Trim(), department, StringComparison.OrdinalIgnoreCase))).ToList();
         var selectedIds = selected.Select(m => m.Id).ToHashSet();
-        var daily = IntervalConsumption.Allocate(History.Where(r => selectedIds.Contains(r.MeterId)), start, end);
+        var daily = IntervalConsumption.Allocate(accountingHistory.Where(r => selectedIds.Contains(r.MeterId)), start, end);
         var water = selected.Where(m => m.MeterType == MeterType.Water).Select(m => m.Id).ToHashSet();
         var expected = new HashSet<int>(); var missing = new List<string>();
         var validLinks = links.Where(p => p.Value.HasValue && water.Contains(p.Value.Value) && network.Nodes.Any(n => n.Id == p.Key && n.CanLinkMeter)).ToDictionary(p => p.Key, p => p.Value!.Value);
@@ -142,7 +160,7 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
             return false;
         }
         var label = "Main Meter · water released from source storage";
-        if (meterId.HasValue) { expected = water; label = "Estimated flow through the selected meter"; }
+        if (meterId.HasValue) { expected = water; label = lineage?.Family(meterId.Value).Count>1?"Estimated flow at the selected measurement point · across replacements":"Estimated flow through the selected meter"; }
         else if (!string.IsNullOrWhiteSpace(department))
         {
             label = "Estimated department flow (topmost linked meters; department totals may overlap)";
@@ -189,7 +207,7 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
                 Borehole=MeterScope(group.Where(n=>WaterAccounting.Origins(network,n.Id).SetEquals(new[]{"borehole"})),group.Key+" borehole",true,covered)
             };
         }).ToList();
-        var captured=History.Where(r=>selectedIds.Contains(r.MeterId)&&r.ReadingDate.Date>=start&&r.ReadingDate.Date<=end).ToList();
+        var captured=accountingHistory.Where(r=>selectedIds.Contains(r.MeterId)&&r.ReadingDate.Date>=start&&r.ReadingDate.Date<=end).ToList();
         var capturedIds=captured.Select(r=>r.MeterId).ToHashSet();
         var startingOnly=capturedIds.Count(id=>History.Where(r=>r.MeterId==id).Select(r=>r.ReadingDate.Date).Distinct().Count()<2);
         var result = new ConsumptionPeriod { MunicipalReceipt = FlowTraceForPeriod(start,end).MunicipalReceipt, BoreholePair = !meterId.HasValue && string.IsNullOrWhiteSpace(department) ? FlowTraceForPeriod(start,end).Borehole : null, WaterSupplies=supplies,WaterAreas=areas,AllDaily = daily,CapturesInPeriod=captured.Count,StartingOnlyMeterCount=startingOnly,

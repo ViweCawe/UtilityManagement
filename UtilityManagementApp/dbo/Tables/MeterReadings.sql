@@ -1,12 +1,14 @@
-﻿CREATE TABLE [dbo].[MeterReadings]
+CREATE TABLE [dbo].[MeterReadings]
 (
 	[Id] INT NOT NULL PRIMARY KEY IDENTITY(1,1), 
 	[MeterId] INT NOT NULL, 
 	[EmployeeId] INT NOT NULL, 
 	[ReadingDate] DATETIME NOT NULL DEFAULT GETDATE(), 
-	[CurrentReading] INT NOT NULL,
-	[PreviousReading] INT NOT NULL,
+	[CurrentReading] DECIMAL(19,6) NOT NULL,
+	[PreviousReading] DECIMAL(19,6) NOT NULL,
 	[Usage] AS (CurrentReading - PreviousReading) PERSISTED,
+    [ImportBatchId] INT NULL,
+    CONSTRAINT FK_MeterReadings_Import FOREIGN KEY(ImportBatchId) REFERENCES dbo.MeterReadingImportBatches(Id),
 	[Notes] NVARCHAR(255) NULL,
 	[IsDeleted] BIT NOT NULL DEFAULT 0,
 	[UpdatedAt] DATETIME  NULL,

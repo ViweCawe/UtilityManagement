@@ -6,7 +6,8 @@ public sealed class MeterDailyAverageRow
  public string MeterName { get; set; } = "";
  public MeterType MeterType { get; set; }
  public string DepartmentName { get; set; } = "";
- public int? LatestCounter { get; set; }
+ public decimal? LatestCounter { get; set; }
+ public string CounterUnit { get; set; } = "L";
  public DateTime? LatestCounterDate { get; set; }
  public string CalculationStatus { get; set; } = "";
  public string ReadingPurpose { get; set; } = "";
