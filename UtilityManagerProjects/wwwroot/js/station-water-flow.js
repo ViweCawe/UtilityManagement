@@ -10,5 +10,5 @@ for(const chart of document.querySelectorAll('.station-flow-chart')){
   if(!values.length)canvas.append(svg('text',{x:420,y:95,'text-anchor':'middle'},'No flow calculated'));
   status.textContent=!point.linked?`${point.label}: link its actual meter in the network editor to show saved readings.`:values.length?`${point.label}: ${values.length} of ${count} days covered. Daily averages between captures; missing intervals remain gaps.`:`${point.label}: capture two readings on different dates to calculate flow. No usage is assumed.`;
   canvas.setAttribute('aria-label',`${point.label} daily average flow in litres per day, ${values.length} of ${count} days covered`);
- }select.addEventListener('change',render);render();
+ }if(data.selected)select.value=data.selected;select.addEventListener('change',render);render();
 }

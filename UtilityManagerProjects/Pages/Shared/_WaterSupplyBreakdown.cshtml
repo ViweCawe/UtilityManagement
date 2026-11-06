@@ -6,7 +6,7 @@
 @if(Model.WaterSupplies.Any()||Model.WaterAreas.Any()) {
 <section class="content-card" aria-label="Water sources and shared areas">
  <p><a asp-page="/WaterBalance/Index" asp-route-StartDate="@Model.Water.Start.ToString("yyyy-MM-dd")" asp-route-EndDate="@Model.Water.End.ToString("yyyy-MM-dd")">Track transfers and storage balances</a></p>
- <div class="content-card-header"><div><h2>Water by source</h2><p>Main Meter is the control total for its municipal branch. Downstream meter readings are already inside that flow and are not added again.</p></div></div>
+ <div class="content-card-header"><div><h2>Water by source</h2><p>Main Meter records water leaving source storage, including transfers to Top Station. The separate municipal inlet is not currently recorded, so incoming litres remain unknown. Downstream readings are not added again.</p></div></div>
  @if(sourceRows.Any()) {
  <div class="table-wrap"><table class="utility-table"><thead><tr><th>Measurement boundary</th><th>Recorded flow</th><th>Daily average</th><th>Days covered</th></tr></thead><tbody>
  @foreach(var row in sourceRows) {

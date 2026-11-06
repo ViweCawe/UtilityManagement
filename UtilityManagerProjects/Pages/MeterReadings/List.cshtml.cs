@@ -13,6 +13,9 @@ namespace UtilityManagerProjects.Pages.MeterReadings
     {
         private readonly IMeterReadingData meterReading;
         private readonly ConsumptionService calculations;
+        public Dictionary<int,string> ReadingPurposes { get; private set; } = [];
+        public WaterOutletMovementTable OutletTransfers { get; private set; } = new();
+ public WaterConsumptionTable EndUse { get; private set; } = new();
         public ConsumptionPeriod Consumption { get; private set; } = new();
 
         public ListModel(IMeterReadingData meterReading, ConsumptionService calculations)
@@ -69,6 +72,9 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             await calculations.LoadAsync();
             var allMeterReadings = calculations.History;
             Consumption = calculations.ForPeriod(CurrentStart,CurrentEnd,MeterId,Department);
+            EndUse = calculations.ConsumptionTable(Consumption, MeterId, Department);
+            OutletTransfers=calculations.OutletMovements(Consumption,MeterId,Department);
+            ReadingPurposes=calculations.Meters.ToDictionary(m=>m.Id,m=>calculations.ReadingPurpose(m.Id));
             ViewData["Consumption"] = Consumption;
             ViewData["ConsumptionWarnings"] = calculations.Warnings;
 

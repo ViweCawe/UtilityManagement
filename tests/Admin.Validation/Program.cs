@@ -27,7 +27,7 @@ builder.Services.AddUtilityPages();
 builder.Services.AddAuthentication(o=>{o.DefaultAuthenticateScheme="Validation";o.DefaultChallengeScheme="Validation";o.DefaultForbidScheme="Validation";}).AddScheme<AuthenticationSchemeOptions,ValidationAuthentication>("Validation",_=>{});
 builder.Services.AddScoped<UserAdministration>();builder.Services.AddScoped<ReferenceDataStore>();builder.Services.AddScoped<ConsumptionService>();builder.Services.AddScoped<WaterNetworkStore>();
 builder.Services.AddSingleton(new ConnectionStringData());
-builder.Configuration.AddInMemoryCollection(new Dictionary<string,string?> { ["WaterNetwork:MeterIds:main-tank"]="1",["WaterNetwork:MeterIds:fire-hydrant"]="2",["WaterNetwork:MeterIds:borehole-in"]="3",["WaterNetwork:MeterIds:garage-roof"]="4",["WaterNetwork:MeterIds:borehole-out"]="7",["WaterNetwork:MeterIds:docking-bay"]="8" });
+builder.Configuration.AddInMemoryCollection(new Dictionary<string,string?> { ["WaterNetwork:MeterIds:main-tank"]="1",["WaterNetwork:MeterIds:fire-hydrant"]="2",["WaterNetwork:MeterIds:borehole-in"]="3",["WaterNetwork:MeterIds:garage-roof"]="4",["WaterNetwork:MeterIds:borehole-out"]="7",["WaterNetwork:MeterIds:docking-bay"]="8",["WaterNetwork:MeterIds:male-female-toilets"]="9" });
 var sample=new SampleData();
 builder.Services.AddSingleton(sample.Data<IMeterData>());builder.Services.AddSingleton(sample.Data<IMeterReadingData>());builder.Services.AddSingleton(sample.Data<IWasteReadingData>());builder.Services.AddSingleton(sample.Data<IDailyPeopleCountData>());builder.Services.AddSingleton(sample.Data<IAreaData>());builder.Services.AddSingleton(sample.Data<IStationData>());builder.Services.AddSingleton(sample.Data<IEmployeeData>());builder.Services.AddSingleton(sample.Data<IDepartmentData>());builder.Services.AddSingleton(sample.Data<IWasteTypeData>());builder.Services.AddSingleton(sample.Data<IDataAccess>());
 var app=builder.Build();app.UseStaticFiles();app.UseRouting();app.UseAuthentication();app.UseAuthorization();app.MapRazorPages();
@@ -96,12 +96,18 @@ public sealed class ValidationAuthentication(IOptionsMonitor<AuthenticationSchem
 }
 public sealed class SampleData
 {
- readonly List<Meter> meters=Enumerable.Range(1,8).Select(i=>new Meter{Id=i,MeterName=new[]{"Main Meter","Fire Hydrant","Borehole Incoming","Garage Roof","Electricity","New usage meter","Borehole Out","Docking Bay"}[i-1],MeterType=i==5?MeterType.Electricity:MeterType.Water,IsActive=true,DepartmentName="Operations",AreaName="Lower station"}).ToList();
+ readonly List<Meter> meters=Enumerable.Range(1,9).Select(i=>new Meter{Id=i,MeterName=new[]{"Main Meter","Fire Hydrant","Borehole Incoming","Garage Roof","Electricity","New usage meter","Borehole Out","Docking Bay","Toilets consumption"}[i-1],MeterType=i==5?MeterType.Electricity:MeterType.Water,IsActive=true,DepartmentName="Operations",AreaName="Lower station"}).ToList();
+ WaterNetworkStore.Document ConsumptionDocument() {
+  var source=File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"../../../../../UtilityManagerProjects/App_Data/water-network.json"));
+  var graph=System.Text.Json.Nodes.JsonNode.Parse(source)!;
+  foreach(var node in graph["nodes"]!.AsArray()) if((string?)node!["id"]=="male-female-toilets")node["measuresFinalUse"]=true;
+  return new(){NetworkJson=graph.ToJsonString(),Revision=1};
+ }
  public T Data<T>() where T:class => Proxy.Make<T>((method,args)=>{
   var resultType=method.ReturnType.GetGenericArguments()[0];
   if(!resultType.IsGenericType) throw new NotSupportedException(method.Name);
   var itemType=resultType.GetGenericArguments()[0];var list=(IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType))!;
-  IEnumerable values=itemType==typeof(Meter)?meters:itemType==typeof(MeterReading)?meters.SelectMany(m=>Enumerable.Range(0,5).Select(i=>new MeterReading{Id=m.Id*10+i,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,AreaName=m.AreaName,ReadingDate=DateTime.Today.AddDays(-28+7*i),CurrentReading=1000+(m.Id==7?350:m.Id==8?200:700)*i,PreviousReading=i==0?1000:1000+(m.Id==7?350:m.Id==8?200:700)*(i-1),IsBaseline=i==0,Usage=i==0?0:m.Id==7?350:m.Id==8?200:700})):itemType==typeof(ReferenceDataStore.Row)?new[]{new ReferenceDataStore.Row{Id=1,Name="Lower station",StationName="Lower",StationId=1,IsActive=true}}:Array.Empty<object>();
+  IEnumerable values=itemType==typeof(Meter)?meters:itemType==typeof(MeterReading)?meters.SelectMany(m=>Enumerable.Range(0,5).Select(i=>new MeterReading{Id=m.Id*10+i,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,AreaName=m.AreaName,ReadingDate=DateTime.Today.AddDays(-28+7*i),CurrentReading=1000+(m.Id==7?350:m.Id==8?200:m.Id==9?100:700)*i,PreviousReading=i==0?1000:1000+(m.Id==7?350:m.Id==8?200:m.Id==9?100:700)*(i-1),IsBaseline=i==0,Usage=i==0?0:m.Id==7?350:m.Id==8?200:m.Id==9?100:700})):itemType==typeof(WaterNetworkStore.Document)?new[]{ConsumptionDocument()}:itemType==typeof(ReferenceDataStore.Row)?new[]{new ReferenceDataStore.Row{Id=1,Name="Lower station",StationName="Lower",StationId=1,IsActive=true}}:Array.Empty<object>();
   foreach(var item in values) list.Add(item);
   return typeof(Task).GetMethod(nameof(Task.FromResult))!.MakeGenericMethod(resultType).Invoke(null,[list]);
  });

@@ -24,7 +24,7 @@ test('station flow, borehole pairing, curves and cross-station source traces ren
   await page.screenshot({path:'/tmp/station-water-balance-mobile.png',fullPage:true});
   response=await page.goto('http://127.0.0.1:5188/WaterNetwork?node=male-female-toilets');assert.equal(response.status(),200);
   await page.locator('#network-controls').waitFor({state:'visible'});assert.equal(await page.locator('#network-station').inputValue(),'All');
-  assert.equal(await page.locator('#network-diagram .wn-node').count(),33,'both stations shown together');
+  assert.equal(await page.locator('#network-diagram .wn-node').count(),34,'both stations shown together');
   assert.equal(await page.locator('.wn-station-label').count(),2);
   assert.match(await page.locator('#selected-point-title').textContent(),/Male and Female/,'source link selects the correct point');
   assert.match(await page.locator('#selected-point-routes').textContent(),/Main Meter.*Docking Bay.*Reservoir.*Header Tank/s,'an unlinked point still shows its mapped source route');
@@ -32,8 +32,8 @@ test('station flow, borehole pairing, curves and cross-station source traces ren
   assert.equal(await page.evaluate(()=>{const box=document.querySelector('.wn-node.selected').getBoundingClientRect(),frame=document.querySelector('.wn-canvas').getBoundingClientRect();return box.left>=frame.left&&box.right<=frame.right;}),true,'selected source remains visible inside the mobile canvas');
   assert.match(await page.locator('#network-diagram .wn-node').filter({has:page.locator('.wn-reading-value',{hasText:'Flow:'})}).first().textContent(),/Counter:/,'flow and counter visible together');
   const paths=await page.locator('#network-diagram>path title').allTextContents();assert.ok(paths.some(p=>p.includes('Main Meter')&&p.includes('Cable car')),'cross-station link drawn');
-  await page.locator('#network-station').selectOption('Top');assert.equal(await page.locator('.wn-station-label').textContent(),'Top Station');assert.ok(await page.locator('#network-diagram .wn-node').count()<33);
-  await page.locator('#network-station').selectOption('All');assert.equal(await page.locator('#network-diagram .wn-node').count(),33);
+  await page.locator('#network-station').selectOption('Top');assert.equal(await page.locator('.wn-station-label').textContent(),'Top Station');assert.ok(await page.locator('#network-diagram .wn-node').count()<34);
+  await page.locator('#network-station').selectOption('All');assert.equal(await page.locator('#network-diagram .wn-node').count(),34);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2),false,'mobile map canvas stays inside page');
   await page.screenshot({path:'/tmp/station-water-network-mobile.png',fullPage:true});
   // Selecting historical dates must not show today's counter as if it existed then.

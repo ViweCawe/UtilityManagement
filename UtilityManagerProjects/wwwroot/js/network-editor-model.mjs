@@ -1,11 +1,11 @@
-import { reportingRole, nodeOrigins } from './water-network-accounting.mjs';
+import { reportingRole, nodeOrigins, counterBoundary } from './water-network-accounting.mjs';
 export function validateNetwork(map) {
     if (!Array.isArray(map.nodes) || map.nodes.length < 1 || map.nodes.length > 500 || !Array.isArray(map.connections) || map.connections.length > 1500)
         throw new Error('Use 1–500 points and at most 1500 connections.');
     const ids = new Set(), meters = new Set(), pairs = new Set();
     for (const n of map.nodes) {
         if (!n || !/^[a-z0-9-]{1,80}$/.test(n.id) || ids.has(n.id) || !n.label?.trim() || n.label.length > 100 ||
-            !['Lower', 'Top'].includes(n.station) || !['source', 'storage', 'distribution', 'usage', 'transfer', 'unresolved'].includes(n.kind) || (n.note?.length || 0) > 1000 || (n.usageArea?.length||0)>100 || !['','main','borehole-inlet','borehole-outlet','hydrant'].includes(reportingRole(n)) || !['','municipal','borehole','rain','other'].includes(n.supplyOrigin||''))
+            !['outlet','inlet','unconfirmed'].includes(counterBoundary(n)) || !['Lower', 'Top'].includes(n.station) || !['source', 'storage', 'distribution', 'usage', 'transfer', 'unresolved'].includes(n.kind) || (n.note?.length || 0) > 1000 || (n.usageArea?.length||0)>100 || !['','main','municipal-inlet','borehole-inlet','borehole-outlet','hydrant'].includes(reportingRole(n)) || !['','municipal','borehole','rain','other'].includes(n.supplyOrigin||''))
             throw new Error('Every point needs a unique identity, a name, a station and a role.');
         ids.add(n.id);
         if (n.meterId != null) {
@@ -29,11 +29,12 @@ export function validateNetwork(map) {
         if(!['source','storage'].includes(n.kind)||!Array.isArray(ins)||!Array.isArray(outs)||ins.length>500||outs.length>500||[...ins,...outs].some(id=>!Number.isInteger(id)||id<=0)||ins.some(id=>outs.includes(id)))throw new Error('Storage needs distinct inlet and outlet counters on a physical source/storage point.');
         if((b.openingDate!=null)!==(b.openingVolumeLitres!=null)||b.openingVolumeLitres!=null&&(!Number.isFinite(b.openingVolumeLitres)||b.openingVolumeLitres<0))throw new Error('Enter both a measured opening volume and its date. Do not use the cumulative counter as stock.');
         if(b.openingDate!=null){const date=new Date(b.openingDate);if(!Number.isFinite(date.getTime())||date.getFullYear()<1753||date.setHours(0,0,0,0)>new Date().setHours(0,0,0,0))throw new Error('Choose a valid opening stock date no later than today.');}
+        if(counterBoundary(n)==='outlet'&&ins.includes(n.meterId))throw new Error('This tank counter measures an outlet. Its counter cannot also be its tank inlet.');
         for(const id of ins){if(credits.has(id))throw new Error('A transfer counter can credit only one receiving tank.');credits.set(id,n.id);}
         for(const id of outs){if(debits.has(id))throw new Error('A transfer counter can debit only one supplying tank.');debits.add(id);}
     }
     for(const n of map.nodes.filter(n=>n.measuresFinalUse)) {
-        if(n.canLinkMeter===false||['main','borehole-inlet','borehole-outlet'].includes(reportingRole(n))||credits.has(n.meterId))throw new Error('A supply/transfer credited to storage cannot also count as final use.');
+        if(n.canLinkMeter===false||['main','municipal-inlet','borehole-inlet','borehole-outlet'].includes(reportingRole(n))||credits.has(n.meterId))throw new Error('A supply/transfer credited to storage cannot also count as final use.');
         const queue=map.connections.filter(e=>e.from===n.id).map(e=>e.to),seen=new Set();
         while(queue.length){const id=queue.shift();if(seen.has(id))continue;seen.add(id);const child=map.nodes.find(p=>p.id===id);if(child.canLinkMeter!==false||child.kind==='storage')throw new Error('A counter feeding another meter/tank is a transfer, not final consumption.');queue.push(...map.connections.filter(e=>e.from===id).map(e=>e.to));}
     }
@@ -52,8 +53,8 @@ export function validateNetwork(map) {
     for(const n of map.nodes) {
         const role=reportingRole(n);if(!role) continue;
         if(n.canLinkMeter===false||roles.has(role)) throw new Error('Choose one distinct metered point for each reporting boundary.');roles.add(role);
-        if(['main','hydrant','borehole-inlet'].includes(role)&&map.connections.some(e=>e.to===n.id&&e.kind!=='backup')) throw new Error('An inlet reporting meter must not have a normal upstream supplier.');
-        const expected=['main','hydrant'].includes(role)?'municipal':'borehole',sources=nodeOrigins(map,n.id);
+        if(['municipal-inlet','hydrant','borehole-inlet'].includes(role)&&map.connections.some(e=>e.to===n.id&&e.kind!=='backup')) throw new Error('An inlet reporting meter must not have a normal upstream supplier.');
+        const expected=['main','municipal-inlet','hydrant'].includes(role)?'municipal':'borehole',sources=nodeOrigins(map,n.id);
         if(sources.size!==1||!sources.has(expected)) throw new Error('This reporting meter measures the wrong or mixed sources. A combined counter cannot be a municipal or borehole total.');
     }
 

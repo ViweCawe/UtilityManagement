@@ -1,5 +1,5 @@
 import { arrangeNetwork, removePoint, validateNetwork } from './network-editor-model.mjs';
-import { flowSections, reportingRole, reportingRoles, origins, nodeOrigins, usageArea, rootOrigin } from './water-network-accounting.mjs';
+import { flowSections, counterBoundary, reportingRole, reportingRoles, origins, nodeOrigins, usageArea, rootOrigin } from './water-network-accounting.mjs';
 const form=document.getElementById('network-edit-form'),hidden=document.getElementById('NetworkJson'),error=document.getElementById('network-editor-error');
 function el(tag,text,cls){const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;}
 function button(text,fn){const n=el('button',text);n.type='button';n.addEventListener('click',fn);return n;}
@@ -39,18 +39,19 @@ try {
  }
  function storageControls(node) {
   const box=el('details','', 'ne-storage-settings');box.append(el('summary','Storage balance and final-use measurements'));
-  if(node.canLinkMeter!==false){const final=el('input');final.type='checkbox';final.checked=node.measuresFinalUse===true;final.addEventListener('change',()=>{node.measuresFinalUse=final.checked;renderReview();});box.append(field('This counter measures final consumption, not a tank transfer',final));}
+  if(node.canLinkMeter!==false){const final=el('input');final.type='checkbox';final.disabled=['main','municipal-inlet','borehole-inlet','borehole-outlet'].includes(reportingRole(node));final.checked=node.measuresFinalUse===true;final.addEventListener('change',()=>{node.measuresFinalUse=final.checked;renderReview();});box.append(field('This counter measures final consumption, not a tank transfer',final));}
   if(!['source','storage'].includes(node.kind))return box;
   const enable=el('input');enable.type='checkbox';enable.checked=!!node.storage;
-  enable.addEventListener('change',()=>{node.storage=enable.checked?{openingDate:null,openingVolumeLitres:null,inletMeterIds:[],outletMeterIds:[],allFlowsConfirmed:false}:null;const replacement=storageControls(node);replacement.open=true;box.replaceWith(replacement);renderReview();});
+  enable.addEventListener('change',()=>{node.storage=enable.checked?{openingDate:null,openingVolumeLitres:null,inletMeterIds:[],outletMeterIds:counterBoundary(node)==='outlet'&&node.meterId?[node.meterId]:[],allFlowsConfirmed:false,incomingTransfersConfirmed:false}:null;const replacement=storageControls(node);replacement.open=true;box.replaceWith(replacement);renderReview();});
   box.append(field('This point represents physical stored water; configure its balance',enable));
-  box.append(el('p','A cumulative reading is not tank contents. Only enter a measured opening volume. One transfer counter may be the supplier’s outlet and the next tank’s inlet.'));
+  box.append(el('p','An outlet counter records water sent onward. An upstream outlet can provide the incoming transfer quantity when delivery is confirmed. A cumulative reading is not tank contents. Only enter a measured opening volume. One transfer counter may be the supplier’s outlet and the next tank’s inlet.'));
   if(!node.storage)return box;
   const stock=node.storage,volume=input(stock.openingVolumeLitres??'',v=>stock.openingVolumeLitres=v===''?null:Number(v));volume.type='number';volume.min='0';volume.step='0.01';
   const date=input(stock.openingDate?.slice(0,10)||'',v=>stock.openingDate=v?v+'T00:00:00':null);date.type='date';
   box.append(field('Measured opening stock (litres), not the counter value',volume),field('Opening stock measured at end of this date',date));
-  function choices(key,title){const group=el('fieldset');group.append(el('legend',title));for(const meter of meters.filter(m=>map.nodes.some(n=>n.meterId===m.id))){const checked=el('input');checked.type='checkbox';checked.checked=stock[key].includes(meter.id);checked.addEventListener('change',()=>{stock[key]=checked.checked?[...stock[key],meter.id]:stock[key].filter(id=>id!==meter.id);renderReview();});const label=el('label',meter.name,'ne-meter-choice');label.prepend(checked);group.append(label);}return group;}
-  box.append(choices('inletMeterIds','Counters measuring water into this tank'),choices('outletMeterIds','Counters measuring all water leaving this tank'));
+  function choices(key,title){const group=el('fieldset');group.append(el('legend',title));for(const meter of meters.filter(m=>map.nodes.some(n=>n.meterId===m.id))){const checked=el('input');checked.type='checkbox';checked.checked=stock[key].includes(meter.id);checked.disabled=key==='inletMeterIds'&&counterBoundary(node)==='outlet'&&meter.id===node.meterId&&!checked.checked;checked.addEventListener('change',()=>{stock[key]=checked.checked?[...stock[key],meter.id]:stock[key].filter(id=>id!==meter.id);renderReview();});const label=el('label',meter.name,'ne-meter-choice');label.prepend(checked);group.append(label);}return group;}
+  box.append(choices('inletMeterIds','Incoming quantity from upstream transfer counters'),choices('outletMeterIds','Counter measuring water leaving this tank'));
+  const received=el('input');received.type='checkbox';received.checked=stock.incomingTransfersConfirmed===true;received.addEventListener('change',()=>{stock.incomingTransfersConfirmed=received.checked;renderReview();});box.append(field('I confirmed the full upstream transfer arrived in this tank without unmeasured losses',received));
   const verified=el('input');verified.type='checkbox';verified.checked=stock.allFlowsConfirmed===true;verified.addEventListener('change',()=>{stock.allFlowsConfirmed=verified.checked;renderReview();});box.append(field('I verified every inlet, outlet, rain input and use/loss is accounted for by these counters',verified));
   box.append(el('p','If any path is unmetered or not confirmed, leave this unchecked. Unknown remaining stock will stay unknown.'));
   return box;
@@ -68,10 +69,10 @@ try {
     const metered=el('input');metered.type='checkbox';metered.checked=node.canLinkMeter!==false;
     metered.addEventListener('change',()=>{node.canLinkMeter=metered.checked;if(!metered.checked){node.meterId=null;node.reportingRole='';node.isExternalSupply=false;}renderFlow();renderReview();});
     fields.append(field('Record a meter at this point',metered));
-    if(node.canLinkMeter!==false){fields.append(field('Actual meter',select([['','Not assigned'],...meters.filter(m=>m.id===node.meterId||!map.nodes.some(n=>n.meterId===m.id)).map(m=>[String(m.id),m.name])],node.meterId,v=>{node.meterId=v?Number(v):null;renderReview();})),field('Reporting boundary',select(Object.entries(reportingRoles),reportingRole(node),v=>{node.reportingRole=v;if(['main','hydrant','borehole-inlet'].includes(v)){node.isExternalSupply=true;node.supplyOrigin=v==='borehole-inlet'?'borehole':'municipal';}renderReview();})));
+    if(node.canLinkMeter!==false){fields.append(field('Counter measurement',select([['outlet','Outlet · water leaving this point'],['inlet','Incoming measurement boundary'],['unconfirmed','Boundary not yet confirmed']],counterBoundary(node),v=>{node.counterBoundary=v;renderFlow();renderReview();})));fields.append(field('Actual meter',select([['','Not assigned'],...meters.filter(m=>m.id===node.meterId||!map.nodes.some(n=>n.meterId===m.id)).map(m=>[String(m.id),m.name])],node.meterId,v=>{node.meterId=v?Number(v):null;renderReview();})),field('Reporting boundary',select(Object.entries(reportingRoles),reportingRole(node),v=>{node.reportingRole=v;if(v==='main')node.isExternalSupply=false;if(['municipal-inlet','hydrant','borehole-inlet'].includes(v)){node.isExternalSupply=true;node.supplyOrigin=v==='borehole-inlet'?'borehole':'municipal';}renderReview();})));
     }
     if(node.canLinkMeter!==false&&(['source','storage'].includes(node.kind)||node.isExternalSupply)) {
-     const external=el('input');external.type='checkbox';external.checked=node.isExternalSupply===true;
+     const external=el('input');external.type='checkbox';external.checked=node.isExternalSupply===true;external.disabled=reportingRole(node)==='main';
      external.addEventListener('change',()=>{node.isExternalSupply=external.checked;renderReview();});fields.append(field('External water inlet (not a downstream meter)',external));
     }
     if(!parents.length)fields.append(field('Source water type',select(Object.entries(origins),rootOrigin(node),v=>{node.supplyOrigin=v;renderFlow();renderReview();})));
@@ -82,7 +83,7 @@ try {
  }
  function renderReview(){error.hidden=true;const root=document.getElementById('network-editor-review');root.replaceChildren();
   root.append(el('p',`${map.nodes.length} points · ${map.connections.length} routes. Changes affect the map after Save.`));
-  const mains=map.nodes.filter(n=>reportingRole(n)==='main');root.append(el('p',mains.length===1?`Municipal control total: ${mains[0].label}${mains[0].meterId?'':' (link its meter)'}`:'Choose exactly one Main Meter reporting boundary.'));
+  const mains=map.nodes.filter(n=>reportingRole(n)==='main');root.append(el('p',mains.length===1?`Recorded source outlet: ${mains[0].label}${mains[0].meterId?'':' (link its meter)'}`:'Choose exactly one Main Meter reporting boundary.'));
   for(const n of map.nodes.filter(n=>nodeOrigins(map,n.id).size>1&&n.canLinkMeter!==false))root.append(el('p',`${n.label}: combined-source meter; source split not separately measured.`));
   try{validateNetwork(map);root.append(el('p','Routes checked. Review meter assignments, then save.'));}catch(e){root.append(el('p','Needs attention: '+e.message,'ne-combined-note'));}
  }

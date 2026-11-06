@@ -18,3 +18,8 @@
 .station-comparison :is(th,td):nth-child(3),.station-comparison :is(th,td):nth-child(4),.station-comparison :is(th,td):nth-child(5) { width:11%; }
 .station-comparison :is(th,td):nth-child(6) { width:30%; }
 .station-flow-section h2,.borehole-flow h3 { font-size:1.2rem; font-weight:700; }
+.tank-balance-table { min-width:700px; }
+.tank-balance-table td:first-child { min-width:230px; white-space:normal; }
+.tank-balance-table details { max-width:360px; font-size:.82rem; font-weight:400; }
+.tank-balance-table details p { margin:8px 0; overflow-wrap:anywhere; }
+.tank-balance-table summary { color:#174b81; cursor:pointer; }

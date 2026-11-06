@@ -54,7 +54,7 @@ test('Main reporting boundary stays unique and cannot measure mixed sources',()=
  assert.throws(()=>validateNetwork({nodes:[main,point('basin')],connections:[route('m','basin',{sourceFilter:'borehole'})]}));
 });
 
-const storageMap=()=>({nodes:[point('source',{kind:'source',meterId:1,storage:{openingDate:'2025-01-01T00:00:00',openingVolumeLitres:0,inletMeterIds:[1],outletMeterIds:[2],allFlowsConfirmed:true}}),point('tank',{kind:'storage',meterId:2,storage:{openingDate:'2025-01-01T00:00:00',openingVolumeLitres:0,inletMeterIds:[2],outletMeterIds:[3],allFlowsConfirmed:true}}),point('use',{meterId:3,measuresFinalUse:true})],connections:[route('source','tank'),route('tank','use')]});
+const storageMap=()=>({nodes:[point('source',{kind:'source',counterBoundary:'inlet',meterId:1,storage:{openingDate:'2025-01-01T00:00:00',openingVolumeLitres:0,inletMeterIds:[1],outletMeterIds:[2],allFlowsConfirmed:true}}),point('tank',{kind:'storage',counterBoundary:'inlet',meterId:2,storage:{openingDate:'2025-01-01T00:00:00',openingVolumeLitres:0,inletMeterIds:[2],outletMeterIds:[3],allFlowsConfirmed:true}}),point('use',{meterId:3,measuresFinalUse:true})],connections:[route('source','tank'),route('tank','use')]});
 test('a shared transfer debits its supplier and credits its receiving tank',()=>assert.doesNotThrow(()=>validateNetwork(storageMap())));
 test('a boundary counter cannot credit two tanks or double as final use',()=>{
  const duplicate=storageMap();duplicate.nodes[0].storage.inletMeterIds=[2];assert.throws(()=>validateNetwork(duplicate));
@@ -63,4 +63,12 @@ test('a boundary counter cannot credit two tanks or double as final use',()=>{
 test('paired transfers must follow the map and stock requires a measured date',()=>{
  const disconnected=storageMap();disconnected.connections=disconnected.connections.filter(e=>e.from!=='source');assert.throws(()=>validateNetwork(disconnected));
  const undated=storageMap();undated.nodes[0].storage.openingDate=null;assert.throws(()=>validateNetwork(undated));
+});
+
+test('the municipal inlet and Main outlet are separate boundaries',()=>{
+ const inlet=point('inlet',{kind:'source',reportingRole:'municipal-inlet',isExternalSupply:true,supplyOrigin:'municipal'});
+ const main=point('main',{kind:'source',reportingRole:'main',isExternalSupply:false,supplyOrigin:'municipal',meterId:1});
+ assert.doesNotThrow(()=>validateNetwork({nodes:[inlet,main],connections:[route('inlet','main')]}));
+ main.storage={openingDate:'2025-01-01T00:00:00',openingVolumeLitres:0,inletMeterIds:[1],outletMeterIds:[]};
+ assert.throws(()=>validateNetwork({nodes:[inlet,main],connections:[route('inlet','main')]}),/outlet/);
 });

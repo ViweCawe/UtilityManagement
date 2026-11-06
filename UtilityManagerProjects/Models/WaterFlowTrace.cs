@@ -17,6 +17,7 @@ public sealed class WaterFlowPoint
     public string Label { get; init; } = "";
     public string Station { get; init; } = "";
     public string Kind { get; init; } = "";
+    public string ReportingRole { get; init; } = "";
     public int Depth { get; init; }
     public int? MeterId { get; init; }
     public string MeterName { get; init; } = "";
@@ -47,6 +48,9 @@ public sealed class WaterStationTransfer
     public string ToStation { get; init; } = "";
     public bool ExclusiveRoute { get; init; }
     public ConsumptionScope Received { get; init; } = new();
+    public ConsumptionScope Sent { get; init; } = new();
+    public bool DedicatedDeparture { get; init; }
+    public string MeasurementNote { get; init; } = "";
 }
 
 public sealed class BoreholeFlowPair
@@ -67,6 +71,7 @@ public sealed class WaterFlowTraceReport
     public List<WaterStationFlow> Stations { get; init; } = [];
     public List<WaterStationTransfer> Transfers { get; init; } = [];
     public BoreholeFlowPair Borehole { get; init; } = new();
+    public ConsumptionScope MunicipalReceipt { get; init; } = new();
     public List<string> Warnings { get; init; } = [];
     public IEnumerable<WaterFlowPoint> Points => Stations.SelectMany(s => s.Points);
 }
@@ -172,7 +177,7 @@ public static class WaterFlowTracing
             var next = nextById[node.Id];
             var row = new WaterFlowPoint
             {
-                Id = node.Id, Label = node.Label, Station = node.Station, Kind = node.Kind, Depth = Rank(node.Id),
+                Id = node.Id, Label = node.Label, Station = node.Station, Kind = node.Kind, ReportingRole=WaterAccounting.Role(node), Depth = Rank(node.Id),
                 MeterId = valid.TryGetValue(node.Id, out var meterId) ? meterId : null,
                 MeterName = valid.ContainsKey(node.Id) ? active[valid[node.Id]].MeterName : "Meter not linked",
                 MeasuresFinalUse = node.MeasuresFinalUse, Flow = Scope([node.Id]), Sources = sourceRoutes[node.Id],
@@ -187,7 +192,11 @@ public static class WaterFlowTracing
                 if (nodes[id].Station != node.Station) transfers.Add(new()
                 {
                     FromId = node.Id, ToId = id, From = node.Label, To = nodes[id].Label,
-                    FromStation = node.Station, ToStation = nodes[id].Station, ExclusiveRoute = exclusive, Received = Scope([id])
+                    FromStation = node.Station, ToStation = nodes[id].Station, ExclusiveRoute = exclusive,
+                    Received = WaterAccounting.CounterBoundary(nodes[id])=="inlet" ? Scope([id]) : Scope([]),
+                    DedicatedDeparture = WaterAccounting.CounterBoundary(node)=="outlet" && next.Meters.Count==1 && next.UnmeteredEnds.Count==0,
+                    Sent = WaterAccounting.CounterBoundary(node)=="outlet" && next.Meters.Count==1 && next.UnmeteredEnds.Count==0 ? Scope([node.Id]) : Scope([]),
+                    MeasurementNote = WaterAccounting.CounterBoundary(nodes[id])=="outlet" ? "The next tank's counter records its own outflow, not arrival at that station. A shared Main outlet cannot isolate the Top transfer while other branches also use water." : "Receipt is recorded at the next station's incoming boundary."
                 });
             }
             if (next.Meters.Count == 0) continue;
@@ -223,6 +232,7 @@ public static class WaterFlowTracing
         return new()
         {
             Start = start, End = end, Warnings = warnings, Borehole = pair, Transfers = transfers,
+            MunicipalReceipt = Scope(map.Nodes.Where(n => WaterAccounting.Role(n) == "municipal-inlet").Select(n => n.Id)),
             Stations = new[] { "Lower", "Top" }.Select(station => new WaterStationFlow
             {
                 Station = station, Points = points.Where(p => p.Station == station).OrderBy(p => p.Depth).ThenBy(p => WaterAccounting.Role(nodes[p.Id]) == "main" ? 0 : 1).ThenBy(p => p.Label).ToList()

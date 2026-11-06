@@ -155,7 +155,7 @@
                 <i class="bi bi-water"></i>
             </div>
             <div class="stat-content">
-                <p>Estimated Water Flow</p>
+                <p>@Model.Consumption.Water.Label</p>
                 <h2>@(Model.Consumption.Water.CoveredDays>0 ? Model.WaterUsage.ToString("N1") : "—") <span>L</span></h2>
                 <span>selected period</span>
             </div>
@@ -185,6 +185,9 @@
 
     </section>
 
+    <partial name="_WaterConsumptionTable" model="Model.EndUse" />
+    <partial name="_WaterOutletMovements" model="Model.OutletTransfers" />
+
     <section class="content-card">
 
         <div class="content-card-header">
@@ -207,7 +210,7 @@
                         <th>Reading Date</th>
                         <th>Previous Reading</th>
                         <th>Current Reading</th>
-                        <th>Usage</th>
+                        <th>Recorded flow / energy</th>
                         <th>Captured By</th>
                         <th>Actions</th>
                     </tr>
@@ -265,6 +268,7 @@
 
                                 <td class="trend-positive">
                                     @reading.Usage.ToString("N0") @unit
+                                    <small class="table-subtext d-block">@Model.ReadingPurposes.GetValueOrDefault(reading.MeterId,"Unclassified flow")</small>
                                 </td>
 
                                 <td>@reading.EmployeeEmail</td>

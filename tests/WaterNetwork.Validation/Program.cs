@@ -6,7 +6,7 @@ var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "water-networ
 using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
 {
     var map = WaterNetwork.Load(stream);
-    if (map.Nodes.Count != 33 || map.Connections.Count != 32)
+    if (map.Nodes.Count != 34 || map.Connections.Count != 33)
         throw new Exception("Unexpected source map inventory.");
 }
 

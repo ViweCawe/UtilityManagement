@@ -20,7 +20,7 @@ public static class FlowTraceValidation
             {
                 Id = name, Label = name, Station = i is 3 or 4 || i >= 10 ? "Top" : "Lower",
                 Kind = i == 0 ? "source" : i == 3 ? "storage" : i < 5 ? "distribution" : "usage",
-                ReportingRole = i == 0 ? "main" : "", IsExternalSupply = i == 0, SupplyOrigin = "municipal", MeasuresFinalUse = i >= 5
+                CounterBoundary=i==0?"outlet":"inlet", ReportingRole = i == 0 ? "main" : "", IsExternalSupply = i == 0, SupplyOrigin = "municipal", MeasuresFinalUse = i >= 5
             }).ToList(),
             Connections = [new() { From = "main", To = "son" }, new() { From = "main", To = "daughter" }, new() { From = "daughter", To = "handoff" }, new() { From = "handoff", To = "store" }, new() { From = "store", To = "assistant" }]
         };
@@ -51,7 +51,7 @@ public static class FlowTraceValidation
             Nodes = map.Nodes.Select(n => new WaterNetworkNode
             {
                 Id=n.Id, Label=n.Label, Station=n.Station, Kind=storageIds.Contains(n.Id)?n.Id=="main"?"source":"storage":n.Kind,
-                CanLinkMeter=n.CanLinkMeter, ReportingRole=n.ReportingRole, SupplyOrigin=n.SupplyOrigin,
+                CanLinkMeter=n.CanLinkMeter, CounterBoundary="inlet", ReportingRole=n.Id=="main"?"":n.ReportingRole, SupplyOrigin=n.SupplyOrigin,
                 IsExternalSupply=n.IsExternalSupply, MeasuresFinalUse=n.MeasuresFinalUse
             }).ToList(), Connections=map.Connections.ToList()
         };

@@ -9,6 +9,8 @@ public sealed class MeterDailyAverageRow
  public int? LatestCounter { get; set; }
  public DateTime? LatestCounterDate { get; set; }
  public string CalculationStatus { get; set; } = "";
+ public string ReadingPurpose { get; set; } = "";
+ public bool IsConfirmedConsumption { get; set; }
  public string SupplyDescription { get; set; } = "";
  public int ReadingCount { get; set; }
  public decimal TotalUsage { get; set; }

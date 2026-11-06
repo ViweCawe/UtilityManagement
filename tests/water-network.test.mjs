@@ -8,22 +8,22 @@ const network = JSON.parse(readFileSync(new URL('../UtilityManagerProjects/App_D
 test('map has valid, unique points, unique edges and documented source IDs', () => {
     const ids = new Set(network.nodes.map(n => n.id));
     assert.equal(ids.size, network.nodes.length);
-    assert.equal(network.nodes.length, 33);
-    assert.equal(network.connections.length, 32);
+    assert.equal(network.nodes.length, 34);
+    assert.equal(network.connections.length, 33);
     const pairs = new Set();
-    for (const node of network.nodes) assert.match(node.figmaNodeId, /^\d+:\d+$/);
+    for (const node of network.nodes.filter(n=>n.figmaNodeId)) assert.match(node.figmaNodeId, /^\d+:\d+$/);
     for (const edge of network.connections) {
         assert.ok(ids.has(edge.from) && ids.has(edge.to));
         assert.notEqual(edge.from, edge.to);
         assert.ok(!pairs.has(`${edge.from}/${edge.to}`));
         pairs.add(`${edge.from}/${edge.to}`);
-        assert.ok(edge.figmaConnectorId);
+        assert.ok(edge.figmaConnectorId || edge.from==='municipal-inlet');
     }
 });
 
 test('municipal route reaches both stations without absorbing borehole or rainwater', () => {
     const trace = traceNetwork(network, 'main-tank');
-    assert.deepEqual([...trace.upstream], []);
+    assert.deepEqual([...trace.upstream], ['municipal-inlet']);
     for (const id of ['garage-roof', 'cable-car-transfer', 'docking-bay', 'reservoir', 'dosing', 'header', 'male-female-toilets', 'vida-cafe'])
         assert.ok(trace.downstream.has(id), id);
     for (const id of ['rainwater', 'borehole-in', 'fire-hydrant'])
