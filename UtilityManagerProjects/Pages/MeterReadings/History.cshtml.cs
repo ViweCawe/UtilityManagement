@@ -49,9 +49,9 @@ namespace UtilityManagerProjects.Pages.MeterReadings
             }
 
             TotalReadings = ReadingHistory.Count;
-            TotalUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Sum(x => (decimal)x.Usage);
-            HighestUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Select(x=>(decimal)x.Usage).DefaultIfEmpty(0).Max();
-            LowestUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Select(x=>(decimal)x.Usage).DefaultIfEmpty(0).Min();
+            TotalUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Sum(x => x.DisplayUsage);
+            HighestUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Select(x=>x.DisplayUsage).DefaultIfEmpty(0).Max();
+            LowestUsage = ReadingHistory.Where(x=>!x.IsBaseline && x.Usage>=0).Select(x=>x.DisplayUsage).DefaultIfEmpty(0).Min();
 
             return Page();
         }
@@ -63,7 +63,7 @@ namespace UtilityManagerProjects.Pages.MeterReadings
                 return string.Empty;
             }
 
-            return LatestReading.Unit;
+            return LatestReading.DisplayUnit;
         }
 
         public string MeterDisplayName()

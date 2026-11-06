@@ -221,7 +221,7 @@
                     {
                         @foreach (var reading in Model.LatestReadings)
                         {
-                            var unit = Model.GetMeterUnit(reading.MeterType);
+                            var unit = reading.DisplayUnit;
 
                             var pillClass = reading.MeterType == DataLibrary.Models.MeterType.Water
                                 ? "reading-water"
@@ -263,11 +263,11 @@
                                     </div>
                                 </td>
 
-                                <td>@reading.PreviousReading.ToString("#,##0.######") @unit</td>
-                                <td>@reading.CurrentReading.ToString("#,##0.######") @unit</td>
+                                <td>@reading.DisplayPreviousReading.ToString("#,##0.######") @unit@if(reading.HasConvertedDisplay){<small class="table-subtext d-block">Meter: @reading.PreviousReading.ToString("#,##0.######") @reading.Unit</small>}</td>
+                                <td>@reading.DisplayCurrentReading.ToString("#,##0.######") @unit@if(reading.HasConvertedDisplay){<small class="table-subtext d-block">Meter: @reading.CurrentReading.ToString("#,##0.######") @reading.Unit</small>}</td>
 
                                 <td class="trend-positive">
-                                    @reading.Usage.ToString("N0") @unit
+                                    @reading.DisplayUsage.ToString("#,##0.######") @unit
                                     <small class="table-subtext d-block">@Model.ReadingPurposes.GetValueOrDefault(reading.MeterId,"Unclassified flow")</small>
                                 </td>
 

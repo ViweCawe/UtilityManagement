@@ -17,11 +17,11 @@
     </div>
     <section class="content-card form-card">
         <div class="content-card-header">
-            <div><h3>Waste Reading Information</h3><p>Complete the required fields.</p></div>
+            <div><h3>Meter Reading Information</h3><p>Complete the required fields.</p></div>
             <div class="form-card-icon blue"><i class="bi bi-speedometer2"></i></div>
         </div>
         <form method="post" class="utility-form">
-            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <div asp-validation-summary="All" class="validation-summary"></div>
             <div class="form-grid">
                 <div class="form-group form-group-full">
                     <label asp-for="Input.MeterId">Meter</label>
@@ -31,9 +31,11 @@
                     <span asp-validation-for="Input.MeterId" class="field-validation"></span>
                 </div>
                 <div class="form-group">
-                    <label asp-for="Input.CurrentReading">Current Reading</label>
-                    <input asp-for="Input.CurrentReading" class="utility-input" type="number" min="0" step="0.000001" />
+                    <label asp-for="Input.CurrentReading" id="counter-entry-label">Counter as shown on the meter</label>
+                    <input asp-for="Input.CurrentReading" class="utility-input" type="number" min="0" step="0.000001" data-counter-entry data-meter-select="Input_MeterId" data-counter-readout="counter-conversion" />
                     <span asp-validation-for="Input.CurrentReading" class="text-danger"></span>
+                    <p class="form-hint">Enter the number shown on the physical meter in its configured unit. Do not multiply it before entering it.</p>
+                    <output id="counter-conversion" class="form-hint" aria-live="polite">Select a meter and enter its counter to see the equivalent display value.</output>
                 </div>
                 <div class="form-group">
                     <label asp-for="Input.ReadingDate">Reading Date</label>
@@ -54,4 +56,5 @@
         </form>
     </section>
 </div>
-@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }
+<script type="application/json" id="counter-unit-options">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CounterUnits))</script>
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } <script type="module" src="~/js/reading-counter-preview.js" asp-append-version="true"></script> }

@@ -30,6 +30,8 @@ public class CreateModel : PageModel
         this.logger = logger;
     }
 
+    public sealed record CounterUnitInfo(string Unit,decimal Factor,string DisplayUnit);
+    public Dictionary<int,CounterUnitInfo> CounterUnits { get; private set; } = [];
     public List<SelectListItem> MeterItems { get; set; } = new();
 
     [BindProperty]
@@ -71,13 +73,7 @@ public class CreateModel : PageModel
         // Required whenever Page() may be returned.
         var meters = await meterData.GetMeters();
 
-        MeterItems = meters?.Where(m => m.IsActive)
-            .Select(m => new SelectListItem
-            {
-                Text = $"{m.MeterName} ({m.Unit} · {m.FlowDirection})",
-                Value = m.Id.ToString()
-            })
-            .ToList() ?? new();
+        SetMeterItems(meters ?? []);
 
         if (!ModelState.IsValid)
         {
@@ -176,12 +172,13 @@ public class CreateModel : PageModel
     {
         var meters = await meterData.GetMeters();
 
-        MeterItems = meters?.Where(m => m.IsActive)
-            .Select(m => new SelectListItem
-            {
-                Text = $"{m.MeterName} ({m.Unit} · {m.FlowDirection})",
-                Value = m.Id.ToString()
-            })
-            .ToList() ?? new();
+        SetMeterItems(meters ?? []);
     }
+    private void SetMeterItems(IEnumerable<Meter> meters)
+    {
+        var active=meters.Where(m=>m.IsActive).ToList();
+        MeterItems=active.Select(m=>new SelectListItem($"{m.MeterName} ({m.Unit} · {m.FlowDirection})",m.Id.ToString())).ToList();
+        CounterUnits=active.ToDictionary(m=>m.Id,m=>new CounterUnitInfo(m.Unit,MeterUnits.Valid(m.Unit,m.MeterType)?MeterUnits.Factor(m.Unit,m.MeterType):1m,MeterUnits.Valid(m.Unit,m.MeterType)?MeterUnits.Default(m.MeterType):m.Unit));
+    }
+
 }

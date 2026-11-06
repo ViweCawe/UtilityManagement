@@ -15,6 +15,7 @@
             <div class="page-title">
                 <h1>Reading RDG-@Model.Reading.Id.ToString("0000")</h1>
                 <p>Full details for this specific meter reading.</p>
+                @if(Model.Reading.HasConvertedDisplay){<p>Meter counter: @Model.Reading.CurrentReading.ToString("#,##0.######") @Model.Reading.Unit × @Model.Reading.DisplayFactor.ToString("#,##0") = <strong>@Model.Reading.DisplayCurrentReading.ToString("#,##0.######") @Model.Reading.DisplayUnit</strong>. This is a cumulative counter equivalent.</p>}
             </div>
 
             <div class="page-actions">
@@ -60,7 +61,7 @@
                 <div class="stat-content">
                     <p>Meter Type</p>
                     <h2>@Model.Reading.MeterType</h2>
-                    <span>@Model.Reading.Unit</span>
+                    <span>@Model.Reading.DisplayUnit</span>
                 </div>
             </div>
 
@@ -70,7 +71,7 @@
                 </div>
                 <div class="stat-content">
                     <p>Recorded flow / energy</p>
-                    <h2>@Model.Reading.Usage.ToString("N2") <span>@Model.Reading.Unit</span></h2>
+                    <h2>@Model.Reading.DisplayUsage.ToString("#,##0.######") <span>@Model.Reading.DisplayUnit</span></h2>
                     <span>calculated from previous to current</span>
                 </div>
             </div>
@@ -142,17 +143,17 @@
 
                     <div class="detail-row">
                         <span>Previous Reading</span>
-                        <strong>@Model.Reading.PreviousReading.ToString("#,##0.######") @Model.Reading.Unit</strong>
+                        <strong>@Model.Reading.DisplayPreviousReading.ToString("#,##0.######") @Model.Reading.DisplayUnit</strong>
                     </div>
 
                     <div class="detail-row">
                         <span>Current Reading</span>
-                        <strong>@Model.Reading.CurrentReading.ToString("#,##0.######") @Model.Reading.Unit</strong>
+                        <strong>@Model.Reading.DisplayCurrentReading.ToString("#,##0.######") @Model.Reading.DisplayUnit</strong>
                     </div>
 
                     <div class="detail-row">
                         <span>Recorded flow / energy</span>
-                        <strong class="trend-positive">@Model.Reading.Usage.ToString("N2") @Model.Reading.Unit</strong>
+                        <strong class="trend-positive">@Model.Reading.DisplayUsage.ToString("#,##0.######") @Model.Reading.DisplayUnit</strong>
                     </div>
 
                     <div class="detail-row">
@@ -202,9 +203,12 @@
                     <input type="hidden" asp-for="ReadingUpdate.Id" />
 
                     <div class="form-group">
-                        <label asp-for="ReadingUpdate.CurrentReadingUpdate"></label>
-                        <input asp-for="ReadingUpdate.CurrentReadingUpdate" type="number" step="0.000001" min="0" class="form-control utility-input" />
+                        <label asp-for="ReadingUpdate.CurrentReadingUpdate">Counter as shown on the meter (@Model.Reading.Unit)</label>
+                        <input asp-for="ReadingUpdate.CurrentReadingUpdate" type="number" step="0.000001" min="0" data-counter-entry data-fixed-meter="@Model.Reading.MeterId" data-counter-readout="counter-conversion" class="form-control utility-input" />
                         <span asp-validation-for="ReadingUpdate.CurrentReadingUpdate" class="text-danger"></span>
+                        <p class="form-hint">Keep the number in the meter’s original unit; the litre display is calculated automatically.</p>
+                        <output id="counter-conversion" class="form-hint" aria-live="polite"></output>
+                        <script type="application/json" id="counter-unit-options">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new Dictionary<int,object>{[Model.Reading.MeterId]=new {Unit=Model.Reading.Unit,Factor=Model.Reading.DisplayFactor,DisplayUnit=Model.Reading.DisplayUnit}}))</script>
                     </div>
 
                     <div class="form-group">
@@ -243,6 +247,8 @@
 </div>
 
 @section Scripts {
+<script type="module" src="~/js/reading-counter-preview.js" asp-append-version="true"></script>
+
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }

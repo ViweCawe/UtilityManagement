@@ -21,6 +21,12 @@ namespace DataLibrary.Models
 
         public string? CounterUnit { get; set; }
         public string Unit { get => MeterUnits.Normalize(CounterUnit,MeterType); set => CounterUnit=value; }
+        public decimal DisplayFactor => MeterUnits.Valid(Unit,MeterType)?MeterUnits.Factor(Unit,MeterType):1m;
+        public string DisplayUnit => MeterUnits.Valid(Unit,MeterType)?MeterUnits.Default(MeterType):Unit;
+        public bool HasConvertedDisplay => DisplayFactor!=1m;
+        public decimal DisplayCurrentReading => CurrentReading*DisplayFactor;
+        public decimal DisplayPreviousReading => PreviousReading*DisplayFactor;
+        public decimal DisplayUsage => Usage*DisplayFactor;
         // Physical counters remain separate even when reporting under one replacement chain.
         public int? PhysicalMeterId { get; set; }
         public MeterReading ForReporting(int pointId)
