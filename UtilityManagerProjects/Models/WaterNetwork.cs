@@ -75,6 +75,7 @@ public sealed class WaterNetwork
                 string.IsNullOrWhiteSpace(node.Label) || node.Label.Length > 100 ||
                 !System.Text.RegularExpressions.Regex.IsMatch(node.Id, "^[a-z0-9-]{1,80}$") ||
                 (node.Note?.Length ?? 0) > 1000 || (node.UsageArea?.Length ?? 0)>100 ||
+                node.CounterBoundary is not (null or "outlet" or "inlet" or "unconfirmed") ||
                 node.ReportingRole is not (null or "" or "main" or "municipal-inlet" or "borehole-inlet" or "borehole-outlet" or "hydrant") ||
                 node.SupplyOrigin is not (null or "" or "municipal" or "borehole" or "rain" or "other") ||
                 (node.MeterId.HasValue && (!node.CanLinkMeter || node.MeterId <= 0 || !meterIds.Add(node.MeterId.Value))) ||
@@ -158,6 +159,7 @@ public sealed class WaterNetworkNode
     public int? MeterId { get; set; }
     public bool? IsExternalSupply { get; set; }
     public string? ReportingRole { get; set; }
+    public string? CounterBoundary { get; set; }
     public string? SupplyOrigin { get; set; }
     public string? UsageArea { get; set; }
     public WaterStorageSettings? Storage { get; set; }
@@ -182,6 +184,7 @@ public sealed class WaterNetworkConnection
 public static class WaterAccounting
 {
     public static string Role(WaterNetworkNode n) => n.ReportingRole ?? (n.Id switch {"main-tank"=>"main","municipal-inlet"=>"municipal-inlet","borehole-in"=>"borehole-inlet","borehole-out"=>"borehole-outlet","fire-hydrant"=>"hydrant",_=>""});
+    public static string CounterBoundary(WaterNetworkNode node) => Role(node) is "municipal-inlet" or "borehole-inlet" ? "inlet" : Role(node)=="main" ? "outlet" : node.CounterBoundary ?? "outlet";
     public static string Area(WaterNetworkNode n) => n.UsageArea is null?n.Id switch {"workshop"=>"Workshop","staff-toilets-lower"=>"Level 1 Visitor Toilets",_=>""}:n.UsageArea.Trim();
     public static string Origin(WaterNetworkNode n) => !string.IsNullOrWhiteSpace(n.SupplyOrigin)?n.SupplyOrigin:Role(n) switch {"main" or "municipal-inlet" or "hydrant"=>"municipal","borehole-inlet" or "borehole-outlet"=>"borehole",_=>"other"};
     public static HashSet<string> Origins(WaterNetwork map,string id)
@@ -211,4 +214,5 @@ public sealed class WaterStorageSettings
     public List<int> InletMeterIds { get; set; } = [];
     public List<int> OutletMeterIds { get; set; } = [];
     public bool AllFlowsConfirmed { get; set; }
+    public bool IncomingTransfersConfirmed { get; set; }
 }

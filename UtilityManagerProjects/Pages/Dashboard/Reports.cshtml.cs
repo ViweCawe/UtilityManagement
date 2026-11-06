@@ -17,7 +17,8 @@ namespace UtilityManagerProjects.Pages.Reports
         private readonly IMeterReadingData meterReadingData;
         private readonly IWasteReadingData wasteReadingData;
         private readonly ConsumptionService calculations;
-        public WaterConsumptionTable EndUse { get; private set; } = new();
+        public WaterOutletMovementTable OutletTransfers { get; private set; } = new();
+ public WaterConsumptionTable EndUse { get; private set; } = new();
         public ConsumptionPeriod Consumption { get; private set; } = new();
         public bool WaterChangeAvailable { get; private set; }
         public bool ElectricityChangeAvailable { get; private set; }
@@ -115,6 +116,7 @@ namespace UtilityManagerProjects.Pages.Reports
             MeterReadings = ApplyMeterFilters(unfilteredCurrent).Where(r => IsInRange(r.ReadingDate, CurrentStart, CurrentEnd)).OrderByDescending(r => r.ReadingDate).ToList();
             Consumption = calculations.ForPeriod(CurrentStart, CurrentEnd, MeterId, Department);
             EndUse = calculations.ConsumptionTable(Consumption, MeterId, Department);
+            OutletTransfers=calculations.OutletMovements(Consumption,MeterId,Department);
             ViewData["Consumption"] = Consumption;
             ViewData["ConsumptionWarnings"] = calculations.Warnings;
             var previous = calculations.ForPeriod(PreviousStart, PreviousEnd, MeterId, Department);
@@ -510,6 +512,12 @@ namespace UtilityManagerProjects.Pages.Reports
                 rows.Add(Row(TextCell(supply.Label,4),supply.Flow.CoveredDays>0?NumberCell(supply.Flow.Total,5):TextCell("Unavailable",4),TextCell("L",4),NumberCell(supply.Flow.CoveredDays,5),TextCell("Covered days",4),TextCell("Independent flow boundary; storage inlet and outlet overlap.",4)));
             foreach(var area in Consumption.WaterAreas)
                 rows.Add(Row(TextCell(area.Area,4),area.Combined.CoveredDays>0?NumberCell(area.Combined.Total,5):TextCell("Unavailable",4),TextCell("L",4),area.Municipal.CoveredDays>0?NumberCell(area.Municipal.Total,5):TextCell("Municipal split unmeasured",4),area.Borehole.CoveredDays>0?NumberCell(area.Borehole.Total,5):TextCell("Borehole split unmeasured",4),TextCell(area.HasCombinedMeter?"Combined counter: do not infer source volumes":"Dedicated inlet meter flow",4)));
+
+            rows.Add(Row(TextCell("MEASURED OUTLET TRANSFERS · FULL CAPTURE INTERVALS, NOT ADDITIVE",8),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
+            rows.Add(Row(TextCell("Outlet / meter",3),TextCell("Opening capture",3),TextCell("Closing capture",3),TextCell("Counter change L",3),TextCell("Next mapped points",3),TextCell("Measurement basis",3)));
+            foreach(var transfer in OutletTransfers.Rows)
+                rows.Add(Row(TextCell(transfer.Point+" / "+transfer.MeterName,4),TextCell($"#{transfer.OpeningId} {transfer.OpeningDate:yyyy-MM-dd HH:mm} · {transfer.OpeningCounter} L",4),TextCell($"#{transfer.ClosingId} {transfer.ClosingDate:yyyy-MM-dd HH:mm} · {transfer.ClosingCounter} L",4),transfer.Volume.HasValue?NumberCell(transfer.Volume.Value,5):TextCell("Check counter",4),TextCell(transfer.Destinations,4),TextCell(transfer.Status,4)));
+            if(OutletTransfers.Truncated)rows.Add(Row(TextCell("Latest 500 intervals shown; narrow the filter for earlier captures.",4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
 
             rows.Add(Row(TextCell("Methodology",3),TextCell("Estimated daily flow from consecutive counters; unknown days excluded",4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));
             rows.Add(Row(TextCell("Water boundary",3),TextCell(Consumption.Water.Label,4),EmptyCell(),EmptyCell(),EmptyCell(),EmptyCell()));

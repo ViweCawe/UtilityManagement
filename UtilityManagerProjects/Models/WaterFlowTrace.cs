@@ -48,6 +48,9 @@ public sealed class WaterStationTransfer
     public string ToStation { get; init; } = "";
     public bool ExclusiveRoute { get; init; }
     public ConsumptionScope Received { get; init; } = new();
+    public ConsumptionScope Sent { get; init; } = new();
+    public bool DedicatedDeparture { get; init; }
+    public string MeasurementNote { get; init; } = "";
 }
 
 public sealed class BoreholeFlowPair
@@ -189,7 +192,11 @@ public static class WaterFlowTracing
                 if (nodes[id].Station != node.Station) transfers.Add(new()
                 {
                     FromId = node.Id, ToId = id, From = node.Label, To = nodes[id].Label,
-                    FromStation = node.Station, ToStation = nodes[id].Station, ExclusiveRoute = exclusive, Received = Scope([id])
+                    FromStation = node.Station, ToStation = nodes[id].Station, ExclusiveRoute = exclusive,
+                    Received = WaterAccounting.CounterBoundary(nodes[id])=="inlet" ? Scope([id]) : Scope([]),
+                    DedicatedDeparture = WaterAccounting.CounterBoundary(node)=="outlet" && next.Meters.Count==1 && next.UnmeteredEnds.Count==0,
+                    Sent = WaterAccounting.CounterBoundary(node)=="outlet" && next.Meters.Count==1 && next.UnmeteredEnds.Count==0 ? Scope([node.Id]) : Scope([]),
+                    MeasurementNote = WaterAccounting.CounterBoundary(nodes[id])=="outlet" ? "The next tank's counter records its own outflow, not arrival at that station. A shared Main outlet cannot isolate the Top transfer while other branches also use water." : "Receipt is recorded at the next station's incoming boundary."
                 });
             }
             if (next.Meters.Count == 0) continue;

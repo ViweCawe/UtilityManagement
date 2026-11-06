@@ -11,7 +11,7 @@ public static class OutletBoundaryValidation
         var day=new DateTime(2025,1,1);
         var names=new[]{"main","dock","reservoir","dosing","header","outlet-1","outlet-2","outlet-3","outlet-4","outlet-5"};
         var amounts=new[]{30000,20000,15000,20000,20000,400,400,400,400,400};
-        var map=new WaterNetwork{SourceBoundaryVersion=1,Nodes=names.Select((id,i)=>new WaterNetworkNode{Id=id,Label=id,Station=i==0?"Lower":"Top",Kind=i==0?"source":i<5?"storage":"usage",ReportingRole=i==0?"main":"",SupplyOrigin="municipal",IsExternalSupply=false,MeasuresFinalUse=i>=5,MeterId=i+1}).ToList()};
+        var map=new WaterNetwork{SourceBoundaryVersion=1,Nodes=names.Select((id,i)=>new WaterNetworkNode{Id=id,Label=id,Station=i==0?"Lower":"Top",Kind=i==0?"source":i<5?"storage":"usage",CounterBoundary=i>0&&i<5?"inlet":"outlet",ReportingRole=i==0?"main":"",SupplyOrigin="municipal",IsExternalSupply=false,MeasuresFinalUse=i>=5,MeterId=i+1}).ToList()};
         map.Nodes.Insert(0,new(){Id="inlet",Label="Municipal inlet",Station="Lower",Kind="source",ReportingRole="municipal-inlet",SupplyOrigin="municipal",IsExternalSupply=true});
         map.Connections.Add(new(){From="inlet",To="main"});
         foreach(var pair in new[]{("main","dock"),("dock","reservoir"),("reservoir","dosing"),("dosing","header")})map.Connections.Add(new(){From=pair.Item1,To=pair.Item2});

@@ -2,6 +2,14 @@
 
 This document supersedes the earlier assumption that Main Meter measures municipal inflow. The confirmed arrangement has **two separate physical meters**: a municipal inlet whose readings are not captured, and the recorded Main outlet leaving source storage. Main's counter change includes water sent to Lower Station and transfers to Top Station. It is not incoming municipal volume or final consumption.
 
+## Outlet measurements
+
+The confirmed tank arrangement measures water leaving each tank. Docking Bay records Docking Bay → Reservoir, Reservoir records Reservoir → Dosing, and each later counter records its own outlet. A loading counter changing from 200 L to 300 L records **100 L dispatched**. It does not prove the receiving tank gained 100 L if transport losses or other withdrawals occurred.
+
+**Measured outlet transfers · counter records** on Reports, Meter Readings and Water Balances, and in the Excel Executive Summary, shows actual adjacent capture differences, including same-day transfers. These full capture intervals are separate from daily-average allocations; if the opening capture predates the filter, the row says so. Reset/correction intervals remain unknown. The table has no grand total across successive transfer stages because the same water passes multiple counters.
+
+The Main outlet serves multiple branches. Its entire counter change cannot be assigned to Docking Bay. A dedicated loading/transfer meter or an explicitly recorded exclusive filling event is needed to identify that quantity. The current configuration supports dedicated upstream counters; it does not create an unconfirmed loading meter or infer a filling event.
+
 ## The three views
 
 1. **Tank balances** show opening stock, water received, water leaving and closing stock. Outflow may be a transfer. Unknown stock or an unrecorded boundary stays unknown.
@@ -12,7 +20,7 @@ A valid consumption boundary cannot feed another metered point or tank. A storag
 
 ## Corrected example: Header sends 2,000 L across all five outlets
 
-These are illustrative period volumes after counter differences and unit normalization, not imported site measurements. Opening measurements are explicit assumptions for this example.
+These are illustrative period volumes after counter differences and unit normalization, not imported site measurements. Opening measurements are explicit assumptions for this example. Received quantities assume confirmed arrival from dedicated upstream outlet measurements; they are not readings from the destination tank’s own outlet.
 
 | Tank | Opening stock L | Water received L | Water leaving L | Closing stock L |
 |---|---:|---:|---:|---:|
@@ -28,9 +36,9 @@ Main releases 30,000 L, of which 20,000 L is transferred to Top. The remaining 1
 
 ## Configure measurements
 
-In the Admin network editor, open a physical tank/source point's **Storage balance and final-use measurements** section. Enter a physically measured stock in litres and its end-of-day date. Select the actual inlet and outlet counters. Main's own counter belongs on the **outlet** side of the source tank; it is disabled as that tank's inlet. Its separate inlet remains unlinked/unrecorded until actual readings are collected. Do not mark all flows confirmed while an inlet, outlet, rain contribution or other path is unmeasured.
+In the Admin network editor, select **Counter measurement**: outlet for this confirmed layout. Open **Storage balance and final-use measurements**, enter a physically measured opening stock and its end-of-day date, and choose the dedicated upstream outlet counter for incoming transfers. The tank’s own linked outlet measures water leaving; it cannot also be its incoming counter. An explicit inlet-boundary option remains available for other verified physical layouts.
 
-A receiving tank's inlet counter can also debit its supplying tank where it measures the same physical transfer. Each counter can credit one receiving tank and debit one supplying tank. Do not subtract both an overall source outlet and its downstream branches as separate withdrawals from the source tank. For source storage, use municipal inlet flow in and Main outlet flow out. Its downstream distribution is then analysed separately.
+Confirm upstream dispatched water actually arrived before using that quantity as received water in the stock calculation. Shared upstream counters serving other destinations are rejected for tank receipts. All inflows/outflows must also be accounted for before calculating stock. With unrecorded municipal input, Main outflow stays reportable but source stock remains unknown. Earlier configurations using a tank’s own counter as its inlet require review; they are not silently reinterpreted.
 
 The opening stock column is calculated at the **start of the selected reporting period** from the measured anchor and intervening covered flows. It is not an older anchor copied beside this week's flows. When all required data is present, every displayed row reconciles: period opening + period inflow − period outflow = period closing. A direct physical measurement at the end date may establish closing stock even when an earlier period opening remains unknown.
 

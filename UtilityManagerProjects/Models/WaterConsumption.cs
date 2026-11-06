@@ -37,7 +37,7 @@ public static class WaterConsumptionBoundaries
                 if (descendants.Add(id)) foreach (var edge in map.Connections.Where(e => e.From == id)) queue.Enqueue(edge.To);
             if (WaterAccounting.Role(node) is "main" or "municipal-inlet" or "borehole-inlet" or "borehole-outlet" ||
                 credited.Contains(meterId.Value) || duplicateIds.Contains(meterId.Value) ||
-                (node.Kind == "storage" && node.Storage?.OutletMeterIds.Contains(meterId.Value) != true) ||
+                (node.Kind == "storage" && WaterAccounting.CounterBoundary(node) != "outlet") ||
                 map.Nodes.Any(n => descendants.Contains(n.Id) && (n.CanLinkMeter || n.Kind == "storage")))
             { issues.Add($"{node.Label}: a source/transfer/storage-inlet or overlapping counter cannot count as final consumption."); continue; }
             ids.Add(meterId.Value);

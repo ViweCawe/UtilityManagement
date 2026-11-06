@@ -1,0 +1,16 @@
+@model UtilityManagerProjects.Models.WaterOutletMovementTable
+<section class="content-card" aria-label="Measured outlet transfers">
+    <div class="content-card-header"><div><h2>Measured outlet transfers · counter records</h2><p>Closing counter − opening counter = water sent out. For example, 300 − 200 = 100 L transferred. These intervals are separate from final consumption and estimated daily averages.</p></div></div>
+    <div class="table-wrap"><table class="utility-table">
+        <thead><tr><th>Outlet / meter</th><th>Next mapped points</th><th>Opening capture</th><th>Closing capture</th><th>Water sent out</th><th>Measurement basis</th></tr></thead>
+        <tbody>
+            @foreach(var row in Model.Rows)
+            {
+                <tr data-outlet-record="@row.ClosingId"><td>@row.Point<small class="table-subtext d-block">@row.MeterName</small></td><td>@(string.IsNullOrEmpty(row.Destinations)?"Destination not mapped":row.Destinations)</td><td>@row.OpeningCounter.ToString("N0") L<small class="table-subtext d-block">@row.OpeningDate.ToString("dd MMM yyyy") · #@row.OpeningId</small></td><td><a asp-page="/MeterReadings/Display" asp-route-id="@row.ClosingId">@row.ClosingCounter.ToString("N0") L</a><small class="table-subtext d-block">@row.ClosingDate.ToString("dd MMM yyyy") · #@row.ClosingId</small></td><td><strong>@(row.Volume.HasValue?row.Volume.Value.ToString("N1")+" L":"Check counter")</strong></td><td class="outlet-record-note">@row.Status</td></tr>
+            }
+            @if(Model.Rows.Count==0){<tr><td colspan="6">No comparable outlet captures close within the selected dates. Link the outlet meter and capture its before/after counters. No transfer is assumed from a destination tank's outlet.</td></tr>}
+        </tbody>
+    </table></div>
+    @if(Model.Truncated){<p class="form-hint">Showing the latest 500 intervals. Narrow the dates or select a meter for earlier records.</p>}
+    <p class="form-hint">Each row is the whole interval between its two captures. A row may begin before the filter. Do not sum Main, tank and downstream rows as new supply or consumption. Arrival and remaining stock need their own confirmation.</p>
+</section>

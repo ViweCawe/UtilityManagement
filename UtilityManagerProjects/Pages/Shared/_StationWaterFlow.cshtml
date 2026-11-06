@@ -6,15 +6,15 @@
 @foreach (var warning in Model.Warnings) { <p class="alert alert-warning">@warning</p> }
 <section class="content-card" aria-label="Transfers between stations">
     <h2>Water moving between stations</h2>
-    <p>The receiving counter measures water arriving at the next station. This transfer is already part of its upstream supply.</p>
+    <p>Outlet counters measure departures. The next tank's outlet records its later transfer onward, not water arriving there. Shared source flow is not automatically assigned to Top Station.</p>
     <div class="table-wrap"><table class="utility-table">
-        <thead><tr><th>From</th><th>Receiving meter</th><th>Recorded receipt</th><th>Coverage / route</th></tr></thead>
+        <thead><tr><th>From</th><th>Receiving meter</th><th>Measured departure</th><th>Measured receipt</th><th>Measurement basis</th></tr></thead>
         <tbody>
             @foreach (var row in Model.Transfers)
             {
-                <tr><td>@row.From<small class="table-subtext d-block">@row.FromStation Station</small></td><td><a asp-page="/WaterNetwork/Index" asp-route-node="@row.ToId" asp-route-StartDate="@Model.Start.ToString("yyyy-MM-dd")" asp-route-EndDate="@Model.End.ToString("yyyy-MM-dd")">@row.To</a><small class="table-subtext d-block">@row.ToStation Station</small></td><td>@Volume(row.Received.CoveredDays > 0 ? row.Received.Total : null)</td><td>@row.Received.CoveredDays / @row.Received.Dates.Count days<small class="table-subtext d-block">@(row.ExclusiveRoute ? "One mapped upstream meter" : "Additional possible inlet: source split unavailable")</small></td></tr>
+                <tr><td>@row.From<small class="table-subtext d-block">@row.FromStation Station</small></td><td><a asp-page="/WaterNetwork/Index" asp-route-node="@row.ToId" asp-route-StartDate="@Model.Start.ToString("yyyy-MM-dd")" asp-route-EndDate="@Model.End.ToString("yyyy-MM-dd")">@row.To</a><small class="table-subtext d-block">@row.ToStation Station</small></td><td>@Volume(row.Sent.CoveredDays > 0 ? row.Sent.Total : null)</td><td>@Volume(row.Received.CoveredDays > 0 ? row.Received.Total : null)</td><td>@row.MeasurementNote<small class="table-subtext d-block">@(row.DedicatedDeparture ? "Dedicated mapped departure route" : "Dedicated transfer quantity not established")</small></td></tr>
             }
-            @if (!Model.Transfers.Any()) { <tr><td colspan="4">No route between stations is configured. Add the actual supply connection in the network editor.</td></tr> }
+            @if (!Model.Transfers.Any()) { <tr><td colspan="5">No route between stations is configured. Add the actual supply connection in the network editor.</td></tr> }
         </tbody>
     </table></div>
 </section>

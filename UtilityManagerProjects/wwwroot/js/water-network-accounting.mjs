@@ -27,3 +27,5 @@ export function flowSections(map) {
  for(const n of order) { const sources=nodeOrigins(map,n.id);const id=afterMerge(n.id)?'mixed':sources.has('municipal')?(hasHydrant(n.id)?'hydrant':'municipal'):sources.has('borehole')?'borehole':'other';groups.find(g=>g.id===id).nodes.push({node:n,depth:rank.get(n.id)}); }
  return groups.filter(g=>g.nodes.length);
 }
+
+export function counterBoundary(node){return ['municipal-inlet','borehole-inlet'].includes(reportingRole(node))?'inlet':reportingRole(node)==='main'?'outlet':node.counterBoundary||'outlet';}

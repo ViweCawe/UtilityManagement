@@ -209,8 +209,9 @@
       "figmaNodeId": "1:58",
       "x": 505,
       "y": 140,
-      "note": "Receiver tank for water transported by cable car. Attached meters record cumulative water passing through this stage; readings are not tank levels.",
-      "isExternalSupply": false
+      "note": "Receiver tank for water transported by cable car. Attached meters record cumulative water passing through this stage; readings are not tank levels. Counter records water leaving this tank, not water arriving.",
+      "isExternalSupply": false,
+      "counterBoundary": "outlet"
     },
     {
       "id": "reservoir",
@@ -220,8 +221,9 @@
       "figmaNodeId": "1:349",
       "x": 505,
       "y": 280,
-      "note": "Stores pumped water from the Docking Bay Tank and also receives rainwater. Capacity and level readings are not provided. Attached meters record cumulative water passing through this stage; readings are not tank levels.",
-      "isExternalSupply": false
+      "note": "Stores pumped water from the Docking Bay Tank and also receives rainwater. Capacity and level readings are not provided. Attached meters record cumulative water passing through this stage; readings are not tank levels. Counter records water leaving this tank, not water arriving.",
+      "isExternalSupply": false,
+      "counterBoundary": "outlet"
     },
     {
       "id": "rainwater",
@@ -243,8 +245,9 @@
       "figmaNodeId": "1:592",
       "x": 300,
       "y": 420,
-      "note": "The board says dosing flow is recorded here. Confirm the meter ID and distinguish its flow reading from tank level. Attached meters record cumulative water passing through this stage; readings are not tank levels.",
-      "isExternalSupply": false
+      "note": "The board says dosing flow is recorded here. Confirm the meter ID and distinguish its flow reading from tank level. Attached meters record cumulative water passing through this stage; readings are not tank levels. Counter records water leaving this tank, not water arriving.",
+      "isExternalSupply": false,
+      "counterBoundary": "outlet"
     },
     {
       "id": "header",
@@ -254,8 +257,9 @@
       "figmaNodeId": "1:677",
       "x": 505,
       "y": 560,
-      "note": "Distributor for Top Station outlets; also a storage tank. Do not add its throughput to upstream supply as new consumption. Attached meters record cumulative water passing through this stage; readings are not tank levels.",
-      "isExternalSupply": false
+      "note": "Distributor for Top Station outlets; also a storage tank. Do not add its throughput to upstream supply as new consumption. Attached meters record cumulative water passing through this stage; readings are not tank levels. Counter records water leaving this tank, not water arriving.",
+      "isExternalSupply": false,
+      "counterBoundary": "outlet"
     },
     {
       "id": "scullery",
@@ -276,8 +280,9 @@
       "figmaNodeId": "1:1102",
       "x": 0,
       "y": 720,
-      "note": "Feeds Male and Female Toilets. Verify whether its meter is at the inlet or outlet.",
-      "isExternalSupply": false
+      "note": "Feeds Male and Female Toilets. Verify whether its meter is at the inlet or outlet. Counter records water leaving this tank, not water arriving.",
+      "isExternalSupply": false,
+      "counterBoundary": "outlet"
     },
     {
       "id": "ten67",

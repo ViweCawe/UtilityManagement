@@ -50,8 +50,8 @@ public sealed class EditModel(WaterNetworkStore store, IMeterData meters, IDataA
             var network = Models.WaterNetwork.Load(stream);
             if (network.Nodes.Any(n => n.MeterId.HasValue && !AvailableMeters.Any(m => m.Id == n.MeterId)))
                 throw new InvalidDataException("A linked meter is unavailable. Remove its assignment or choose an active water meter.");
-            if(network.Nodes.Any(n=>Models.WaterAccounting.Role(n)=="main" && n.MeterId.HasValue && n.Storage?.InletMeterIds.Contains(n.MeterId.Value)==true))
-                throw new InvalidDataException("Main Meter is an outlet. Configure the separate municipal inlet for water received; Main cannot be the source tank's inlet counter.");
+            if(network.Nodes.Any(n=>Models.WaterAccounting.CounterBoundary(n)=="outlet" && n.MeterId.HasValue && n.Storage?.InletMeterIds.Contains(n.MeterId.Value)==true))
+                throw new InvalidDataException("This counter measures an outlet. Choose an upstream transfer counter for water into the tank; its own outlet cannot also be its inlet.");
             var boundaryIds=network.Nodes.Where(n=>n.Storage is not null).SelectMany(n=>n.Storage!.InletMeterIds.Concat(n.Storage.OutletMeterIds));
             if(boundaryIds.Any(id=>!AvailableMeters.Any(m=>m.Id==id)||!network.Nodes.Any(n=>n.MeterId==id))) throw new InvalidDataException("Each storage boundary must use an active water meter linked to its actual point on the map.");
             await store.SaveAsync(network, Revision, User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name ?? "Admin");

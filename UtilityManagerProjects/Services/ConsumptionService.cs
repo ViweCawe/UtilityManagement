@@ -63,7 +63,7 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
         if (role == "borehole-inlet") return "Borehole storage inflow";
         if (role == "borehole-outlet") return "Borehole water supplied";
         if (FinalUseSelection().MeterIds.Contains(meterId)) return "Consumption";
-        if (node.Kind == "storage" || network.Nodes.Any(n => n.Storage?.InletMeterIds.Contains(meterId) == true)) return "Tank flow / transfer";
+        if (node.Kind == "storage" || network.Nodes.Any(n => n.Storage?.InletMeterIds.Contains(meterId) == true)) return WaterAccounting.CounterBoundary(node)=="outlet"?"Tank outlet / transfer":"Tank inlet measurement";
         if (node.Kind is "transfer" or "distribution" || network.Connections.Any(e => e.From == node.Id)) return "Transfer / distribution";
         return "Final use not yet confirmed";
     }
@@ -76,6 +76,9 @@ public sealed class ConsumptionService(IMeterReadingData readings, IMeterData me
             Label = "Recorded water consumption at confirmed final-use meters", MeterIds = rows.Select(r => r.MeterId).ToHashSet(),
             Missing = meterId.HasValue || !string.IsNullOrWhiteSpace(department) ? [] : selection.Issues, Allocated = period.AllDaily } };
     }
+
+    public WaterOutletMovementTable OutletMovements(ConsumptionPeriod period, int? meterId=null, string? department=null) =>
+        WaterOutletMovements.Calculate(network,links,Meters,History,period.Water.Start,period.Water.End,meterId,department);
 
     public WaterFlowTraceReport FlowTraceForPeriod(DateTime start, DateTime end)
     {
