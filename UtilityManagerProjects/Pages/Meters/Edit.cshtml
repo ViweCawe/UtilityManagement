@@ -11,6 +11,9 @@
 }
 
 <style>
+    .meter-form-card .validation-summary-valid { display:none; }
+    .meter-asset-page .meter-form-card legend { color:#374151; }
+    .meter-save-success { padding:16px 20px; margin:0 0 20px; border:1px solid #86c9a0; border-radius:8px; background:#e8f5ee; color:#14532d; font-weight:600; }
     .meter-edit-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
     .meter-form-card, .meter-side-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; }
     .meter-form-card { padding: 28px; }
@@ -62,10 +65,14 @@
         </div>
     </div>
 
+    @if(TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="meter-save-success" role="status" aria-live="polite">@successMessage</div>
+    }
     <div class="meter-edit-layout">
-        <form method="post" class="meter-form-card"><section class="content-card"><h2>Counter units and physical meter</h2><partial name="_MeterCounterFields" /><p class="form-hint">Once readings exist, unit and measurement boundary are preserved. Use Add Meter to record a replacement.</p></section>
+        <form method="post" class="meter-form-card"><section class="content-card"><h2>Counter units and physical meter</h2><partial name="_MeterCounterFields" /><p class="form-hint">Direction can be corrected here. For a replacement chain, this corrects the direction for the whole measurement point. Recorded units and physical service dates stay protected.</p></section>
             <input asp-for="Input.Id" type="hidden" />
-            <div asp-validation-summary="ModelOnly"></div>
+            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
 
             <section class="meter-form-section">
@@ -105,7 +112,7 @@
                         <label class="meter-type-option">
                             <input asp-for="Input.MeterType" type="radio" value="@MeterType.Water" />
                             <span class="meter-type-icon water"><i class="bi bi-droplet-fill"></i></span>
-                            <span class="meter-type-copy"><strong>Water</strong><span>Usage recorded in litres</span></span>
+                            <span class="meter-type-copy"><strong>Water</strong><span>Counter unit selected above</span></span>
                         </label>
                         <label class="meter-type-option">
                             <input asp-for="Input.MeterType" type="radio" value="@MeterType.Electricity" />
@@ -175,4 +182,5 @@
 @section Scripts {
     <script src="~/js/meter-assets.js" asp-append-version="true"></script>
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/meter-form-validation.js" asp-append-version="true"></script>
 }

@@ -96,10 +96,10 @@ public sealed class ValidationAuthentication(IOptionsMonitor<AuthenticationSchem
 }
 public sealed class SampleData
 {
- readonly List<Meter> meters=Enumerable.Range(1,9).Select(i=>new Meter{Id=i,MeterName=new[]{"Main Meter","Fire Hydrant","Borehole Incoming","Garage Roof","Electricity","New usage meter","Borehole Out","Docking Bay","Toilets consumption"}[i-1],MeterType=i==5?MeterType.Electricity:MeterType.Water,IsActive=true,DepartmentName="Operations",AreaName="Lower station"}).ToList();
+ readonly List<Meter> meters=Enumerable.Range(1,9).Select(i=>new Meter{Id=i,MeterName=new[]{"Main Meter","Fire Hydrant","Borehole Incoming","Garage Roof","Electricity","New usage meter","Borehole Out","Docking Bay","Toilets consumption"}[i-1],MeterType=i==5?MeterType.Electricity:MeterType.Water,IsActive=true,AreaId=1,DepartmentId=1,StationId=1,DepartmentName="Operations",AreaName="Lower station"}).ToList();
  public SampleData() {
   var cutover=DateTime.Today.AddDays(-28);
-  meters.Add(new Meter{Id=10,MeterName="Old Dock counter",SerialNumber="OLD-DOCK-2021",MeterType=MeterType.Water,Unit="m³",IsActive=false,RetiredOn=cutover,DepartmentName="Operations",AreaName="Lower station"});
+  meters.Add(new Meter{Id=10,MeterName="Old Dock counter",SerialNumber="OLD-DOCK-2021",MeterType=MeterType.Water,Unit="m³",IsActive=false,AreaId=1,DepartmentId=1,StationId=1,RetiredOn=cutover,DepartmentName="Operations",AreaName="Lower station"});
   var dock=meters.Single(m=>m.Id==8);dock.ReplacesMeterId=10;dock.InstalledOn=cutover;dock.SerialNumber="NEW-DOCK";
  }
  WaterNetworkStore.Document ConsumptionDocument() {
@@ -109,10 +109,27 @@ public sealed class SampleData
   return new(){NetworkJson=graph.ToJsonString(),Revision=1};
  }
  public T Data<T>() where T:class => Proxy.Make<T>((method,args)=>{
+  if(typeof(T)==typeof(IMeterData)&&method.Name=="GetMeterById") {
+   var meter=meters.SingleOrDefault(m=>m.Id==(int)args![0]!);
+   var copy=meter is null?null:System.Text.Json.JsonSerializer.Deserialize<Meter>(System.Text.Json.JsonSerializer.Serialize(meter));
+   return Task.FromResult(copy);
+  }
+  if(typeof(T)==typeof(IMeterData)&&method.Name=="UpdateMeter"&&args?.Length==1) {
+   var submitted=(Meter)args[0]!;
+   // Explicit test fault: simulate a database writer that returns without persisting.
+   if(submitted.MeterName=="__simulate_ignored_update__")return Task.CompletedTask;
+   var index=meters.FindIndex(m=>m.Id==submitted.Id);
+   if(index>=0) {
+    var family=new UtilityManagerProjects.Models.MeterLineage(meters).Family(submitted.Id).Select(m=>m.Id).ToHashSet();
+    meters[index]=System.Text.Json.JsonSerializer.Deserialize<Meter>(System.Text.Json.JsonSerializer.Serialize(submitted))!;
+    foreach(var member in meters.Where(m=>family.Contains(m.Id)))member.FlowDirection=submitted.FlowDirection;
+   }
+   return Task.CompletedTask;
+  }
   var resultType=method.ReturnType.GetGenericArguments()[0];
   if(!resultType.IsGenericType) throw new NotSupportedException(method.Name);
   var itemType=resultType.GetGenericArguments()[0];var list=(IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType))!;
-  IEnumerable values=itemType==typeof(Meter)?meters:itemType==typeof(MeterReading)?meters.Where(m=>m.Id!=10).SelectMany(m=>Enumerable.Range(0,5).Select(i=>new MeterReading{Id=m.Id*10+i,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,AreaName=m.AreaName,ReadingDate=DateTime.Today.AddDays(-28+7*i),CurrentReading=1000+(m.Id==7?350:m.Id==8?200:m.Id==9?100:700)*i,PreviousReading=i==0?1000:1000+(m.Id==7?350:m.Id==8?200:m.Id==9?100:700)*(i-1),IsBaseline=i==0,Usage=i==0?0:m.Id==7?350:m.Id==8?200:m.Id==9?100:700})).Concat(new[]{new MeterReading{Id=1000,MeterId=10,MeterName="Old Dock counter",MeterType=MeterType.Water,Unit="m³",ReadingDate=new DateTime(2021,1,1),CurrentReading=200,IsBaseline=true},new MeterReading{Id=1001,MeterId=10,MeterName="Old Dock counter",MeterType=MeterType.Water,Unit="m³",ReadingDate=new DateTime(2021,1,8),CurrentReading=200.5m}}):itemType==typeof(WaterNetworkStore.Document)?new[]{ConsumptionDocument()}:itemType==typeof(ReferenceDataStore.Row)?new[]{new ReferenceDataStore.Row{Id=1,Name="Lower station",StationName="Lower",StationId=1,IsActive=true}}:Array.Empty<object>();
+  IEnumerable values=itemType==typeof(Area)?new[]{new Area{Id=1,AreaName="Lower station"}}:itemType==typeof(Department)?new[]{new Department{Id=1,DepartmentName="Operations"}}:itemType==typeof(Station)?new[]{new Station{Id=1,StationName="Lower"}}:itemType==typeof(Meter)?meters:itemType==typeof(MeterReading)?meters.Where(m=>m.Id!=10).SelectMany(m=>Enumerable.Range(0,5).Select(i=>new MeterReading{Id=m.Id*10+i,MeterId=m.Id,MeterName=m.MeterName,MeterType=m.MeterType,DepartmentName=m.DepartmentName,AreaName=m.AreaName,ReadingDate=DateTime.Today.AddDays(-28+7*i),CurrentReading=1000+(m.Id==7?350:m.Id==8?200:m.Id==9?100:700)*i,PreviousReading=i==0?1000:1000+(m.Id==7?350:m.Id==8?200:m.Id==9?100:700)*(i-1),IsBaseline=i==0,Usage=i==0?0:m.Id==7?350:m.Id==8?200:m.Id==9?100:700})).Concat(new[]{new MeterReading{Id=1000,MeterId=10,MeterName="Old Dock counter",MeterType=MeterType.Water,Unit="m³",ReadingDate=new DateTime(2021,1,1),CurrentReading=200,IsBaseline=true},new MeterReading{Id=1001,MeterId=10,MeterName="Old Dock counter",MeterType=MeterType.Water,Unit="m³",ReadingDate=new DateTime(2021,1,8),CurrentReading=200.5m}}):itemType==typeof(WaterNetworkStore.Document)?new[]{ConsumptionDocument()}:itemType==typeof(ReferenceDataStore.Row)?new[]{new ReferenceDataStore.Row{Id=1,Name="Lower station",StationName="Lower",StationId=1,IsActive=true}}:Array.Empty<object>();
   foreach(var item in values) list.Add(item);
   return typeof(Task).GetMethod(nameof(Task.FromResult))!.MakeGenericMethod(resultType).Invoke(null,[list]);
  });

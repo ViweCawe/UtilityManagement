@@ -110,14 +110,35 @@ namespace UtilityManagerProjects.Pages.Meters
             meter.DepartmentId = Input.DepartmentId;
             meter.StationId = Input.StationId;
             meter.IsCumulative = Input.IsCumulative;
-            meter.Unit=Input.CounterUnit;meter.SerialNumber=Input.SerialNumber.Trim();meter.FlowDirection=Input.FlowDirection;meter.InstalledOn=Input.InstalledOn;
+            meter.Unit=Input.CounterUnit;meter.SerialNumber=Input.SerialNumber?.Trim() ?? "";meter.FlowDirection=Input.FlowDirection;meter.InstalledOn=Input.InstalledOn;
 
-            try { await meterData.UpdateMeter(meter); }
-            catch(Microsoft.Data.SqlClient.SqlException){ModelState.AddModelError(string.Empty,"Cannot change a recorded meter’s unit, measurement boundary or service dates. Create a replacement to keep history accurate.");return Page();}
-
-            TempData["SuccessMessage"] = $"Meter {meter.MeterName} was updated.";
-            return RedirectToPage("./Index");
+            try
+            {
+                await meterData.UpdateMeter(meter);
+                var saved=await meterData.GetMeterById(id);
+                if(saved is null || !MatchesSavedMeter(saved,meter))
+                {
+                    ModelState.AddModelError(string.Empty,"Changes could not be confirmed in the database. Reload the meter and try again. No save was confirmed.");
+                    return Page();
+                }
+            }
+            catch(Microsoft.Data.SqlClient.SqlException ex)
+            {
+                var message=ex.Number is 201 or 207 or 208 or 2812 or 8144
+                    ? "Meter not saved. The database meter update is missing or out of date. Ask your administrator to apply the pending meter database updates."
+                    : ex.Number is >=51100 and <=51199 ? "Meter not saved. "+ex.Message : "Meter not saved. The database rejected the update. Please try again or contact your administrator.";
+                ModelState.AddModelError(string.Empty,message);return Page();
+            }
+            TempData["SuccessMessage"] = $"Saved successfully. {meter.MeterName} · direction: {meter.FlowDirection}.";
+            return RedirectToPage("./Edit",new {id});
         }
+
+        private static bool MatchesSavedMeter(Meter saved,Meter expected) =>
+            saved.Id==expected.Id && saved.MeterName==expected.MeterName && saved.MeterType==expected.MeterType &&
+            saved.AssetKind==expected.AssetKind && saved.NetworkRole==expected.NetworkRole && saved.CapacityLitres==expected.CapacityLitres &&
+            saved.Unit==expected.Unit && saved.SerialNumber==expected.SerialNumber && saved.FlowDirection==expected.FlowDirection &&
+            saved.InstalledOn==expected.InstalledOn && saved.AreaId==expected.AreaId && saved.DepartmentId==expected.DepartmentId &&
+            saved.StationId==expected.StationId && saved.IsCumulative==expected.IsCumulative && saved.IsActive==expected.IsActive;
 
         public async Task<IActionResult> OnPostDisableAsync(int id)
         {
